@@ -11,7 +11,7 @@ const program = initShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
 
 setup3dScene(gl, program);
 
-const posBuffer = createFloatBuffer(gl, [
+const vertexBuffer = createFloatBuffer(gl, [
     // triangle one
     [-.8, .8],
     [.1, -.6],
@@ -22,12 +22,12 @@ const posBuffer = createFloatBuffer(gl, [
     [.8, .8],
     [.9, -.6]
 ]);
-const posAttributeLocation = getAttributeLocation(gl, program, 'aVertexPosition');
-bindBufferToAttribute(gl, posAttributeLocation, posBuffer);
+const aVertexLoc = getAttributeLocation(gl, program, 'aVertexPosition');
+bindBufferToAttribute(gl, aVertexLoc, vertexBuffer);
 
-const colorUniformLocation = getUniformLocation(gl, program, 'uColor');
-bindValueToUniform(gl, colorUniformLocation, '4f', [.1, .1, .9, .9]);
+const uColorLoc = getUniformLocation(gl, program, 'uColor');
+bindValueToUniform(gl, uColorLoc, '4f', [.1, .1, .9, .9]);
 
 gl.drawArrays(gl.TRIANGLES, 0, 3);
-bindValueToUniform(gl, colorUniformLocation, '4f', [.9, .1, .1, .9]);
+bindValueToUniform(gl, uColorLoc, '4f', [.9, .1, .1, .9]); // <-- this seems inefficient. GPU needs to wait for CPU here.
 gl.drawArrays(gl.TRIANGLES, 3, 3);

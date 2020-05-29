@@ -21,8 +21,16 @@
  *  - Varyings are values that are passed from vertex-shader to fragment-shader.
  *    They are read-only only for the fragment-shader.
  *
+ * A program is just a list of compiled and linked vertex- and fragment-shaders.
+ *
+ *
+ * Drawing: there's drawArrays and drawElements.
+ *
  *
  * Rendering data is fast, but uploading it into GPU memory is slow.
+ * Optimizing WebGl performance mostly means: Avoiding having GPU and CPU wait for each other.
+ * The more the GPU can do in bulk, the better. The more often you have to upload data from CPU to GPU, the worse.
+ * So avoid switching (from bad to not so bad) programs, buffers and uniforms if you can.
  */
 
 
@@ -101,7 +109,7 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
 
     const bufferObject: BufferObject = {
         buffer: buffer,
-        vectorSize: 2,
+        vectorSize: data[0].length,
         vectorCount: data.length,
         type: gl.FLOAT,   // the data is 32bit floats
         normalize: false, // don't normalize the data
@@ -120,12 +128,18 @@ export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLPr
     return gl.getAttribLocation(program, attributeName);
 };
 
-
+/**
+ * Fetch uniform's location (uniform declared in some shader). Slow! Do *before* render loop.
+ */
 export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProgram, uniformName: string): WebGLUniformLocation => {
     return gl.getUniformLocation(program, uniformName);
 };
 
 
+/**
+ * Attributes vary from vertex to vertex - that means that there are *many* of them.
+ * So it makes sense for WebGl to store attribute values in a dedicated data structure - the buffer.
+ */
 export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
     // Enable editing
     gl.enableVertexAttribArray(attributeLocation);
@@ -140,6 +154,9 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
 
 export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f';
 
+/**
+ * Contrary to attributes, uniforms don't need to be stored in a buffer.
+ */
 export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: WebGLUniformLocation, type: UniformType, values: number[]): void => {
     switch (type) {
         case '1i':
