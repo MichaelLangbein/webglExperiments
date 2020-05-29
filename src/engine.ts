@@ -14,7 +14,7 @@ export interface AttributeObject {
 
 export interface EObject {
     program: WebGLProgram;
-    attributes: AttributeObject;
+    attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
     uniforms: UniformObject[];
 }
 
@@ -35,9 +35,9 @@ export class Engine {
         setup3dScene(this.gl);
 
         const tDeltaTarget = 1000 * 1.0 / fps;
-        let tStart = window.performance.now();
-        let tNow: number, tDelta, tSleep;
+        let tStart, tNow: number, tDelta, tSleep;
         const render = () => {
+            tStart = window.performance.now();
 
             // Part 1: do global changes (like changing rotation angle)
 
@@ -47,11 +47,13 @@ export class Engine {
             clearBackground(this.gl, [0, 0, 0, 1]);
             for (const o of this.objects) {
                 bindProgram(this.gl, o.program);
-                bindBufferToAttribute(this.gl, o.attributes.location, o.attributes.value);
+                for (const a of o.attributes) {
+                    bindBufferToAttribute(this.gl, a.location, a.value);
+                }
                 for (const u of o.uniforms) {
                     bindValueToUniform(this.gl, u.location, u.type, u.value);
                 }
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, o.attributes.value.vectorCount);
+                this.gl.drawArrays(this.gl.TRIANGLES, 0, o.attributes[0].value.vectorCount);
             }
 
             // Part 4: time-management
@@ -59,7 +61,6 @@ export class Engine {
             tDelta = tNow - tStart;
             tSleep = Math.max(tDeltaTarget - tDelta, 0);
             setTimeout(() => {
-                tStart = tNow;
                 requestAnimationFrame(render);
             }, tSleep);
 
