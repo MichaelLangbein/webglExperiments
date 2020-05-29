@@ -11,20 +11,24 @@
  *    note that buffers contain one entry for each vertex.
  *  - textures (bitmap images).
  *
- * Shaders use these data structures in different ways.
- *  - Const: a compile-time constant.
+ * Shaders use these data structures in two different ways.
  *  - Attributes are values, one per vertex.
  *    For the shader, attributes are read-only.
  *    Attributes default to [0, 0, 0, 1]
  *  - Uniforms are values, one per shader.
  *    For the shader, uniforms are read-only.
+ *
+ * Apart from this, shaders know about two more types of data:
  *  - Varyings are values that are passed from vertex-shader to fragment-shader.
  *    They are read-only only for the fragment-shader.
+ *  - Const: a compile-time constant.
  *
  * A program is just a list of compiled and linked vertex- and fragment-shaders.
  *
  *
  * Drawing: there's drawArrays and drawElements.
+ *  - drawArrays is the robust all-rounder.
+ *  - drawElements can be more performant if you share vertices between objects.
  *
  *
  * Rendering data is fast, but uploading it into GPU memory is slow.
@@ -33,6 +37,7 @@
  *  - So avoid switching programs, buffers and uniforms if you can.
  *    (You won't be able to avoid switching buffers, because every object is likely different. But sort your objects by their shaders, and you'll save a lot of time.)
  *  - Try to do translations, rotations and shears inside the vertex-shader instead of altering the object's buffer.
+ *  - If appropriate, create über-shaders and über-buffers, that contain information for more than just one object.
  */
 
 
@@ -72,15 +77,19 @@ export const initShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource:
 };
 
 
-export const setup3dScene = (gl: WebGLRenderingContext, program: WebGLProgram): void => {
+export const setup3dScene = (gl: WebGLRenderingContext): void => {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.cullFace(gl.BACK);
-    gl.useProgram(program);
 
     clearBackground(gl, [0, 0, 0, 1]);
+};
+
+
+export const bindProgram = (gl: WebGLRenderingContext, program: WebGLProgram): void => {
+    gl.useProgram(program);
 };
 
 
@@ -94,7 +103,7 @@ export const clearBackground = (gl: WebGLRenderingContext, color: number[]): voi
  /**
   * A generic buffer, together with it's metadata.
   */
- interface BufferObject {
+export interface BufferObject {
     buffer: WebGLBuffer;
     vectorSize: number;
     vectorCount: number;
@@ -103,6 +112,7 @@ export const clearBackground = (gl: WebGLRenderingContext, color: number[]): voi
     stride: number;
     offset: number;
 }
+
 
 /**
  * Create buffer. Creation is slow! Do *before* render loop.
