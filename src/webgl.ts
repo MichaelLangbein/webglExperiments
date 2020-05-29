@@ -30,7 +30,9 @@
  * Rendering data is fast, but uploading it into GPU memory is slow.
  * Optimizing WebGl performance mostly means: Avoiding having GPU and CPU wait for each other.
  * The more the GPU can do in bulk, the better. The more often you have to upload data from CPU to GPU, the worse.
- * So avoid switching (from bad to not so bad) programs, buffers and uniforms if you can.
+ *  - So avoid switching programs, buffers and uniforms if you can.
+ *    (You won't be able to avoid switching buffers, because every object is likely different. But sort your objects by their shaders, and you'll save a lot of time.)
+ *  - Try to do translations, rotations and shears inside the vertex-shader instead of altering the object's buffer.
  */
 
 
