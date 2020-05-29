@@ -72,13 +72,20 @@ export const initShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource:
 
 export const setup3dScene = (gl: WebGLRenderingContext, program: WebGLProgram): void => {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clearDepth(1.0);
+
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.cullFace(gl.BACK);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
+
+    clearBackground(gl, [0, 0, 0, 1]);
+};
+
+
+export const clearBackground = (gl: WebGLRenderingContext, color: number[]): void => {
+    gl.clearColor(color[0], color[1], color[2], color[3]);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 };
 
 
@@ -161,6 +168,9 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
     switch (type) {
         case '1i':
             gl.uniform1i(uniformLocation, values[0]);
+            break;
+        case '1f':
+            gl.uniform1f(uniformLocation, values[0]);
             break;
         case '3f':
             gl.uniform3f(uniformLocation, values[0], values[1], values[2]);
