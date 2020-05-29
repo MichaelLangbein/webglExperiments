@@ -5,85 +5,39 @@
  *
  * Vertex shaders take whatever coordinates you use and return a 3-d array with elements between -1 and 1.
  *
- * WebGL knows these data structures:
+ * WebGL knows two data structures:
  *  - buffers (generic byte arrays): usually positions, normals, texture-coordinates, vertex-colors etc.
  *    buffers are accessed in shaders as 'attributes'.
  *    note that buffers contain one entry for each vertex.
  *  - textures (bitmap images).
  *
  * Shaders use these data structures in different ways.
- *  - Attributes are ...
+ *  - Const: a compile-time constant.
+ *  - Attributes are values, one per vertex.
+ *    For the shader, attributes are read-only.
  *    Attributes default to [0, 0, 0, 1]
- *  - ...
+ *  - Uniforms are values, one per shader.
+ *    For the shader, uniforms are read-only.
+ *  - Varyings are values that are passed from vertex-shader to fragment-shader.
+ *    They are read-only only for the fragment-shader.
+ *
  *
  * Rendering data is fast, but uploading it into GPU memory is slow.
  */
 
 
- /**
-  * A generic buffer, together with it's metadata.
-  */
-interface BufferObject {
-    buffer: WebGLBuffer;
-    vectorSize: number;
-    type: number;
-    normalize: boolean;
-    stride: number;
-    offset: number;
-}
-
-/**
- * Create buffer. Creation is slow! Do *before* render loop.
- */
-export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): BufferObject => {
-    const dataFlattened = new Float32Array([].concat.apply([], data));
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    // STATIC_DRAW: tells WebGl that we are not likely to change this data much.
-    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
-
-    const bufferObject: BufferObject = {
-        buffer: buffer,
-        vectorSize: 2,    // x components per position
-        type: gl.FLOAT,   // the data is 32bit floats
-        normalize: false, // don't normalize the data
-        stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position
-        offset: 0,        // start at the beginning of the buffer
-    };
-
-    return bufferObject;
-};
 
 
 /**
- * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
+ * Compile shader.
  */
-export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
-    return gl.getAttribLocation(program, attributeName);
-};
-
-
-export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
-    // Enable editing
-    gl.enableVertexAttribArray(attributeLocation);
-    // Bind buffer to ARRAY_BUFFER
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferObject.buffer);
-    // Bind the buffer currently at ARRAY_BUFFER to a vertex-buffer-location.
-    gl.vertexAttribPointer(
-        attributeLocation,
-        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
-};
-
-
-
 const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource: string): WebGLShader => {
     const shader = gl.createShader(typeBit);
     gl.shaderSource(shader, shaderSource);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('An error occurred compiling the shader: ' + gl.getShaderInfoLog(shader));
         gl.deleteShader(shader);
-        return null;
+        throw new Error('An error occurred compiling the shader: ' + gl.getShaderInfoLog(shader));
     }
     return shader;
 };
@@ -100,9 +54,8 @@ export const initShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource:
     gl.linkProgram(program);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(program));
         gl.deleteProgram(program);
-        return null;
+        throw new Error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(program));
     }
 
     return program;
@@ -115,8 +68,90 @@ export const setup3dScene = (gl: WebGLRenderingContext, program: WebGLProgram): 
     gl.clearDepth(1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
+    gl.cullFace(gl.BACK);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
 };
 
 
+ /**
+  * A generic buffer, together with it's metadata.
+  */
+ interface BufferObject {
+    buffer: WebGLBuffer;
+    vectorSize: number;
+    vectorCount: number;
+    type: number;
+    normalize: boolean;
+    stride: number;
+    offset: number;
+}
+
+/**
+ * Create buffer. Creation is slow! Do *before* render loop.
+ */
+export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): BufferObject => {
+
+    const dataFlattened = new Float32Array([].concat.apply([], data));
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
+    // STATIC_DRAW: tells WebGl that we are not likely to change this data much.
+
+    const bufferObject: BufferObject = {
+        buffer: buffer,
+        vectorSize: 2,
+        vectorCount: data.length,
+        type: gl.FLOAT,   // the data is 32bit floats
+        normalize: false, // don't normalize the data
+        stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
+        offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
+    };
+
+    return bufferObject;
+};
+
+
+/**
+ * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
+ */
+export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
+    return gl.getAttribLocation(program, attributeName);
+};
+
+
+export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProgram, uniformName: string): WebGLUniformLocation => {
+    return gl.getUniformLocation(program, uniformName);
+};
+
+
+export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
+    // Enable editing
+    gl.enableVertexAttribArray(attributeLocation);
+    // Bind buffer to ARRAY_BUFFER
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferObject.buffer);
+    // Bind the buffer currently at ARRAY_BUFFER to a vertex-buffer-location.
+    gl.vertexAttribPointer(
+        attributeLocation,
+        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
+};
+
+
+export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f';
+
+export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: WebGLUniformLocation, type: UniformType, values: number[]): void => {
+    switch (type) {
+        case '1i':
+            gl.uniform1i(uniformLocation, values[0]);
+            break;
+        case '3f':
+            gl.uniform3f(uniformLocation, values[0], values[1], values[2]);
+            break;
+        case '4f':
+            gl.uniform4f(uniformLocation, values[0], values[1], values[2], values[3]);
+            break;
+        default:
+            throw Error(`Type ${type} not yet implemented.`);
+    }
+};
