@@ -1,59 +1,119 @@
 import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram } from './webgl';
 
+/**
+ * Userfacing. Contains basic information to create an
+ * (engine facing) UniformObject
+ */
+export interface IUniform {
+    variableName: string;
+    type: UniformType;
+    data: number[];
+}
 
-export interface UniformObject {
+interface UniformObject {
     location: WebGLUniformLocation;
     type: UniformType;
     value: number[];
 }
 
-export interface AttributeObject {
+/**
+ * Userfacing. Contains basic information to create an
+ * (engine facing) UniformObject
+ */
+export interface IAttribute {
+    variableName: string;
+    data: number[][];
+}
+
+interface AttributeObject {
     location: number;
     value: BufferObject;
 }
 
-export interface EObject {
+interface IObject {
     program: WebGLProgram;
     attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
     uniforms: UniformObject[];
+    update: (tDelta: number) => void;
 }
+
+
+export class EObject implements IObject {
+    program: WebGLProgram;
+    attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
+    uniforms: UniformObject[];
+
+    constructor(
+            gl: WebGLRenderingContext,
+            vertexShaderSource: string, fragmentShaderSource: string,
+            attributeData: IAttribute[],
+            uniformData: IUniform[]
+        ) {
+
+        const program = initShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+        const attributes: AttributeObject[] = [];
+        for (const attr of attributeData) {
+            attributes.push({
+                location: getAttributeLocation(gl, program, attr.variableName),
+                value: createFloatBuffer(gl, attr.data)
+            });
+        }
+
+        const uniforms: UniformObject[] = [];
+        for (const uni of uniformData) {
+            uniforms.push({
+                location: getUniformLocation(gl, program, uni.variableName),
+                type: uni.type,
+                value: uni.data
+            });
+        }
+
+        this.program = program;
+        this.attributes = attributes;
+        this.uniforms = uniforms;
+    }
+
+    update(tDelta: number): void {
+        // extend this!
+    }
+}
+
+
 
 
 export class Engine {
 
-    private canvas: HTMLCanvasElement;
-    private gl: WebGLRenderingContext;
-    private objects: EObject[];
+    readonly objects: IObject[] = [];
 
-    constructor(canvasId: string) {
-        this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-        this.gl = this.canvas.getContext('webgl');
-    }
+    constructor() {}
 
-
-    public renderLoop(fps: number): void {
-        setup3dScene(this.gl);
+    public renderLoop(gl: WebGLRenderingContext, fps: number): void {
+        setup3dScene(gl);
 
         const tDeltaTarget = 1000 * 1.0 / fps;
-        let tStart, tNow: number, tDelta, tSleep;
+        let tStart, tNow: number, tDelta: number, tSleep;
         const render = () => {
             tStart = window.performance.now();
 
             // Part 1: do global changes (like changing rotation angle)
 
             // Part 2: allow objects to update their state
+            for (const o of this.objects) {
+                o.update(tDeltaTarget);
+            }
 
             // Part 3: do the actual rendering work here
-            clearBackground(this.gl, [0, 0, 0, 1]);
+            clearBackground(gl, [0, 0, 0, 1]);
             for (const o of this.objects) {
-                bindProgram(this.gl, o.program);
+                bindProgram(gl, o.program);
                 for (const a of o.attributes) {
-                    bindBufferToAttribute(this.gl, a.location, a.value);
+                    bindBufferToAttribute(gl, a.location, a.value);
                 }
                 for (const u of o.uniforms) {
-                    bindValueToUniform(this.gl, u.location, u.type, u.value);
+                    bindValueToUniform(gl, u.location, u.type, u.value);
                 }
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, o.attributes[0].value.vectorCount);
+                gl.drawArrays(gl.TRIANGLES, 0, o.attributes[0].value.vectorCount);
             }
 
             // Part 4: time-management
@@ -69,10 +129,11 @@ export class Engine {
         render();
     }
 
-    public addObject(object: EObject): void {
+    public addObject(object: IObject): void {
         this.objects.push(object);
         this.sortObjects();
     }
+
 
     private sortObjects(): void {
         // @TODO: sort objects by their program (and then by their buffer), so we don't have to keep switching shaders.
