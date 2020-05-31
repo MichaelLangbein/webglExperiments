@@ -20,12 +20,15 @@ class SpinnyThing extends EObject {
 
 
 
-const redTriangle = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource, [{
+const redSquare = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource, [{
     variableName: 'aVertexPosition',
     data: [
         [-.8, .8, .4],
-        [-.7, -.4, .4],
-        [.6, -.5, .4]
+        [-.8, -.8, .4],
+        [.8, -.8, .4],
+        [-.8, .8, .4],
+        [.8, .8, .4],
+        [.8, -.8, .4]
     ]
 }], [{
     variableName: 'uColor',
@@ -41,12 +44,12 @@ const redTriangle = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource
 const blueSquare = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource, [{
     variableName: 'aVertexPosition',
     data: [
+        [-.8, .8, -.4],
+        [-.8, -.8, -.4],
+        [.8, -.8, -.4],
+        [-.8, .8, -.4],
         [.8, .8, -.4],
-        [.7, -.4, -.4],
-        [.6, -.5, -.4],
-        [.8, .8, -.4],
-        [.6, -.5, -.4],
-        [.7, .7, -.4]
+        [.8, -.8, -.4]
     ]
 }], [{
     variableName: 'uColor',
@@ -60,7 +63,7 @@ const blueSquare = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource,
 
 
 
-engine.addObject(redTriangle);
+engine.addObject(redSquare);
 engine.addObject(blueSquare);
 
 engine.renderLoop(gl, 30);

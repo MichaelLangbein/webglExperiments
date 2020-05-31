@@ -1,7 +1,7 @@
 import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram } from './webgl';
 
 /**
- * Userfacing. Contains basic information to create an
+ * User facing. Contains basic information to create an
  * (engine facing) UniformObject
  */
 export interface IUniform {
@@ -17,8 +17,8 @@ interface UniformObject {
 }
 
 /**
- * Userfacing. Contains basic information to create an
- * (engine facing) UniformObject
+ * User facing. Contains basic information to create an
+ * (engine facing) AttributeObject
  */
 export interface IAttribute {
     variableName: string;

@@ -4,6 +4,9 @@
  * Allows to draw points, line segments, or triangles.
  *
  * Vertex shaders take whatever coordinates you use and return a 3-d array with elements between -1 and 1.
+ * Basically, this is a 3d-array, but WebGl does not use the z-axis for real perspective, but only to differentiate
+ * what pixel lies in front of another.
+ * This is not like looking in a 3d-box, but rather like looking on multiple stacked sheets on a projector.
  *
  * WebGL knows two data structures:
  *  - buffers (generic byte arrays): usually positions, normals, texture-coordinates, vertex-colors etc.
