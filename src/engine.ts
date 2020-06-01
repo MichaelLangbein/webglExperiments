@@ -1,4 +1,9 @@
 import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram } from './webgl';
+const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
+const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
+const hash = require('string-hash');
+
+
 
 /**
  * User facing. Contains basic information to create an
@@ -30,32 +35,38 @@ interface AttributeObject {
     value: BufferObject;
 }
 
-interface IObject {
+export interface ProgramObject {
     program: WebGLProgram;
+    id: string;
+}
+
+interface IObject {
+    program: ProgramObject;
     attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
     uniforms: UniformObject[];
     update: (tDelta: number) => void;
 }
 
 
+
+
+
 export class EObject implements IObject {
-    program: WebGLProgram;
+    program: ProgramObject;
     attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
     uniforms: UniformObject[];
 
     constructor(
             gl: WebGLRenderingContext,
-            vertexShaderSource: string, fragmentShaderSource: string,
+            program: ProgramObject,
             attributeData: IAttribute[],
             uniformData: IUniform[]
         ) {
 
-        const program = initShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
-
         const attributes: AttributeObject[] = [];
         for (const attr of attributeData) {
             attributes.push({
-                location: getAttributeLocation(gl, program, attr.variableName),
+                location: getAttributeLocation(gl, program.program, attr.variableName),
                 value: createFloatBuffer(gl, attr.data)
             });
         }
@@ -63,7 +74,7 @@ export class EObject implements IObject {
         const uniforms: UniformObject[] = [];
         for (const uni of uniformData) {
             uniforms.push({
-                location: getUniformLocation(gl, program, uni.variableName),
+                location: getUniformLocation(gl, program.program, uni.variableName),
                 type: uni.type,
                 value: uni.data
             });
@@ -75,7 +86,51 @@ export class EObject implements IObject {
     }
 
     update(tDelta: number): void {
-        // extend this!
+        // @TODO: extend this!
+    }
+}
+
+
+
+export class EObject3d {
+    program: ProgramObject;
+    attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
+    uniforms: UniformObject[];
+
+    constructor(
+            gl: WebGLRenderingContext,
+            vertices: number[][],
+            translation: number[],
+            rotation: number[]
+        ) {
+
+        const program = {
+            program: initShaderProgram(gl, basic3dVertexShaderSource, basic3dFragmentShaderSource),
+            id: hash(basic3dVertexShaderSource + basic3dFragmentShaderSource)
+        };
+
+        const attributes: AttributeObject[] = [{
+            location: getAttributeLocation(gl, program, 'a_vertex'),
+            value: createFloatBuffer(gl, vertices)
+        }];
+
+        const uniforms: UniformObject[] = [{
+            location: getUniformLocation(gl, program, 'u_translation'),
+            type: '3f',
+            value: translation
+        }, {
+            location: getUniformLocation(gl, program, 'u_rotation'),
+            type: '3f',
+            value: rotation
+        }];
+
+        this.program = program;
+        this.attributes = attributes;
+        this.uniforms = uniforms;
+    }
+
+    update(tDelta: number): void {
+        // TODO: extend this.
     }
 }
 
@@ -93,6 +148,7 @@ export class Engine {
 
         const tDeltaTarget = 1000 * 1.0 / fps;
         let tStart, tNow: number, tDelta: number, tSleep;
+        let currentShader = '';
         const render = () => {
             tStart = window.performance.now();
 
@@ -106,7 +162,10 @@ export class Engine {
             // Part 3: do the actual rendering work here
             clearBackground(gl, [0, 0, 0, 1]);
             for (const o of this.objects) {
-                bindProgram(gl, o.program);
+                if (o.program.id !== currentShader) {
+                    bindProgram(gl, o.program.program);
+                    currentShader = o.program.id;
+                }
                 for (const a of o.attributes) {
                     bindBufferToAttribute(gl, a.location, a.value);
                 }
@@ -137,6 +196,9 @@ export class Engine {
 
     private sortObjects(): void {
         // @TODO: sort objects by their program (and then by their buffer), so we don't have to keep switching shaders.
+        this.objects.sort((a: IObject, b: IObject) => {
+            return (a.program.id > b.program.id) ? 1 : -1;
+        });
     }
 
 

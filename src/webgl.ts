@@ -61,14 +61,21 @@ const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource:
 };
 
 
+/**
+ * Note that every program *must* have one and only one vertex-shader
+ * and one and only one fragment shader.
+ * That means you cannot add multiple fragment-shaders in one program. Instead, either load them in consecutively as part of different programs,
+ * or generate an über-shader that contains both codes.
+ */
 export const initShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram => {
+
+    const program = gl.createProgram();
 
     const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-    const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
+
     gl.linkProgram(program);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {

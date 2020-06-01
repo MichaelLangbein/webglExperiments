@@ -51,13 +51,16 @@ module.exports = {
             },
             // Require .vert and .frag as raw text.
             {
-                test: /\.(vert|frag)$/i,
+                test: /\.(vert|frag|glsl)$/i,
                 use: 'raw-loader',
             }
         ]
     },
 
     devtool: 'cheap-module-source-map',
-    devServer: {}
+    devServer: {
+        disableHostCheck: true, 
+        // public: 'localhost:9000'
+    }
 };
 

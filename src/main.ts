@@ -1,4 +1,6 @@
-import { Engine, EObject } from './engine';
+import { Engine, EObject, IAttribute, IUniform } from './engine';
+import { initShaderProgram } from './webgl';
+const hash = require('string-hash');
 const vertexShaderSource = require('./demo.vert').default;
 const fragmentShaderSource = require('./demo.frag').default;
 
@@ -10,7 +12,17 @@ const gl = canvas.getContext('webgl');
 const engine = new Engine();
 
 
+const program = {
+    program: initShaderProgram(gl, vertexShaderSource, fragmentShaderSource),
+    id: hash(vertexShaderSource + fragmentShaderSource)
+};
+
+
 class SpinnyThing extends EObject {
+    constructor(gl: WebGLRenderingContext, attributeData: IAttribute[], uniformData: IUniform[]) {
+        super(gl, program, attributeData, uniformData);
+    }
+
     update(tDelta: number): void {
         const oldVal = this.uniforms[1].value[0];
         const newVal = oldVal + 0.05 * tDelta;
@@ -20,7 +32,7 @@ class SpinnyThing extends EObject {
 
 
 
-const redSquare = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource, [{
+const redSquare = new SpinnyThing(gl, [{
     variableName: 'aVertexPosition',
     data: [
         [-.8, .8, .4],
@@ -41,7 +53,7 @@ const redSquare = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource, 
 }]);
 
 
-const blueSquare = new SpinnyThing(gl, vertexShaderSource, fragmentShaderSource, [{
+const blueSquare = new SpinnyThing(gl, [{
     variableName: 'aVertexPosition',
     data: [
         [-.8, .8, -.4],
