@@ -1,6 +1,4 @@
-import { Engine, EObject, IAttribute, IUniform } from './engine';
-import { initShaderProgram } from './webgl';
-const hash = require('string-hash');
+import { Engine, EObject, IAttribute, IUniform, createProgram } from './engine';
 const vertexShaderSource = require('./demo.vert').default;
 const fragmentShaderSource = require('./demo.frag').default;
 
@@ -12,10 +10,7 @@ const gl = canvas.getContext('webgl');
 const engine = new Engine();
 
 
-const program = {
-    program: initShaderProgram(gl, vertexShaderSource, fragmentShaderSource),
-    id: hash(vertexShaderSource + fragmentShaderSource)
-};
+const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
 
 class SpinnyThing extends EObject {

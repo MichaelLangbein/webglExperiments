@@ -40,6 +40,15 @@ export interface ProgramObject {
     id: string;
 }
 
+
+export const createProgram = (gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): ProgramObject => {
+    return {
+        program: initShaderProgram(gl, vertexShaderSource, fragmentShaderSource),
+        id: hash(vertexShaderSource + fragmentShaderSource);
+    };
+};
+
+
 interface IObject {
     program: ProgramObject;
     attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
@@ -48,6 +57,15 @@ interface IObject {
 }
 
 
+
+interface Texture {
+    textureCoords: AttributeObject;
+    texture: UniformObject;
+}
+
+export const createTexture = (gl: WebGLRenderingContext, program: ProgramObject, coords: number[][], img: HTMLImageElement) => {
+
+}
 
 
 
@@ -87,50 +105,6 @@ export class EObject implements IObject {
 
     update(tDelta: number): void {
         // @TODO: extend this!
-    }
-}
-
-
-
-export class EObject3d {
-    program: ProgramObject;
-    attributes: AttributeObject[]; // note that attributes must all have the same number of entries!
-    uniforms: UniformObject[];
-
-    constructor(
-            gl: WebGLRenderingContext,
-            vertices: number[][],
-            translation: number[],
-            rotation: number[]
-        ) {
-
-        const program = {
-            program: initShaderProgram(gl, basic3dVertexShaderSource, basic3dFragmentShaderSource),
-            id: hash(basic3dVertexShaderSource + basic3dFragmentShaderSource)
-        };
-
-        const attributes: AttributeObject[] = [{
-            location: getAttributeLocation(gl, program, 'a_vertex'),
-            value: createFloatBuffer(gl, vertices)
-        }];
-
-        const uniforms: UniformObject[] = [{
-            location: getUniformLocation(gl, program, 'u_translation'),
-            type: '3f',
-            value: translation
-        }, {
-            location: getUniformLocation(gl, program, 'u_rotation'),
-            type: '3f',
-            value: rotation
-        }];
-
-        this.program = program;
-        this.attributes = attributes;
-        this.uniforms = uniforms;
-    }
-
-    update(tDelta: number): void {
-        // TODO: extend this.
     }
 }
 
