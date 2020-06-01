@@ -1,4 +1,4 @@
-import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram } from './webgl';
+import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform } from './webgl';
 const hash = require('string-hash');
 
 
@@ -40,6 +40,19 @@ export class Uniform implements IUniform {
     }
 }
 
+export class Texture {
+
+    readonly location: WebGLUniformLocation;
+    readonly bindPoint: number;
+    readonly texture: any;
+
+    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, image: HTMLImageElement, bindPoint: number) {
+        this.location = getUniformLocation(gl, program.program, variableName);
+        this.texture = createTexture(gl, image);
+        this.bindPoint = bindPoint;
+    }
+}
+
 
 export interface IAttribute {
     location: number;
@@ -47,7 +60,7 @@ export interface IAttribute {
 }
 
 
-export class Attribute {
+export class Attribute implements IAttribute {
 
     readonly location: number;
     readonly value: BufferObject;
@@ -63,6 +76,7 @@ interface IEntity {
     program: IProgram;
     attributes: IAttribute[]; // note that attributes must all have the same number of entries!
     uniforms: IUniform[];
+    textures: Texture[];
     update: (tDelta: number) => void;
 }
 
@@ -74,6 +88,7 @@ export class Entity implements IEntity {
         readonly program: IProgram,
         readonly attributes: IAttribute[],
         readonly uniforms: IUniform[],
+        readonly textures: Texture[],
         readonly updateFunction: (tDelta: number, attrs: IAttribute[], unis: IUniform[]) => void) {}
 
     update(tDelta: number): void {
@@ -105,7 +120,7 @@ export class Engine {
             }
 
             // Part 2: do the actual rendering work here
-            clearBackground(gl, [0, 0, 0, 1]);
+            clearBackground(gl, [.7, .7, .7, 1]);
             for (const e of this.entities) {
                 if (e.program.id !== currentShader) {
                     bindProgram(gl, e.program.program);
@@ -116,6 +131,9 @@ export class Engine {
                 }
                 for (const u of e.uniforms) {
                     bindValueToUniform(gl, u.location, u.type, u.value);
+                }
+                for (const t of e.textures) {
+                    bindTextureToUniform(gl, t.texture, t.bindPoint, t.location);
                 }
                 gl.drawArrays(gl.TRIANGLES, 0, e.attributes[0].value.vectorCount);
             }

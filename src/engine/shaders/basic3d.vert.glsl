@@ -1,7 +1,8 @@
 attribute vec4 a_vertex;
+attribute vec2 a_textureCoord;
 uniform vec3 u_translation;
 uniform vec3 u_rotation;
-
+varying vec2 v_textureCoord;
 
 
 
@@ -34,4 +35,5 @@ void main() {
     position = position + vec4(u_translation, .0);
     // TODO: perspective
     gl_Position = position;
+	v_textureCoord = a_textureCoord;
 }

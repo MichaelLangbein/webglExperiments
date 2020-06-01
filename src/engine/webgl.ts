@@ -161,6 +161,21 @@ export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement
 
 
 /**
+ * Even though we reference textures as uniforms in a fragment shader, assigning an actual texture-value to that uniform works differently than for normal uniforms.
+ * Normal uniforms have a concrete value.
+ * Texture uniforms, on the other hand, are just an integer-index that points to a special slot in the GPU memory (the bindPoint) where the actual texture value lies.
+ */
+export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTexture, bindPoint: number, uniformLocation: WebGLUniformLocation): void =>  {
+    if (bindPoint > gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) {
+        throw new Error(`There are only ${gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)} texture bind points, but you tried to bind to point nr. ${bindPoint}.`);
+    }
+    gl.activeTexture(gl.TEXTURE0 + bindPoint);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(uniformLocation, bindPoint);
+};
+
+
+/**
  * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
  */
 export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
@@ -209,8 +224,12 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
         case '1i':
             gl.uniform1i(uniformLocation, values[0]);
             break;
+
         case '1f':
             gl.uniform1f(uniformLocation, values[0]);
+            break;
+        case '2f':
+            gl.uniform2f(uniformLocation, values[0], values[1]);
             break;
         case '3f':
             gl.uniform3f(uniformLocation, values[0], values[1], values[2]);
@@ -218,6 +237,7 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
         case '4f':
             gl.uniform4f(uniformLocation, values[0], values[1], values[2], values[3]);
             break;
+
         default:
             throw Error(`Type ${type} not yet implemented.`);
     }
