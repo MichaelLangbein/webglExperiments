@@ -1,4 +1,4 @@
-import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, bindProgram } from './webgl';
+import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, bindProgram } from './engine/webgl';
 const vertexShaderSource = require('./demo.vert').default;
 const fragmentShaderSource = require('./demo.frag').default;
 

@@ -1,8 +1,7 @@
-import { Engine, Program, Entity, Attribute, Uniform, IAttribute, IUniform } from './engine.core';
-import { box } from './engine.shapes';
-import { getAttributeLocation, getUniformLocation } from './webgl';
-const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
-const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
+import { Engine, Program, Entity, Attribute, Uniform, IAttribute, IUniform } from './engine/engine.core';
+import { box, square } from './engine/engine.shapes';
+const basic3dVertexShaderSource = require('./engine/shaders/basic3d.vert.glsl').default;
+const basic3dFragmentShaderSource = require('./engine/shaders/basic3d.frag.glsl').default;
 
 
 const canvas = document.getElementById('webGlCanvas') as HTMLCanvasElement;
@@ -15,7 +14,7 @@ const program = new Program(gl, basic3dVertexShaderSource, basic3dFragmentShader
 const redSquare = new Entity(
     program,
     [
-        new Attribute(gl, program, 'a_vertex', box(.2, .2, .2) )
+        new Attribute(gl, program, 'a_vertex', square(.2, .2) )
     ], [
         new Uniform(gl, program, 'u_translation', '3f', [.3, .3, .0]),
         new Uniform(gl, program, 'u_rotation', '3f', [.0, .0, .0])
