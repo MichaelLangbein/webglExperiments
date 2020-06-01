@@ -164,14 +164,22 @@ export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement
  * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
  */
 export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
-    return gl.getAttribLocation(program, attributeName);
+    const loc = gl.getAttribLocation(program, attributeName);
+    if (loc === -1) {
+        throw new Error(`Couldn't find attribute ${attributeName} in program.`);
+    }
+    return loc;
 };
 
 /**
  * Fetch uniform's location (uniform declared in some shader). Slow! Do *before* render loop.
  */
 export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProgram, uniformName: string): WebGLUniformLocation => {
-    return gl.getUniformLocation(program, uniformName);
+    const loc = gl.getUniformLocation(program, uniformName);
+    if (loc === null) {
+        throw new Error(`Couldn't find uniform ${uniformName} in program.`);
+    }
+    return loc;
 };
 
 
