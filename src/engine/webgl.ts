@@ -41,6 +41,10 @@
  *    (You won't be able to avoid switching buffers, because every object is likely different. But sort your objects by their shaders, and you'll save a lot of time.)
  *  - Try to do translations, rotations and shears inside the vertex-shader instead of altering the object's buffer.
  *  - If appropriate, create über-shaders and über-buffers, that contain information for more than just one object.
+ *
+ * There is another thing that affects performance:
+ * WebGL will only run fragment-shaders when the object's pixels aren't already obscured by a larger object in front of it.
+ * That means it makes sense to first draw large objects that are close to the camera - all objects behind them won't need their fragment-shader executed.
  */
 
 
@@ -155,7 +159,7 @@ export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
     return texture;
 };
 
@@ -169,9 +173,9 @@ export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTe
     if (bindPoint > gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) {
         throw new Error(`There are only ${gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)} texture bind points, but you tried to bind to point nr. ${bindPoint}.`);
     }
-    gl.activeTexture(gl.TEXTURE0 + bindPoint);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(uniformLocation, bindPoint);
+    gl.activeTexture(gl.TEXTURE0 + bindPoint);  // analog to enableVertexAttribArray
+    gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer
+    gl.uniform1i(uniformLocation, bindPoint); // analog to vertexAttribPointer
 };
 
 

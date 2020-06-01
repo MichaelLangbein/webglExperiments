@@ -36,8 +36,8 @@ const letterEntity = new Entity(
 const boxEntity = new Entity(
     program,
     [
-        new Attribute(gl, program, 'a_vertex', box(.2, .2, .2) ),
-        new Attribute(gl, program, 'a_textureCoord', box(.2, .2, .2))
+        new Attribute(gl, program, 'a_vertex', box(.2, .1, .3)),
+        new Attribute(gl, program, 'a_textureCoord', box(.2, .1, .3))
     ], [
         new Uniform(gl, program, 'u_translation', '3f', [-.3, -.3, -.3]),
         new Uniform(gl, program, 'u_rotation', '3f', [.0, .0, .0])
