@@ -41,9 +41,9 @@ export const box = (width: number, height: number, depth: number): number[][] =>
         [ width / 2,  height / 2,  depth / 2],
         [ width / 2,  height / 2, -depth / 2],
         [ width / 2, -height / 2, -depth / 2],
-        [ width / 2,  height / 2, -depth / 2],
+        [ width / 2,  height / 2,  depth / 2],
         [ width / 2, -height / 2, -depth / 2],
-        [ width / 2, -height / 2, -depth / 2],
+        [ width / 2, -height / 2,  depth / 2],
 
         // face 4
         [-width / 2, -height / 2,  depth / 2],
@@ -65,8 +65,8 @@ export const box = (width: number, height: number, depth: number): number[][] =>
         [-width / 2,  height / 2,  depth / 2],
         [-width / 2,  height / 2, -depth / 2],
         [-width / 2, -height / 2, -depth / 2],
-        [-width / 2,  height / 2, -depth / 2],
+        [-width / 2,  height / 2,  depth / 2],
         [-width / 2, -height / 2, -depth / 2],
-        [-width / 2, -height / 2, -depth / 2]
+        [-width / 2, -height / 2,  depth / 2]
     ];
 };

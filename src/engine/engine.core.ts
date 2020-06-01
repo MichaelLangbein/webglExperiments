@@ -40,11 +40,18 @@ export class Uniform implements IUniform {
     }
 }
 
-export class Texture {
+
+export interface ITexture {
+    location: WebGLUniformLocation;
+    bindPoint: number;
+    texture: WebGLTexture;
+}
+
+export class Texture implements ITexture {
 
     readonly location: WebGLUniformLocation;
     readonly bindPoint: number;
-    readonly texture: any;
+    readonly texture: WebGLTexture;
 
     constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, image: HTMLImageElement, bindPoint: number) {
         this.location = getUniformLocation(gl, program.program, variableName);
@@ -76,7 +83,7 @@ interface IEntity {
     program: IProgram;
     attributes: IAttribute[]; // note that attributes must all have the same number of entries!
     uniforms: IUniform[];
-    textures: Texture[];
+    textures: ITexture[];
     update: (tDelta: number) => void;
 }
 
@@ -88,7 +95,7 @@ export class Entity implements IEntity {
         readonly program: IProgram,
         readonly attributes: IAttribute[],
         readonly uniforms: IUniform[],
-        readonly textures: Texture[],
+        readonly textures: ITexture[],
         readonly updateFunction: (tDelta: number, attrs: IAttribute[], unis: IUniform[]) => void) {}
 
     update(tDelta: number): void {
