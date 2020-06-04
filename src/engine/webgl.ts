@@ -1,3 +1,5 @@
+import { flattenMatrix } from './engine.shapes';
+
 /**
  * WEBGL
  *
@@ -92,7 +94,7 @@ export const initShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource:
 
 
 export const setup3dScene = (gl: WebGLRenderingContext): void => {
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);  // making sure that shader-coordinate-system goes from 0 to 1.
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -133,7 +135,7 @@ export interface BufferObject {
  */
 export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): BufferObject => {
 
-    const dataFlattened = new Float32Array([].concat.apply([], data));
+    const dataFlattened = new Float32Array(flattenMatrix(data));
 
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -154,13 +156,65 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
 };
 
 
+export interface TextureObject {
+    originalImage: HTMLImageElement;
+    texture: WebGLTexture;
+    level: number;
+    internalformat: number;
+    format: number;
+    type: number;
+}
 
-export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement): WebGLTexture => {
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement): TextureObject => {
+    const texture = gl.createTexture();  // analog to createBuffer
+    gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);  // analog to bufferData
     gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
-    return texture;
+
+    const textureObj: TextureObject = {
+        originalImage: image,
+        texture: texture,
+        level: 0,
+        internalformat: gl.RGBA,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+    };
+
+    return textureObj;
+};
+
+
+export interface FramebufferObject {
+    framebuffer: WebGLFramebuffer;
+    width: number;
+    height: number;
+}
+
+export const createFramebuffer = (gl: WebGLRenderingContext, texture: TextureObject): FramebufferObject => {
+    const fb = gl.createFramebuffer();  // analog to createBuffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);  // analog to bindBuffer
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0); // analog to bufferData
+
+    const fbo: FramebufferObject = {
+        framebuffer: fb,
+        width: texture.originalImage.width,
+        height: texture.originalImage.height
+    };
+
+    return fbo;
+};
+
+
+export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObject) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.framebuffer);
+    gl.viewport(0, 0, fbo.width, fbo.height);  // making sure that shader-coordinate-system goes from 0 to 1.
+};
+
+
+export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);  // making sure that shader-coordinate-system goes from 0 to 1.
 };
 
 
@@ -218,7 +272,7 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
 };
 
 
-export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f';
+export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv';
 
 /**
  * Contrary to attributes, uniforms don't need to be stored in a buffer.
@@ -242,7 +296,17 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
             gl.uniform4f(uniformLocation, values[0], values[1], values[2], values[3]);
             break;
 
+        case '1fv':
+            gl.uniform1fv(uniformLocation, values);
+            break;
+        case '2fv':
+            gl.uniform2fv(uniformLocation, values);
+            break;
+
         default:
             throw Error(`Type ${type} not yet implemented.`);
     }
 };
+
+
+

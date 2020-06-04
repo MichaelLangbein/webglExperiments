@@ -1,4 +1,4 @@
-import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform } from './webgl';
+import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject } from './webgl';
 const hash = require('string-hash');
 
 
@@ -44,14 +44,14 @@ export class Uniform implements IUniform {
 export interface ITexture {
     location: WebGLUniformLocation;
     bindPoint: number;
-    texture: WebGLTexture;
+    texture: TextureObject;
 }
 
 export class Texture implements ITexture {
 
     readonly location: WebGLUniformLocation;
     readonly bindPoint: number;
-    readonly texture: WebGLTexture;
+    readonly texture: TextureObject;
 
     constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, image: HTMLImageElement, bindPoint: number) {
         this.location = getUniformLocation(gl, program.program, variableName);
@@ -140,7 +140,7 @@ export class Engine {
                     bindValueToUniform(gl, u.location, u.type, u.value);
                 }
                 for (const t of e.textures) {
-                    bindTextureToUniform(gl, t.texture, t.bindPoint, t.location);
+                    bindTextureToUniform(gl, t.texture.texture, t.bindPoint, t.location);
                 }
                 gl.drawArrays(gl.TRIANGLES, 0, e.attributes[0].value.vectorCount);
             }
