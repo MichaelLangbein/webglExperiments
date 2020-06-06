@@ -3,7 +3,7 @@ const vertexShaderSource = require('./demo.vert').default;
 const fragmentShaderSource = require('./demo.frag').default;
 
 
-const canvas = document.getElementById('webGlCanvas') as HTMLCanvasElement;
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
 
 const program = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);

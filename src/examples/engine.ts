@@ -4,7 +4,7 @@ const basic3dVertexShaderSource = require('../engine/shaders/basic3d.vert.glsl')
 const basic3dFragmentShaderSource = require('../engine/shaders/basic3d.frag.glsl').default;
 
 
-const canvas = document.getElementById('webGlCanvas') as HTMLCanvasElement;
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
 
 const letterImg = document.getElementById('letterTexture') as HTMLImageElement;

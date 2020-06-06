@@ -47,3 +47,17 @@ export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElemen
     clearBackground(gl, [.9, .9, .9, 1.0]);
     gl.drawArrays(gl.TRIANGLES, 0, rct.vertices.length);
 };
+
+
+
+export const createTextCanvas = (text: string, width: number = 256, height: number = 256, color: string = 'red') => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.canvas.width = width;
+    ctx.canvas.height = height;
+    ctx.font = `bold ${height * 5 / 6 | 0}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(text, width / 2, height / 2);
+    return ctx.canvas;
+  };

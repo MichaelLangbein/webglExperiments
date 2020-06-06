@@ -1,4 +1,5 @@
 import { flattenMatrix } from './engine.shapes';
+import { type } from 'os';
 
 /**
  * WEBGL
@@ -159,6 +160,37 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
 };
 
 
+
+/**
+ * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
+ */
+export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
+    const loc = gl.getAttribLocation(program, attributeName);
+    if (loc === -1) {
+        throw new Error(`Couldn't find attribute ${attributeName} in program.`);
+    }
+    return loc;
+};
+
+
+
+/**
+ * Attributes vary from vertex to vertex - that means that there are *many* of them.
+ * So it makes sense for WebGl to store attribute values in a dedicated data structure - the buffer.
+ */
+export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
+    // Enable editing
+    gl.enableVertexAttribArray(attributeLocation);
+    // Bind buffer to ARRAY_BUFFER
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferObject.buffer);
+    // Bind the buffer currently at ARRAY_BUFFER to a vertex-buffer-location.
+    gl.vertexAttribPointer(
+        attributeLocation,
+        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
+    // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
+};
+
+
 export interface TextureObject {
     texture: WebGLTexture;
     width: number;
@@ -170,12 +202,21 @@ export interface TextureObject {
 }
 
 
-export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement): TextureObject => {
+export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement | HTMLCanvasElement): TextureObject => {
     const texture = gl.createTexture();  // analog to createBuffer
-    gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer
+    gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);  // analog to bufferData
     gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
     gl.bindTexture(gl.TEXTURE_2D, null);  // unbinding
+
+    let w, h: number;
+    if (image instanceof HTMLImageElement) {
+        w = image.naturalWidth;
+        h = image.naturalHeight;
+    } else {
+        w = image.width;
+        h = image.height;
+    }
 
     const textureObj: TextureObject = {
         texture: texture,
@@ -183,8 +224,8 @@ export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement
         internalformat: gl.RGBA,
         format: gl.RGBA,
         type: gl.UNSIGNED_BYTE,
-        width: image.naturalWidth,
-        height: image.naturalHeight
+        width: w,
+        height: h
     };
 
     return textureObj;
@@ -217,36 +258,19 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
 };
 
 
-// export const createFramebufferWithEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): FramebufferObject => {
-//     const tex = gl.createTexture();
-//     gl.bindTexture(gl.TEXTURE_2D, tex);
-//     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-//     const fb = gl.createFramebuffer();
-//     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-//     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-
-//     gl.bindTexture(gl.TEXTURE_2D, null);
-//     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-//     return {
-//         framebuffer: fb,
-//         texture: {
-//             texture: tex,
-//             level: 0,
-//             internalformat: gl.RGBA,
-//             format: gl.RGBA,
-//             type: gl.UNSIGNED_BYTE,
-//             width: width,
-//             height: height
-//         },
-//         height: height,
-//         width: width
-//     };
-// };
+/**
+ * Even though we reference textures as uniforms in a fragment shader, assigning an actual texture-value to that uniform works differently than for normal uniforms.
+ * Normal uniforms have a concrete value.
+ * Texture uniforms, on the other hand, are just an integer-index that points to a special slot in the GPU memory (the bindPoint) where the actual texture value lies.
+ */
+export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTexture, bindPoint: number, uniformLocation: WebGLUniformLocation): void =>  {
+    if (bindPoint > gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) {
+        throw new Error(`There are only ${gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)} texture bind points, but you tried to bind to point nr. ${bindPoint}.`);
+    }
+    gl.activeTexture(gl.TEXTURE0 + bindPoint);  // analog to enableVertexAttribArray
+    gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
+    gl.uniform1i(uniformLocation, bindPoint); // analog to vertexAttribPointer
+};
 
 
 export interface FramebufferObject {
@@ -261,6 +285,24 @@ export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer =
     const fb = gl.createFramebuffer();  // analog to createBuffer
     return fb;
 };
+
+
+/**
+ * The operations `clear`, `drawArrays` and `drawElements` only affect the currently bound framebuffer.
+ */
+export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObject) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.framebuffer);
+    gl.viewport(0, 0, fbo.width, fbo.height);
+    // Note that binding the framebuffer does *not* mean binding its texture. In fact, if there is a bound texture, it must be the *input* to a shader, not the output.
+    // Therefore, a framebuffer's texture must not be bound when the framebuffer is.
+};
+
+
+export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+};
+
 
 /**
  * A framebuffer can have a texture - that is the bitmap that the shader-*out*put is drawn on.
@@ -287,48 +329,14 @@ export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: Tex
     return fbo;
 };
 
-/**
- * The operations `clear`, `drawArrays` and `drawElements` only affect the currently bound framebuffer.
- */
-export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObject) => {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.framebuffer);
-    gl.viewport(0, 0, fbo.width, fbo.height);
-    // Note that binding the framebuffer does *not* mean binding its texture. In fact, if there is a bound texture, it must be the *input* to a shader, not the output.
-    // Therefore, a framebuffer's texture must not be bound when the framebuffer is.
-};
 
 
-export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext) => {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-};
 
 
-/**
- * Even though we reference textures as uniforms in a fragment shader, assigning an actual texture-value to that uniform works differently than for normal uniforms.
- * Normal uniforms have a concrete value.
- * Texture uniforms, on the other hand, are just an integer-index that points to a special slot in the GPU memory (the bindPoint) where the actual texture value lies.
- */
-export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTexture, bindPoint: number, uniformLocation: WebGLUniformLocation): void =>  {
-    if (bindPoint > gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) {
-        throw new Error(`There are only ${gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)} texture bind points, but you tried to bind to point nr. ${bindPoint}.`);
-    }
-    gl.activeTexture(gl.TEXTURE0 + bindPoint);  // analog to enableVertexAttribArray
-    gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer
-    gl.uniform1i(uniformLocation, bindPoint); // analog to vertexAttribPointer
-};
 
 
-/**
- * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
- */
-export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
-    const loc = gl.getAttribLocation(program, attributeName);
-    if (loc === -1) {
-        throw new Error(`Couldn't find attribute ${attributeName} in program.`);
-    }
-    return loc;
-};
+
+
 
 /**
  * Fetch uniform's location (uniform declared in some shader). Slow! Do *before* render loop.
@@ -342,21 +350,6 @@ export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProg
 };
 
 
-/**
- * Attributes vary from vertex to vertex - that means that there are *many* of them.
- * So it makes sense for WebGl to store attribute values in a dedicated data structure - the buffer.
- */
-export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
-    // Enable editing
-    gl.enableVertexAttribArray(attributeLocation);
-    // Bind buffer to ARRAY_BUFFER
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferObject.buffer);
-    // Bind the buffer currently at ARRAY_BUFFER to a vertex-buffer-location.
-    gl.vertexAttribPointer(
-        attributeLocation,
-        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
-    // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
-};
 
 
 export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv';
