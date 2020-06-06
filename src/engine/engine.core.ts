@@ -1,4 +1,4 @@
-import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject } from './webgl';
+import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject } from './webgl';
 const hash = require('string-hash');
 
 
@@ -14,7 +14,7 @@ export class Program implements IProgram {
     readonly id: string;
 
     constructor(gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string) {
-        this.program = initShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+        this.program = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
         this.id = hash(vertexShaderSource + fragmentShaderSource);
     }
 }

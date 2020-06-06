@@ -1,4 +1,4 @@
-import { initShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, bindProgram } from './engine/webgl';
+import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, bindProgram } from './engine/webgl';
 const vertexShaderSource = require('./demo.vert').default;
 const fragmentShaderSource = require('./demo.frag').default;
 
@@ -6,7 +6,7 @@ const fragmentShaderSource = require('./demo.frag').default;
 const canvas = document.getElementById('webGlCanvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
 
-const program = initShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+const program = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
 
 const aVertexLoc = getAttributeLocation(gl, program, 'aVertexPosition');
 const uColorLoc = getUniformLocation(gl, program, 'uColor');

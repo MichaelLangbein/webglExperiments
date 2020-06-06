@@ -3,7 +3,7 @@ import { flattenMatrix } from './engine.shapes';
 /**
  * WEBGL
  *
- * Allows to draw points, line segments, or triangles.
+ * A rasterization engin that allows to draw points, line segments, or triangles.
  *
  * Vertex shaders take whatever coordinates you use and return a 3-d array with elements between -1 and 1.
  * Basically, this is a 3d-array, but WebGl does not use the z-axis for real perspective, but only to differentiate
@@ -47,6 +47,8 @@ import { flattenMatrix } from './engine.shapes';
  * There is another thing that affects performance:
  * WebGL will only run fragment-shaders when the object's pixels aren't already obscured by a larger object in front of it.
  * That means it makes sense to first draw large objects that are close to the camera - all objects behind them won't need their fragment-shader executed.
+ *
+ * All `create*` functions unbind variables after setting their values. This is to avoid unwanted side-effects.
  */
 
 
@@ -73,7 +75,7 @@ const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource:
  * That means you cannot add multiple fragment-shaders in one program. Instead, either load them in consecutively as part of different programs,
  * or generate an über-shader that contains both codes.
  */
-export const initShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram => {
+export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram => {
 
     const program = gl.createProgram();
 
@@ -141,6 +143,7 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
     // STATIC_DRAW: tells WebGl that we are not likely to change this data much.
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
 
     const bufferObject: BufferObject = {
         buffer: buffer,
@@ -157,8 +160,9 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
 
 
 export interface TextureObject {
-    originalImage: HTMLImageElement;
     texture: WebGLTexture;
+    width: number;
+    height: number;
     level: number;
     internalformat: number;
     format: number;
@@ -171,44 +175,125 @@ export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement
     gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);  // analog to bufferData
     gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
+    gl.bindTexture(gl.TEXTURE_2D, null);  // unbinding
 
     const textureObj: TextureObject = {
-        originalImage: image,
         texture: texture,
         level: 0,
         internalformat: gl.RGBA,
         format: gl.RGBA,
-        type: gl.UNSIGNED_BYTE
+        type: gl.UNSIGNED_BYTE,
+        width: image.naturalWidth,
+        height: image.naturalHeight
+    };
+
+    return textureObj;
+};
+
+export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): TextureObject => {
+    if (width <= 0 || height <= 0) {
+        throw new Error('Width and height must be positive.');
+    }
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    const textureObj: TextureObject = {
+        texture: texture,
+        level: 0,
+        internalformat: gl.RGBA,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE,
+        width: width,
+        height: height
     };
 
     return textureObj;
 };
 
 
+export const createFramebufferWithEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): FramebufferObject => {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    return {
+        framebuffer: fb,
+        texture: {
+            texture: tex,
+            level: 0,
+            internalformat: gl.RGBA,
+            format: gl.RGBA,
+            type: gl.UNSIGNED_BYTE,
+            width: width,
+            height: height
+        },
+        height: height,
+        width: width
+    };
+};
+
+
 export interface FramebufferObject {
     framebuffer: WebGLFramebuffer;
+    texture: TextureObject;
     width: number;
     height: number;
 }
 
-export const createFramebuffer = (gl: WebGLRenderingContext, texture: TextureObject): FramebufferObject => {
+
+export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer => {
     const fb = gl.createFramebuffer();  // analog to createBuffer
+    return fb;
+};
+
+/**
+ * Each framebuffer has a texture - that is the bitmap that the shader-*out*put is drawn on.
+ * Shaders may also have an *in*put texture, which must be provided to the shader as a uniform sampler2D.
+ * Only the shader needs to know about any potential input texture, the framebuffer will always only know about it's output texture.
+ */
+export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: TextureObject, fb: WebGLFramebuffer): FramebufferObject => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);  // analog to bindBuffer
+    gl.viewport(0, 0, texture.width, texture.height);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0); // analog to bufferData
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        throw new Error(`Error creating framebuffer: framebuffer-status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)} ; error-code: ${gl.getError()}`);
+    }
 
     const fbo: FramebufferObject = {
         framebuffer: fb,
-        width: texture.originalImage.width,
-        height: texture.originalImage.height
+        texture: texture,
+        width: texture.width,
+        height: texture.height
     };
 
     return fbo;
 };
 
-
+/**
+ * The operations `clear`, `drawArrays` and `drawElements` only affect the currently bound framebuffer.
+ */
 export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObject) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.framebuffer);
     gl.viewport(0, 0, fbo.width, fbo.height);  // making sure that shader-coordinate-system goes from 0 to 1.
+    // Note that binding the framebuffer does *not* mean binding its texture. In fact, if there is a bound texture, it must be the *input* to a shader, not the output.
+    // Therefore, a framebuffer's texture must not be bound when the framebuffer is.
 };
 
 
@@ -269,6 +354,7 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
     gl.vertexAttribPointer(
         attributeLocation,
         bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
+    // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
 };
 
 
