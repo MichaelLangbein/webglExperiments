@@ -1,10 +1,9 @@
 import { flattenMatrix } from './engine.shapes';
-import { type } from 'os';
 
 /**
  * WEBGL
  *
- * A rasterization engin that allows to draw points, line segments, or triangles.
+ * A rasterization engine that allows to draw points, line segments, or triangles.
  *
  * Vertex shaders take whatever coordinates you use and return a 3-d array with elements between -1 and 1.
  * Basically, this is a 3d-array, but WebGl does not use the z-axis for real perspective, but only to differentiate
@@ -54,11 +53,16 @@ import { type } from 'os';
 
 
 
+const shaderInputTextureBindPoint = 0;
+const textureConstructionBindPoint = 7;
+
+
+
 
 /**
  * Compile shader.
  */
-const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource: string): WebGLShader => {
+export const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource: string): WebGLShader => {
     const shader = gl.createShader(typeBit);
     gl.shaderSource(shader, shaderSource);
     gl.compileShader(shader);
@@ -86,6 +90,9 @@ export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSourc
     gl.attachShader(program, fragmentShader);
 
     gl.linkProgram(program);
+
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         gl.deleteProgram(program);
@@ -259,6 +266,12 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
 
 
 /**
+ *
+ * A shader must have only one texture. (@TODO: is that really true? Check this link: https://stackoverflow.com/questions/11292599/how-to-use-multiple-textures-in-webgl)
+ *
+ * *IMPORTANT: * This method must be called very shortly before `drawArrays`.
+ * Reason: if another method calls `activeTexture` after this one, then the shader gets a different input-texture.
+ *
  * Even though we reference textures as uniforms in a fragment shader, assigning an actual texture-value to that uniform works differently than for normal uniforms.
  * Normal uniforms have a concrete value.
  * Texture uniforms, on the other hand, are just an integer-index that points to a special slot in the GPU memory (the bindPoint) where the actual texture value lies.
