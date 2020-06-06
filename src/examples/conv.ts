@@ -14,15 +14,15 @@ const main = () => {
     const program = new Program(gl, convVSS, convFSS);
     bindProgram(gl, program.program);
 
-    const bx = rectangle(.4, .3);
+    const bx = rectangle(1., 1.);
 
-    const coords = new Attribute(gl, program, 'a_coord', bx.vertices);
+    const coords = new Attribute(gl, program, 'a_vertex', bx.vertices);
     bindBufferToAttribute(gl, coords.location, coords.value);
 
     const texCoords = new Attribute(gl, program, 'a_textureCoord', bx.texturePositions);
     bindBufferToAttribute(gl, texCoords.location, texCoords.value);
 
-    const tex = new Texture(gl, program, 'u_image', boxImg, 0);
+    const tex = new Texture(gl, program, 'u_texture', boxImg, 0);
     bindTextureToUniform(gl, tex.texture.texture, tex.bindPoint, tex.location);
     const texSize = new Uniform(gl, program, 'u_textureSize', '2f', [tex.texture.width, tex.texture.height]);
     bindValueToUniform(gl, texSize.location, texSize.type, texSize.value);

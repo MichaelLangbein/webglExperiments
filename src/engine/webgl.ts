@@ -217,36 +217,36 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
 };
 
 
-export const createFramebufferWithEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): FramebufferObject => {
-    const tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+// export const createFramebufferWithEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): FramebufferObject => {
+//     const tex = gl.createTexture();
+//     gl.bindTexture(gl.TEXTURE_2D, tex);
+//     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    const fb = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+//     const fb = gl.createFramebuffer();
+//     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+//     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
 
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+//     gl.bindTexture(gl.TEXTURE_2D, null);
+//     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-    return {
-        framebuffer: fb,
-        texture: {
-            texture: tex,
-            level: 0,
-            internalformat: gl.RGBA,
-            format: gl.RGBA,
-            type: gl.UNSIGNED_BYTE,
-            width: width,
-            height: height
-        },
-        height: height,
-        width: width
-    };
-};
+//     return {
+//         framebuffer: fb,
+//         texture: {
+//             texture: tex,
+//             level: 0,
+//             internalformat: gl.RGBA,
+//             format: gl.RGBA,
+//             type: gl.UNSIGNED_BYTE,
+//             width: width,
+//             height: height
+//         },
+//         height: height,
+//         width: width
+//     };
+// };
 
 
 export interface FramebufferObject {
@@ -263,18 +263,19 @@ export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer =
 };
 
 /**
- * Each framebuffer has a texture - that is the bitmap that the shader-*out*put is drawn on.
+ * A framebuffer can have a texture - that is the bitmap that the shader-*out*put is drawn on.
  * Shaders may also have an *in*put texture, which must be provided to the shader as a uniform sampler2D.
  * Only the shader needs to know about any potential input texture, the framebuffer will always only know about it's output texture.
  */
 export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: TextureObject, fb: WebGLFramebuffer): FramebufferObject => {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);  // analog to bindBuffer
-    gl.viewport(0, 0, texture.width, texture.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0); // analog to bufferData
 
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
         throw new Error(`Error creating framebuffer: framebuffer-status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)} ; error-code: ${gl.getError()}`);
     }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     const fbo: FramebufferObject = {
         framebuffer: fb,
@@ -291,7 +292,7 @@ export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: Tex
  */
 export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObject) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.framebuffer);
-    gl.viewport(0, 0, fbo.width, fbo.height);  // making sure that shader-coordinate-system goes from 0 to 1.
+    gl.viewport(0, 0, fbo.width, fbo.height);
     // Note that binding the framebuffer does *not* mean binding its texture. In fact, if there is a bound texture, it must be the *input* to a shader, not the output.
     // Therefore, a framebuffer's texture must not be bound when the framebuffer is.
 };
@@ -299,7 +300,7 @@ export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObjec
 
 export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);  // making sure that shader-coordinate-system goes from 0 to 1.
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 };
 
 
