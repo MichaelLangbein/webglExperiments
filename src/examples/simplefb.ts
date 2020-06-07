@@ -27,16 +27,16 @@ const main = () => {
     const texCoordsLoc = getAttributeLocation(gl, program, 'a_textureCoord');
     bindBufferToAttribute(gl, texCoordsLoc, texCoords);
 
+    // 1.1. Bind source texture to shader's input-texture.
+    const boxTexture = createTexture(gl, textImage);
+    const srcTexLoc = getUniformLocation(gl, program, 'u_texture');
+    bindTextureToUniform(gl, boxTexture.texture, 1, srcTexLoc);
+
     // 1.2. Catch output in framebuffer.
     const fb = createFramebuffer(gl);
     const fbTexture = createEmptyTexture(gl, canvas.width, canvas.height);
     const fbo = bindTextureToFramebuffer(gl, fbTexture, fb);
     bindFramebuffer(gl, fbo);
-
-    // 1.1. Bind source texture to shader's input-texture.
-    const boxTexture = createTexture(gl, textImage);
-    const srcTexLoc = getUniformLocation(gl, program, 'u_texture');
-    bindTextureToUniform(gl, boxTexture.texture, 1, srcTexLoc);
 
     // 1.3. Render
     clearBackground(gl, [.7, .7, .7, 1]);

@@ -208,9 +208,22 @@ export interface TextureObject {
     type: number;
 }
 
-
+/**
+ * A shader's attributes get their buffer-values from the VERTEX_ARRAY, but they are constructed in the ARRAY_BUFFER.
+ * Textures analogously are served from the TEXTURE_UNITS, while for construction they are bound to ACTIVE_TEXTURE.
+ *
+ * There is a big difference, however. Contrary to buffers which receive their initial value while still outside the ARRAY_BUFFER,
+ * a texture does already have to be bound into the TEXTURE_UNITS when it's being created.
+ * Since it'll always be bound into the slot that ACTIVE_TEXTURE points to, you can inadvertently overwrite another texture that is
+ * currently in this place. To avoid this, we provide a dedicated `textureConstructionBindPoint`.
+ *
+ * Buffers are easier in this, since with vertexAttribPointer we are guaranteed to get a slot in the VERTEX_ARRAY that is not
+ * already occupied by another buffer.
+ */
 export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement | HTMLCanvasElement): TextureObject => {
+
     const texture = gl.createTexture();  // analog to createBuffer
+    gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);  // analog to bufferData
     gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
@@ -243,6 +256,7 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
         throw new Error('Width and height must be positive.');
     }
     const texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -267,10 +281,6 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
 
 /**
  *
- * A shader must have only one texture. (@TODO: is that really true? Check this link: https://stackoverflow.com/questions/11292599/how-to-use-multiple-textures-in-webgl)
- *
- * *IMPORTANT: * This method must be called very shortly before `drawArrays`.
- * Reason: if another method calls `activeTexture` after this one, then the shader gets a different input-texture.
  *
  * Even though we reference textures as uniforms in a fragment shader, assigning an actual texture-value to that uniform works differently than for normal uniforms.
  * Normal uniforms have a concrete value.
@@ -279,6 +289,11 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
 export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTexture, bindPoint: number, uniformLocation: WebGLUniformLocation): void =>  {
     if (bindPoint > gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) {
         throw new Error(`There are only ${gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)} texture bind points, but you tried to bind to point nr. ${bindPoint}.`);
+    }
+    if (bindPoint === textureConstructionBindPoint) {
+        console.error(`You are about to bind to the dedicated texture-construction bind point (nr. ${bindPoint}).
+        If after this call another texture is built, your shader will now use that new texture instead of this one!
+        Consider using another bind point.`);
     }
     gl.activeTexture(gl.TEXTURE0 + bindPoint);  // analog to enableVertexAttribArray
     gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
@@ -319,7 +334,7 @@ export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext) => {
 
 /**
  * A framebuffer can have a texture - that is the bitmap that the shader-*out*put is drawn on.
- * Shaders may also have an *in*put texture, which must be provided to the shader as a uniform sampler2D.
+ * Shaders may also have one or more *in*put texture(s), which must be provided to the shader as a uniform sampler2D.
  * Only the shader needs to know about any potential input texture, the framebuffer will always only know about it's output texture.
  */
 export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: TextureObject, fb: WebGLFramebuffer): FramebufferObject => {
