@@ -417,4 +417,48 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
 };
 
 
+/**
+ * (From https://hacks.mozilla.org/2013/04/the-concepts-of-webgl/ and https://stackoverflow.com/questions/56303648/webgl-rendering-buffers:)
+ * Ignoring handmade framebuffers, WebGl has two framebuffers that are always in use: the `frontbuffer/displaybuffer` and the `backbuffer/drawingbuffer`.
+ * WebGl per default renders to the `drawingbuffer`, aka. the `backbuffer`.
+ * There is also the currently displayed buffer, named the `frontbuffer` aka. the `displaybuffer`.
+ * the WebGL programmer has no explicit access to the frontbuffer whatsoever.
+ *
+ * Once you called `clear`, `drawElements` or `drawArrays`, the browser marks the canvas as `needs to be composited`.
+ * (Assuming `preserveDrawingBuffer == false`:) Immediately before compositing, the browser
+ *  - swaps the back- and frontbuffer
+ *  - clears the new backbuffer.
+ * (If `preserveDrawingBuffer === true`: ) Immediately before compositing, the browser
+ *  - copies the drawingbuffer to the frontbuffer.
+ *
+ * As a consequence, if you're going to use canvas.toDataURL or canvas.toBlob or gl.readPixels or any other way of getting data from a WebGL canvas, 
+ * unless you read it in the same event then it will likely be clear when you try to read it.
+ *
+ * In the past, old games always preserved the drawing buffer, so they'd only have to change those pixels that have actually changed. Nowadays preserveDrawingBuffer is false by default.
+ *
+ * A (almost brutal) workaround to get the canvas to preserve the drawingBuffer can be found here: https://stackoverflow.com/questions/26783586/canvas-todataurl-returns-blank-image
+ */
+export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBuffer  => {
+    const gl = canvas.getContext('webgl');
+
+    const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT);
+    const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE);
+
+    let pixels;
+    if (type === gl.UNSIGNED_BYTE) {
+        pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+    } else if (type === gl.UNSIGNED_SHORT_5_6_5 || type === gl.UNSIGNED_SHORT_4_4_4_4 || type === gl.UNSIGNED_SHORT_5_5_5_1) {
+        pixels = new Uint16Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+    } else if (type === gl.FLOAT) {
+        pixels = new Float32Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+    } else {
+        throw new Error(`Did not understand pixel data type ${type} for format ${format}`);
+    }
+
+    // Just like `toDataURL` or `toBlob`, `readPixels` does not access the frontbuffer.
+    // It accesses the backbuffer or any other currently active framebuffer.
+    gl.readPixels(0, 0, canvas.width, canvas.height, format, type, pixels);
+
+    return pixels;
+};
 

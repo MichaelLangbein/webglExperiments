@@ -1,7 +1,6 @@
 import { TextureObject, createShaderProgram, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, clearBackground, getUniformLocation, bindTextureToUniform, bindProgram, bindValueToUniform, createTexture } from './webgl';
 import { rectangle } from './engine.shapes';
-const ptVSS = require('../engine/shaders/passthrough.vert.glsl').default;
-const ptFSS = require('../engine/shaders/passthrough.frag.glsl').default;
+
 
 
 export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElement): void => {
