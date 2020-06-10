@@ -52,14 +52,3 @@ bindTextureToUniform(gl, fbTexture.texture, 2, srcTexLoc);
 clearBackground(gl, [.4, .5, .7, 1]);
 gl.drawArrays(gl.TRIANGLES, 0, bx.vertices.length);
 
-
-canvas.toBlob((blob: Blob) => {
-    downloadBlob(blob, 'canvas_this_frame.png');
-});
-
-
-setTimeout(() => {
-    canvas.toBlob((blob: Blob) => {
-        downloadBlob(blob, 'canvas_next_frame.png');
-    });
-}, 0);
