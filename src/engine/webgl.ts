@@ -402,7 +402,7 @@ export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProg
 
 
 
-export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv';
+export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv' | 'matrix2fv' | 'matrix3fv' | 'matrix4fv';
 
 /**
  * Contrary to attributes, uniforms don't need to be stored in a buffer.
@@ -431,6 +431,18 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
             break;
         case '2fv':
             gl.uniform2fv(uniformLocation, values);
+            break;
+
+        case 'matrix2fv':
+            gl.uniformMatrix2fv(uniformLocation, false, values);
+            break;
+
+        case 'matrix3fv':
+            gl.uniformMatrix3fv(uniformLocation, false, values);
+            break;
+
+        case 'matrix4fv':
+            gl.uniformMatrix4fv(uniformLocation, false, values);
             break;
 
         default:
