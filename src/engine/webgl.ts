@@ -172,6 +172,28 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
 };
 
 
+export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, newData: number[][]): BufferObject => {
+
+    const dataFlattened = new Float32Array(flattenMatrix(newData));
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, bo.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
+
+    const newBufferObject: BufferObject = {
+        buffer: bo.buffer,
+        vectorSize: newData[0].length,
+        vectorCount: newData.length,
+        type: gl.FLOAT,   // the data is 32bit floats
+        normalize: false, // don't normalize the data
+        stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
+        offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
+    };
+
+    return newBufferObject;
+};
+
+
 
 /**
  * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
@@ -385,7 +407,7 @@ export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProg
 
 
 
-export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv';
+export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv' | 'matrix2fv' | 'matrix3fv' | 'matrix4fv';
 
 /**
  * Contrary to attributes, uniforms don't need to be stored in a buffer.
@@ -414,6 +436,18 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
             break;
         case '2fv':
             gl.uniform2fv(uniformLocation, values);
+            break;
+
+        case 'matrix2fv':
+            gl.uniformMatrix2fv(uniformLocation, false, values);
+            break;
+
+        case 'matrix3fv':
+            gl.uniformMatrix3fv(uniformLocation, false, values);
+            break;
+
+        case 'matrix4fv':
+            gl.uniformMatrix4fv(uniformLocation, false, values);
             break;
 
         default:
