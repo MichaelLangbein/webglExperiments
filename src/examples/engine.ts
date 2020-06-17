@@ -26,7 +26,6 @@ const letterEntity = new Entity(
         new Texture(gl, program, 'u_texture', letterImg, 0)
     ],
     (tDelta: number, attrs: IAttribute[], unis: IUniform[]) => {
-        unis[1].value[0] += 0.001 * tDelta;
         unis[1].value[1] += 0.001 * tDelta;
     });
 
@@ -46,7 +45,6 @@ const boxEntity = new Entity(
     ],
     (tDelta: number, attrs: IAttribute[], unis: IUniform[]) => {
         unis[1].value[0] += 0.001 * tDelta;
-        unis[1].value[1] += 0.001 * tDelta;
     }
 );
 

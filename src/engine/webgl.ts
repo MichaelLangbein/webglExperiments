@@ -9,6 +9,11 @@ import { flattenMatrix } from './engine.shapes';
  * Basically, this is a 3d-array, but WebGl does not use the z-axis for real perspective, but only to differentiate
  * what pixel lies in front of another.
  * This is not like looking in a 3d-box, but rather like looking on multiple stacked sheets on a projector.
+ * Actually, this is a lie. WebGl uses 4 coordinates: x, y, z and w. The above only holds if you keep w at 1.
+ * After applying the vertex shader, WebGl divides all coordinates by w, yielding (x/w, y/w, z/w, 1).
+ * This can be used to calculate projections - google for 'homogeneous coordinates' to find out more.
+ * Compare this [site](https://www.tomdalling.com/blog/modern-opengl/explaining-homogenous-coordinates-and-projective-geometry/)
+ * and the shader `basic3d.vert.glsl`.
  *
  * WebGL knows two data structures:
  *  - buffers (generic byte arrays): usually positions, normals, texture-coordinates, vertex-colors etc.
@@ -431,7 +436,7 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
  * (If `preserveDrawingBuffer === true`: ) Immediately before compositing, the browser
  *  - copies the drawingbuffer to the frontbuffer.
  *
- * As a consequence, if you're going to use canvas.toDataURL or canvas.toBlob or gl.readPixels or any other way of getting data from a WebGL canvas, 
+ * As a consequence, if you're going to use canvas.toDataURL or canvas.toBlob or gl.readPixels or any other way of getting data from a WebGL canvas,
  * unless you read it in the same event then it will likely be clear when you try to read it.
  *
  * In the past, old games always preserved the drawing buffer, so they'd only have to change those pixels that have actually changed. Nowadays preserveDrawingBuffer is false by default.

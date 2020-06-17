@@ -27,13 +27,33 @@ mat4 rotationZ( in float angle ) {
 							0,				0,		0,	1);
 }
 
+mat4 projection(vec3 posCamera) {
+	// webgl creates matrices column first.
+	return mat4(
+		1.0, 0.0, 0.0, posCamera.x, // col1
+		0.0, 1.0, 0.0, posCamera.y, // col2
+		0.0, 0.0, 1.0, posCamera.z, // col3
+		0.0, 0.0, 1.0, 1.0  // col4   <--- translates z forward by 1, so we dont have negative values
+	//  row1 row2 row3 row4
+	);
+}
 
+/**
+scl rot rot add
+rot scl rot add
+rot rot scl add
+div div div (1 if add, 0 if div)
+*/
 
 
 void main() {
+	// rotation
     vec4 position = rotationZ(u_rotation.z) * rotationY(u_rotation.y) * rotationX(u_rotation.x) * a_vertex;
+	// translation
     position = position + vec4(u_translation, .0);
-    // TODO: perspective
+	// projection
+	vec3 posCamera = vec3(0., 0., 1);
+    position = projection(posCamera) * position;
     gl_Position = position;
 	v_textureCoord = a_textureCoord;
 }
