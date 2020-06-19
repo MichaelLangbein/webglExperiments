@@ -53,7 +53,7 @@ const program2 = new Program(gl, `
         gl_FragColor = texture2D(u_texture, v_textureCoord);
     }
     `);
-const rect = rectangle(1., 1.);
+const rect = rectangle(1.7, 1.7);
 const shader2 = new Shader(
     program2,
     [

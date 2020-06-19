@@ -3,6 +3,16 @@ export type Vec3 = [number, number, number];
 export type V2Matrix = Vec2[];
 export type V3Matrix = Vec3[];
 export type Matrix = number[][];
+
+
+
+/**
+ * While webgl's clip space has coordinates [-1, 1] (left to right), [-1, 1] (bottom to top),
+ * textures go from [0, 1] (left to right), [0, 1] (bottom to top).
+ */
+
+
+
 export interface Shape {
     vertices: V3Matrix;
     texturePositions: V2Matrix;
