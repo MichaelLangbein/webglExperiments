@@ -66,6 +66,9 @@ const program2 = new Program(gl, `
             texture2D(u_texture, v_textureCoord + u_delta * vec2( 1,  1)) * u_kernel[8];
 
         float transparency = colorSum.w;
+        if (colorSum.x + colorSum.y + colorSum.z == 0.) {
+            transparency = 0.;
+        }
         gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, transparency);
     }`);
 const rect = rectangle(1.7, 1.7);
@@ -75,7 +78,7 @@ const shader2 = new Shader(
         new Attribute(gl, program2, 'a_vertexCoord', rect.vertices),
         new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions),
     ], [
-        new Uniform(gl, program2, 'u_delta', '2f', [.02, .02]),
+        new Uniform(gl, program2, 'u_delta', '2f', [.01, .01]),
         new Uniform(gl, program2, 'u_kernel', '1fv', flattenMatrix(gaussianKernel())),
         new Uniform(gl, program2, 'u_kernelWeight', '1f', [sumMatrix(gaussianKernel())])
     ], [
