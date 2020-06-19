@@ -198,7 +198,7 @@ export class Shader implements IShader {
 
     public updateUniformData(gl: WebGLRenderingContext, variableName: string, newData: number[]): void {
         const uniform = first<IUniform>(this.uniforms, el => el.variableName === variableName);
-        bindValueToUniform(gl, uniform.location, uniform.type, newData);
+        uniform.value = newData;
     }
 }
 
