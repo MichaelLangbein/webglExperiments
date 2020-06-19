@@ -1,5 +1,5 @@
 import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
-import { rectangle } from '../engine/engine.shapes';
+import { rectangle, flattenMatrix, gaussianKernel, sumMatrix } from '../engine/engine.shapes';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -48,18 +48,37 @@ const program2 = new Program(gl, `
     `, `
     precision mediump float;
     uniform sampler2D u_texture;
+    uniform vec2 u_delta;
+    uniform float u_kernel[9];
+    uniform float u_kernelWeight;
     varying vec2 v_textureCoord;
+
     void main() {
-        gl_FragColor = texture2D(u_texture, v_textureCoord);
-    }
-    `);
+        vec4 colorSum =
+            texture2D(u_texture, v_textureCoord + u_delta * vec2(-1, -1)) * u_kernel[0] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2( 0, -1)) * u_kernel[1] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2( 1, -1)) * u_kernel[2] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2(-1,  0)) * u_kernel[3] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2( 0,  0)) * u_kernel[4] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2( 1,  0)) * u_kernel[5] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2(-1,  1)) * u_kernel[6] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2( 0,  1)) * u_kernel[7] +
+            texture2D(u_texture, v_textureCoord + u_delta * vec2( 1,  1)) * u_kernel[8];
+
+        float transparency = colorSum.w;
+        gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, transparency);
+    }`);
 const rect = rectangle(1.7, 1.7);
 const shader2 = new Shader(
     program2,
     [
         new Attribute(gl, program2, 'a_vertexCoord', rect.vertices),
         new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions),
-    ], [], [
+    ], [
+        new Uniform(gl, program2, 'u_delta', '2f', [.02, .02]),
+        new Uniform(gl, program2, 'u_kernel', '1fv', flattenMatrix(gaussianKernel())),
+        new Uniform(gl, program2, 'u_kernelWeight', '1f', [sumMatrix(gaussianKernel())])
+    ], [
         new Texture(gl, program2, 'u_texture', framebuffer.fbo.texture, 0)
     ]
 );

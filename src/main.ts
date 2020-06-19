@@ -1,1 +1,1 @@
-import './examples/shader';
+import './examples/bloom';
