@@ -103,26 +103,26 @@ function first<T>(arr: T[], condition: (el: T) => boolean): T {
 
 
 function parseProgram(program: IProgram): [string[], string[], string[]] {
-    const attributeRegex = /^attribute (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
-    const uniformRegex = /^uniform (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
-    const textureRegex = /^uniform sampler2D (\w*);/gm;
+    const attributeRegex = /attribute (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
+    const uniformRegex = /uniform (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
+    const textureRegex = /uniform sampler2D (\w*);/gm;
 
     const shaderCode = program.fragmentShaderSource + '\n\n\n' + program.vertexShaderSource;
 
     const attributeNames = [];
-    const attributeMatches = attributeRegex.exec(shaderCode);
-    for (const attrMatch in attributeMatches) {
-        attributeNames.push(attrMatch[2]);
+    let attributeMatches;
+    while ((attributeMatches = attributeRegex.exec(shaderCode)) !== null) {
+        attributeNames.push(attributeMatches[2]);
     }
     const uniformNames = [];
-    const uniformMatches = uniformRegex.exec(shaderCode);
-    for (const uniformMatch in uniformMatches) {
-        uniformNames.push(uniformMatch[2]);
+    let uniformMatches;
+    while ((uniformMatches = uniformRegex.exec(shaderCode)) !== null) {
+        uniformNames.push(uniformMatches[2]);
     }
     const textureNames = [];
-    const textureMatches = textureRegex.exec(shaderCode);
-    for (const textureMatch in textureMatches) {
-        textureNames.push(textureMatch[2]);
+    let textureMatches;
+    while ((textureMatches = textureRegex.exec(shaderCode)) !== null) {
+        textureNames.push(textureMatches[2]);
     }
 
     return [attributeNames, uniformNames, textureNames];
@@ -149,19 +149,19 @@ export class Shader implements IShader {
         readonly textures: ITexture[]
     ) {
         const [attributeNames, uniformNames, textureNames] = parseProgram(program);
-        for (const attrName in attributeNames) {
+        for (const attrName of attributeNames) {
             const found = attributes.filter(a => a.variableName === attrName);
             if (found.length !== 1) {
                 throw new Error(`Provided ${found.length} values for shader's attribute ${attrName}.`);
             }
         }
-        for (const uniformName in uniformNames) {
+        for (const uniformName of uniformNames) {
             const found = uniforms.filter(a => a.variableName === uniformName);
             if (found.length !== 1) {
                 throw new Error(`Provided ${found.length} values for shader's uniform ${uniformName}.`);
             }
         }
-        for (const texName in textureNames) {
+        for (const texName of textureNames) {
             const found = textures.filter(a => a.variableName === texName);
             if (found.length !== 1) {
                 throw new Error(`Provided ${found.length} values for shader's texture ${texName}.`);
