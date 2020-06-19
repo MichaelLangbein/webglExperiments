@@ -1,48 +1,68 @@
-import { Program, Shader, Attribute, Uniform } from '../engine/engine.core';
+import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
+import { rectangle } from '../engine/engine.shapes';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
 
-const minVertShader = `
+const program1 = new Program(gl, `
     attribute vec2 a_pos;
     varying vec2 v_pos;
     void main() {
         gl_Position = vec4(a_pos.x, a_pos.y, 0., 1.);
         v_pos = a_pos;
     }
-`;
-const minFragShader = `
+    `, `
     precision mediump float;
-    uniform vec3 u_color;
     varying vec2 v_pos;
     void main() {
-        gl_FragColor = vec4(u_color.xyz, 1.);
+        gl_FragColor = vec4(v_pos.x, v_pos.y, 0.5, 1.);
     }
-`;
-const minProg = new Program(gl, minVertShader, minFragShader);
-const minShader = new Shader(
-    minProg,
+    `);
+const shader1 = new Shader(
+    program1,
     [
-        new Attribute(gl, minProg, 'a_pos', [
+        new Attribute(gl, program1, 'a_pos', [
             [-.5, -.3],
             [.1, .8],
             [.4, -.1]
         ])
-    ], [
-        new Uniform(gl, minProg, 'u_color', '3f', [.8, .1, .1])
-    ], []
+    ], [], []
 );
 
+const framebuffer = new Framebuffer(gl, canvas.width, canvas.height);
+
+shader1.bind(gl);
+shader1.render(gl, [.0, .0, .0, 0.], framebuffer.fbo);
 
 
-minShader.bind(gl);
-minShader.render(gl);
 
-minShader.updateAttributeData(gl, 'a_pos', [
-    [-.5, .5],
-    [.4, .8],
-    [.05, -.4]
-]);
-minShader.updateUniformData(gl, 'u_color', [.1, .8, .1]);
-minShader.render(gl);
+const program2 = new Program(gl, `
+    attribute vec3 a_vertexCoord;
+    attribute vec2 a_textureCoord;
+    varying vec2 v_textureCoord;
+    void main() {
+        v_textureCoord = a_textureCoord;
+        gl_Position = vec4(a_vertexCoord.xyz, 1.);
+    }
+    `, `
+    precision mediump float;
+    uniform sampler2D u_texture;
+    varying vec2 v_textureCoord;
+    void main() {
+        gl_FragColor = texture2D(u_texture, v_textureCoord);
+    }
+    `);
+const rect = rectangle(1., 1.);
+const shader2 = new Shader(
+    program2,
+    [
+        new Attribute(gl, program2, 'a_vertexCoord', rect.vertices),
+        new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions),
+    ], [], [
+        new Texture(gl, program2, 'u_texture', framebuffer.fbo.texture, 0)
+    ]
+);
+
+shader2.bind(gl);
+shader2.render(gl, [.0, .1, .0, .3]);

@@ -28,20 +28,20 @@ export const triangle = (width: number, height: number): Shape => {
 export const rectangle = (width: number, height: number): Shape => {
     return {
         vertices: [
-            [ width / 2,  height / 2, 0],
             [-width / 2,  height / 2, 0],
             [-width / 2, -height / 2, 0],
-            [ width / 2,  height / 2, 0],
             [ width / 2, -height / 2, 0],
-            [-width / 2, -height / 2, 0],
+            [-width / 2,  height / 2, 0],
+            [ width / 2, -height / 2, 0],
+            [ width / 2,  height / 2, 0],
         ],
         texturePositions: [
+            [0, 1],
             [0, 0],
-            [0, 1],
             [1, 0],
             [0, 1],
-            [1, 1],
             [1, 0],
+            [1, 1]
         ]
     };
 };

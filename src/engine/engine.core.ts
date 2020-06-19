@@ -1,4 +1,4 @@
-import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData } from './webgl';
+import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer } from './webgl';
 const hash = require('string-hash');
 
 
@@ -62,9 +62,13 @@ export class Texture implements ITexture {
     readonly texture: TextureObject;
     readonly variableName: string;
 
-    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, image: HTMLImageElement, bindPoint: number) {
+    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, im: HTMLImageElement | TextureObject, bindPoint: number) {
         this.location = getUniformLocation(gl, program.program, variableName);
-        this.texture = createTexture(gl, image);
+        if (im instanceof HTMLImageElement) {
+            this.texture = createTexture(gl, im);
+        } else {
+            this.texture = im;
+        }
         this.bindPoint = bindPoint;
         this.variableName = variableName;
     }
@@ -122,7 +126,7 @@ function parseProgram(program: IProgram): [string[], string[], string[]] {
     const textureNames = [];
     let textureMatches;
     while ((textureMatches = textureRegex.exec(shaderCode)) !== null) {
-        textureNames.push(textureMatches[2]);
+        textureNames.push(textureMatches[1]);
     }
 
     return [attributeNames, uniformNames, textureNames];
@@ -136,7 +140,7 @@ interface IShader {
     uniforms: IUniform[];
     textures: ITexture[];
     bind: (gl: WebGLRenderingContext) => void;
-    render: (gl: WebGLRenderingContext, frameBuffer?: FramebufferObject) => void;
+    render: (gl: WebGLRenderingContext, background?: number[], frameBuffer?: FramebufferObject) => void;
     updateAttributeData: (gl: WebGLRenderingContext, variableName: string, newData: number[][]) => void;
     updateUniformData: (gl: WebGLRenderingContext, variableName: string, newData: number[]) => void;
 }
@@ -182,11 +186,14 @@ export class Shader implements IShader {
         }
     }
 
-    public render(gl: WebGLRenderingContext, frameBuffer?: FramebufferObject): void {
+    public render(gl: WebGLRenderingContext, background?: number[], frameBuffer?: FramebufferObject): void {
         if (!frameBuffer) {
             bindOutputCanvasToFramebuffer(gl);
         } else {
             bindFramebuffer(gl, frameBuffer);
+        }
+        if (background) {
+            clearBackground(gl, background);
         }
         gl.drawArrays(gl.TRIANGLES, 0, this.attributes[0].value.vectorCount);
     }
@@ -203,9 +210,17 @@ export class Shader implements IShader {
 }
 
 
+export class Framebuffer {
 
+    readonly fbo: FramebufferObject;
 
-
+    constructor(gl: WebGLRenderingContext, width: number, height: number) {
+        const fb = createFramebuffer(gl);
+        const fbTexture = createEmptyTexture(gl, width, height);
+        const fbo = bindTextureToFramebuffer(gl, fbTexture, fb);
+        this.fbo = fbo;
+    }
+}
 
 
 
