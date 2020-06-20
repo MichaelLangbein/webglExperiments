@@ -1,1 +1,1 @@
-import './examples/bloom';
+import './examples/srtm_shadow';
