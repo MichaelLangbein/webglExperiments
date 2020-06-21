@@ -1,4 +1,4 @@
-import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer } from './webgl';
+import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, updateTexture } from './webgl';
 const hash = require('string-hash');
 
 
@@ -62,9 +62,9 @@ export class Texture implements ITexture {
     readonly texture: TextureObject;
     readonly variableName: string;
 
-    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, im: HTMLImageElement | TextureObject, bindPoint: number) {
+    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, im: HTMLImageElement | HTMLCanvasElement | TextureObject, bindPoint: number) {
         this.location = getUniformLocation(gl, program.program, variableName);
-        if (im instanceof HTMLImageElement) {
+        if (im instanceof HTMLImageElement || im instanceof  HTMLCanvasElement) {
             this.texture = createTexture(gl, im);
         } else {
             this.texture = im;
@@ -143,6 +143,7 @@ interface IShader {
     render: (gl: WebGLRenderingContext, background?: number[], frameBuffer?: FramebufferObject) => void;
     updateAttributeData: (gl: WebGLRenderingContext, variableName: string, newData: number[][]) => void;
     updateUniformData: (gl: WebGLRenderingContext, variableName: string, newData: number[]) => void;
+    updateTextureData: (gl: WebGLRenderingContext, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement) => void;
 }
 
 export class Shader implements IShader {
@@ -206,6 +207,12 @@ export class Shader implements IShader {
     public updateUniformData(gl: WebGLRenderingContext, variableName: string, newData: number[]): void {
         const uniform = first<IUniform>(this.uniforms, el => el.variableName === variableName);
         uniform.value = newData;
+    }
+
+    public updateTextureData(gl: WebGLRenderingContext, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement): void {
+        const original = first<ITexture>(this.textures, t => t.variableName === variableName);
+        const newTextureObject = updateTexture(gl, original.texture, newImage);
+        original.texture = newTextureObject;
     }
 }
 

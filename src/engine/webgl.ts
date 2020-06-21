@@ -195,6 +195,7 @@ export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, ne
 
 
 
+
 /**
  * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
  */
@@ -278,6 +279,8 @@ export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement
     return textureObj;
 };
 
+
+
 export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): TextureObject => {
     if (width <= 0 || height <= 0) {
         throw new Error('Width and height must be positive.');
@@ -307,8 +310,6 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
 
 
 /**
- *
- *
  * Even though we reference textures as uniforms in a fragment shader, assigning an actual texture-value to that uniform works differently than for normal uniforms.
  * Normal uniforms have a concrete value.
  * Texture uniforms, on the other hand, are just an integer-index that points to a special slot in the GPU memory (the bindPoint) where the actual texture value lies.
@@ -325,6 +326,30 @@ export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTe
     gl.activeTexture(gl.TEXTURE0 + bindPoint);  // analog to enableVertexAttribArray
     gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
     gl.uniform1i(uniformLocation, bindPoint); // analog to vertexAttribPointer
+};
+
+
+
+export const updateTexture = (gl: WebGLRenderingContext, to: TextureObject, newImage: HTMLImageElement | HTMLCanvasElement): TextureObject => {
+
+    gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
+    gl.bindTexture(gl.TEXTURE_2D, to.texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, newImage);  // analog to bufferData
+    gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
+    gl.bindTexture(gl.TEXTURE_2D, null);  // unbinding
+
+    let w, h: number;
+    if (newImage instanceof HTMLImageElement) {
+        w = newImage.naturalWidth;
+        h = newImage.naturalHeight;
+    } else {
+        w = newImage.width;
+        h = newImage.height;
+    }
+    to.width = w;
+    to.height = h;
+
+    return to;
 };
 
 

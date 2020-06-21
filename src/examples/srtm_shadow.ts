@@ -1,11 +1,12 @@
 import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
 import { rectangle, flattenMatrix, gaussianKernel, sumMatrix } from '../engine/engine.shapes';
 import { bindProgram } from '../engine/webgl';
+import { canvasToImage, createTextCanvas } from '../engine/engine.helpers';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
-const image = document.getElementById('srtm') as HTMLImageElement;
+const image = createTextCanvas('test', 256, 256, 'red'); // document.getElementById('srtm') as HTMLImageElement;
 const xslider = document.getElementById('xrange') as HTMLInputElement;
 const yslider = document.getElementById('yrange') as HTMLInputElement;
 
