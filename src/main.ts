@@ -1,1 +1,1 @@
-import './examples/srtm_shadow';
+import './examples/voronoi_water';

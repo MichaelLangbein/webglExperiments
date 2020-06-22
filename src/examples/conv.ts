@@ -1,10 +1,10 @@
 import { Engine, Program, Entity, Attribute, Uniform, IAttribute, IUniform, Texture } from '../engine/engine.core';
 import { box, rectangle, edgeDetectKernel, flattenMatrix } from '../engine/engine.shapes';
 import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform } from '../engine/webgl';
-const basic3dVertexShaderSource = require('../engine/shaders/basic3d.vert.glsl').default;
-const basic3dFragmentShaderSource = require('../engine/shaders/basic3d.frag.glsl').default;
-const convVSS = require('../engine/shaders/conv.vert.glsl').default;
-const convFSS = require('../engine/shaders/conv.frag.glsl').default;
+const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
+const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
+const convVSS = require('./shaders/conv.vert.glsl').default;
+const convFSS = require('./shaders/conv.frag.glsl').default;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const letterImg = document.getElementById('letterTexture') as HTMLImageElement;
 const boxImg = document.getElementById('boxTexture') as HTMLImageElement;

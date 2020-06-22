@@ -1,10 +1,10 @@
 import { box, rectangle, flattenMatrix, edgeDetectKernel, gaussianKernel, embossKernel, sumMatrix, normalKernel } from '../engine/engine.shapes';
 import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, bindTextureToFramebuffer } from '../engine/webgl';
 import { displayImageOn } from '../engine/engine.helpers';
-const basic3dVertexShaderSource = require('../engine/shaders/basic3d.vert.glsl').default;
-const basic3dFragmentShaderSource = require('../engine/shaders/basic3d.frag.glsl').default;
-const convVSS = require('../engine/shaders/conv.vert.glsl').default;
-const convFSS = require('../engine/shaders/conv.frag.glsl').default;
+const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
+const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
+const convVSS = require('./shaders/conv.vert.glsl').default;
+const convFSS = require('./shaders/conv.frag.glsl').default;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const helperCanvas = document.getElementById('helperCanvas') as HTMLCanvasElement;
 const letterImage = document.getElementById('letterTexture') as HTMLImageElement;

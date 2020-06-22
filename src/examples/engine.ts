@@ -1,7 +1,7 @@
 import { Engine, Program, Entity, Attribute, Uniform, IAttribute, IUniform, Texture } from '../engine/engine.core';
 import { box, rectangle } from '../engine/engine.shapes';
-const basic3dVertexShaderSource = require('../engine/shaders/basic3d.vert.glsl').default;
-const basic3dFragmentShaderSource = require('../engine/shaders/basic3d.frag.glsl').default;
+const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
+const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
