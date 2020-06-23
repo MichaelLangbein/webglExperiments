@@ -6,7 +6,7 @@ import { canvasToImage, createTextCanvas } from '../engine/engine.helpers';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
-const image = createTextCanvas('test', 256, 256, 'red'); // document.getElementById('srtm') as HTMLImageElement;
+const image = document.getElementById('srtm') as HTMLImageElement; // createTextCanvas('test', 256, 256, 'red'); // document.getElementById('srtm') as HTMLImageElement;
 const xslider = document.getElementById('xrange') as HTMLInputElement;
 const yslider = document.getElementById('yrange') as HTMLInputElement;
 
