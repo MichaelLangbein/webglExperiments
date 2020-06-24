@@ -73,7 +73,7 @@ export const compileShader = (gl: WebGLRenderingContext, typeBit: number, shader
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         gl.deleteShader(shader);
-        throw new Error('An error occurred compiling the shader: ' + gl.getShaderInfoLog(shader));
+        throw new Error(`An error occurred compiling the shader: ${gl.getShaderInfoLog(shader)}.    \n\n Shader code: ${shaderSource}`);
     }
     return shader;
 };
@@ -96,6 +96,8 @@ export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSourc
 
     gl.linkProgram(program);
 
+    gl.detachShader(program, vertexShader);
+    gl.detachShader(program, fragmentShader);
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
 
@@ -142,13 +144,14 @@ export interface BufferObject {
     normalize: boolean;
     stride: number;
     offset: number;
+    drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES
 }
 
 
 /**
  * Create buffer. Creation is slow! Do *before* render loop.
  */
-export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): BufferObject => {
+export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], drawingMode: number = gl.TRIANGLES): BufferObject => {
 
     const dataFlattened = new Float32Array(flattenMatrix(data));
 
@@ -166,10 +169,17 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][]): 
         normalize: false, // don't normalize the data
         stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
+        drawingMode: drawingMode
     };
 
     return bufferObject;
 };
+
+
+export const drawArray = (gl: WebGLRenderingContext, bo: BufferObject): void => {
+    gl.drawArrays(bo.drawingMode, bo.offset, bo.vectorCount);
+};
+
 
 
 export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, newData: number[][]): BufferObject => {
@@ -188,6 +198,7 @@ export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, ne
         normalize: false, // don't normalize the data
         stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
+        drawingMode: bo.drawingMode,
     };
 
     return newBufferObject;
@@ -224,6 +235,54 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
         bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
     // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
 };
+
+
+
+
+export interface IndexBufferObject {
+    buffer: WebGLBuffer;
+    count: number;
+    type: number; // must be gl.UNSIGNED_SHORT
+    offset: number;
+    drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES
+}
+
+export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][], drawingMode: number = gl.TRIANGLES): IndexBufferObject => {
+
+    const indicesFlattened = new Uint16Array(flattenMatrix(indices));
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+    const bufferObject: IndexBufferObject = {
+        buffer: buffer,
+        count: indicesFlattened.length,
+        type: gl.UNSIGNED_SHORT,
+        offset: 0,
+        drawingMode: drawingMode
+    };
+
+    return bufferObject;
+};
+
+export const drawElements = (gl: WebGLRenderingContext, ibo: IndexBufferObject): void => {
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo.buffer);  // @TODO: optimize this to somewhere else?
+    gl.drawElements(ibo.drawingMode, ibo.count, ibo.type, ibo.offset);
+};
+
+
+export const draw = (gl: WebGLRenderingContext, b: BufferObject | IndexBufferObject): void => {
+    if (b.type  === gl.UNSIGNED_SHORT) {
+        drawElements(gl, b as IndexBufferObject);
+    } else {
+        drawArray(gl, b as BufferObject);
+    }
+};
+
+
+
 
 
 export interface TextureObject {
@@ -432,10 +491,23 @@ export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProg
 
 
 
-export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv' | 'matrix2fv' | 'matrix3fv' | 'matrix4fv';
+export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv' | '3fv' | '4fv' | 'matrix2fv' | 'matrix3fv' | 'matrix4fv';
 
 /**
  * Contrary to attributes, uniforms don't need to be stored in a buffer.
+ *
+ * 'v' is not about the shader, but how you provide data from the js-side.
+ * uniform1fv(loc, [3.19]) === uniform1f(loc, 3.19)
+ *
+ * |js                                      |          shader                  |
+ * |----------------------------------------|----------------------------------|
+ * |uniform1f(loc, 3.19)                    |  uniform float u_pi;             |
+ * |uniform2f(loc, 3.19, 2.72)              |  uniform vec2 u_constants;       |
+ * |uniform2fv(loc, [3.19, 2.72])           |  uniform vec2 u_constants;       |
+ * |uniform1fv(loc, [1, 2, 3, 4, 5, 6])     |  uniform float u_kernel[6];      |
+ * |uniform2fv(loc, [1, 2, 3, 4, 5, 6])     |  uniform vec2 u_observations[3]; |
+ * |uniformMatrix3fv(loc, [[...], [...]])   |  uniform mat3 u_matrix;          |
+ *
  */
 export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: WebGLUniformLocation, type: UniformType, values: number[]): void => {
     switch (type) {
@@ -462,9 +534,15 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
         case '2fv':
             gl.uniform2fv(uniformLocation, values);
             break;
+        case '3fv':
+            gl.uniform3fv(uniformLocation, values);
+            break;
+        case '4fv':
+            gl.uniform4fv(uniformLocation, values);
+            break;
 
         case 'matrix2fv':
-            gl.uniformMatrix2fv(uniformLocation, false, values);
+            gl.uniformMatrix2fv(uniformLocation, false, values);  // @TODO: set this to true? - it is very confusing to have a transformation matrices translation at bottom instead of right.
             break;
 
         case 'matrix3fv':

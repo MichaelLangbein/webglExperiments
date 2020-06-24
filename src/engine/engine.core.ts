@@ -1,4 +1,4 @@
-import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, updateTexture } from './webgl';
+import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, updateTexture, createIndexBuffer, IndexBufferObject, drawArray } from './webgl';
 const hash = require('string-hash');
 
 
@@ -96,6 +96,24 @@ export class Attribute implements IAttribute {
 }
 
 
+/**
+ * @TODO: this is not yet used anywhere.
+ */
+export class ElementAttribute implements IAttribute {
+    readonly location: number;
+    readonly value: BufferObject;
+    readonly indices: IndexBufferObject;
+    readonly variableName: string;
+
+    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, data: number[][], indices: number[][]) {
+        this.location = getAttributeLocation(gl, program.program, variableName);
+        this.value = createFloatBuffer(gl, data);
+        this.indices = createIndexBuffer(gl, indices);
+        this.variableName = variableName;
+    }
+}
+
+
 
 function first<T>(arr: T[], condition: (el: T) => boolean): T {
     for (const el of arr) {
@@ -107,9 +125,9 @@ function first<T>(arr: T[], condition: (el: T) => boolean): T {
 
 
 function parseProgram(program: IProgram): [string[], string[], string[]] {
-    const attributeRegex = /attribute (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
-    const uniformRegex = /uniform (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
-    const textureRegex = /uniform sampler2D (\w*);/gm;
+    const attributeRegex = /^\s*attribute (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
+    const uniformRegex = /^\s*uniform (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*)(\[\d\])*;/gm;
+    const textureRegex = /^\s*uniform sampler2D (\w*);/gm;
 
     const shaderCode = program.fragmentShaderSource + '\n\n\n' + program.vertexShaderSource;
 
@@ -133,6 +151,7 @@ function parseProgram(program: IProgram): [string[], string[], string[]] {
 }
 
 
+export type RenderMode = 'points' | 'lines' | 'triangles';
 
 interface IShader {
     program: IProgram;
@@ -196,8 +215,11 @@ export class Shader implements IShader {
         if (background) {
             clearBackground(gl, background);
         }
-        gl.drawArrays(gl.TRIANGLES, 0, this.attributes[0].value.vectorCount);
+
+        const firstAttribute = this.attributes[0].value;
+        drawArray(gl, firstAttribute);
     }
+
 
     public updateAttributeData(gl: WebGLRenderingContext, variableName: string, newData: number[][]): void {
         const attribute = first<IAttribute>(this.attributes, el => el.variableName === variableName);
