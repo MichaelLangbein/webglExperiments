@@ -94,7 +94,7 @@ const particleProgram = new Program(gl, `
 
     void main() {
         vec2 speed = ((texture2D(u_forceTexture, v_textureCoord) - 0.5 ) * 2.0).xy;
-        vec2 samplePoint = v_textureCoord - speed * u_deltaT * 0.01;
+        vec2 samplePoint = v_textureCoord - speed * u_deltaT * 0.1;
         samplePoint = mod(samplePoint, 1.0);
         gl_FragColor = texture2D(u_particleTexture, samplePoint);
     }
