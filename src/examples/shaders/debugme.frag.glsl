@@ -1,10 +1,9 @@
 precision mediump float;
-    uniform vec2 u_observationLocations[3];
-    uniform vec2 u_observationValues[3];
-    uniform vec2 u_size;
+    uniform sampler2D u_bgTexture;
+    uniform sampler2D u_particleTexture;
     varying vec2 v_textureCoord;
-
     void main() {
-        vec2 delta = 1. / u_size;
-        gl_FragColor = vec4(u_observationValues[0].xy + 0. * delta, 0., 1.);
+        vec4 bgColor = texture2D(u_bgTexture, v_textureCoord);
+        vec4 particleColor = texture2D(u_particleTexture, v_textureCoord);
+        gl_FragColor = vec4(0.9 * particleColor.xyz + 0.1 * bgColor.xyz, 1.0);
     }

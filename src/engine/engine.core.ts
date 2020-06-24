@@ -87,10 +87,11 @@ export class Attribute implements IAttribute {
     readonly location: number;
     readonly value: BufferObject;
     readonly variableName: string;
+    readonly drawingMode: number;
 
-    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, data: number[][]) {
+    constructor(gl: WebGLRenderingContext, program: IProgram, variableName: string, data: number[][], drawingMode: number = gl.TRIANGLES) {
         this.location = getAttributeLocation(gl, program.program, variableName);
-        this.value = createFloatBuffer(gl, data);
+        this.value = createFloatBuffer(gl, data, drawingMode);
         this.variableName = variableName;
     }
 }
