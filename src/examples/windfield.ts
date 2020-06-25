@@ -42,6 +42,10 @@ const interpolShader = new Shader(interpolProgram, [
         [ 0.8,  -0.2,   -0.3,  0.2 ],  // d
         [-0.6,  -0.2,    0.4,  0.5 ],  // b
         [-0.1,  -0.8,   -0.5,  0.1 ],  // e
+
+        [ 0.8,  -0.2,   -0.3,  0.2 ],  // d
+        [-0.1,  -0.8,   -0.5,  0.1 ],  // e
+        [ 0.4,  -0.95,   0.8, -0.8 ],  // f
     ])
 ], [], []);
 
@@ -81,11 +85,11 @@ const particleProgram = new Program(gl, `
         gl_FragColor = texture2D(u_particleTexture, samplePoint);
 
         float randVal = rand(v_textureCoord * abs(sin(u_deltaT)) * 0.01);
-        if (randVal > 0.99) {
+        if (randVal > 0.999) {  // spawn
             gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-        } if (randVal < 0.1) {
+        } if (randVal < 0.3) {   // die off
             gl_FragColor = texture2D(u_forceTexture, v_textureCoord);
-        } if (texture2D(u_forceTexture, v_textureCoord) == vec4(0.0, 0.0, 0.0, 1.0)) {
+        } if (texture2D(u_forceTexture, v_textureCoord) == vec4(0.0, 0.0, 0.0, 0.0)) {
             gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
     }
@@ -144,7 +148,7 @@ interpolShader.bind(gl);
 interpolShader.render(gl, null, interpolFb.fbo);
 textureMixShader.bind(gl);
 textureMixShader.render(gl);
-
+particleShader.bind(gl);
 
 // Animation loop
 let i = 0;
