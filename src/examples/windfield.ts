@@ -37,11 +37,11 @@ const interpolShader = new Shader(interpolProgram, [
 
         [ 0.2,   0.4,    0.2,  0.05],  // c
         [-0.6,  -0.2,    0.4,  0.5 ],  // b
-        [ 0.8,  -0.2,    0.3, -0.2 ],  // d
+        [ 0.8,  -0.2,   -0.3,  0.2 ],  // d
 
-        [ 0.8,  -0.2,    0.3, -0.2 ],  // d
+        [ 0.8,  -0.2,   -0.3,  0.2 ],  // d
         [-0.6,  -0.2,    0.4,  0.5 ],  // b
-        [-0.1,  -0.8,    0.5, -0.1 ],  // e
+        [-0.1,  -0.8,   -0.5,  0.1 ],  // e
     ])
 ], [], []);
 
@@ -49,33 +49,11 @@ const interpolFb = new Framebuffer(gl, canvas.width, canvas.height);
 
 
 
-// -------------- Step 2: Start-positions of particles ------------------------------------------------
 
-const startParticleProgram = new Program(gl, `
-    attribute vec2 a_vertex;
-    void main() {
-        gl_Position = vec4(a_vertex.xy, 0.0, 1.0);
-        gl_PointSize = 10.0;
-    }
-`, `
-    precision mediump float;
-    void main() {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-    }
-`);
-
-const startParticleShader = new Shader(startParticleProgram, [
-    new Attribute(gl, startParticleProgram, 'a_vertex', [
-        [-0.25, 0.25], [-0.25, -0.25], [0.25, -0.25], [0.25, 0.25]
-    ], gl.POINTS)
-], [], []);
+// ------------------ Step 2: moving particles along force field ------------------------------------
 
 const particleFb1 = new Framebuffer(gl, canvas.width, canvas.height);
 const particleFb2 = new Framebuffer(gl, canvas.width, canvas.height);
-
-
-
-// ------------------ Step 3: moving particles along force field ------------------------------------
 
 const particleProgram = new Program(gl, `
     attribute vec3 a_vertex;
@@ -92,11 +70,24 @@ const particleProgram = new Program(gl, `
     uniform float u_deltaT;
     varying vec2 v_textureCoord;
 
+    float rand(vec2 co){
+        return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    }
+
     void main() {
         vec2 speed = ((texture2D(u_forceTexture, v_textureCoord) - 0.5 ) * 2.0).xy;
         vec2 samplePoint = v_textureCoord - speed * u_deltaT * 0.1;
         samplePoint = mod(samplePoint, 1.0);
         gl_FragColor = texture2D(u_particleTexture, samplePoint);
+
+        float randVal = rand(v_textureCoord * abs(sin(u_deltaT)) * 0.01);
+        if (randVal > 0.99) {
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        } if (randVal < 0.1) {
+            gl_FragColor = texture2D(u_forceTexture, v_textureCoord);
+        } if (texture2D(u_forceTexture, v_textureCoord) == vec4(0.0, 0.0, 0.0, 1.0)) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
     }
 `);
 
@@ -113,7 +104,7 @@ const particleShader = new Shader(particleProgram, [
 
 
 
-// ------------------ Step 4: Mixing background-field and particles ------------------------------------
+// ------------------ Step 3: Mixing background-field and particles ------------------------------------
 
 const textureMixProgram = new Program(gl, `
     attribute vec3 a_vertex;
@@ -151,8 +142,6 @@ const textureMixShader = new Shader(textureMixProgram, [
 // Setup
 interpolShader.bind(gl);
 interpolShader.render(gl, null, interpolFb.fbo);
-startParticleShader.bind(gl);
-startParticleShader.render(gl, null, particleFb1.fbo);
 textureMixShader.bind(gl);
 textureMixShader.render(gl);
 
