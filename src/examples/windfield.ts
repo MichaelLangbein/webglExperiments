@@ -4,6 +4,9 @@ import { rectangle, flattenMatrix } from '../engine/engine.shapes';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
+if (!gl) {
+    throw new Error('no context');
+}
 
 const rect = rectangle(2.0, 2.0);
 
@@ -145,7 +148,7 @@ const textureMixShader = new Shader(textureMixProgram, [
 
 // Setup
 interpolShader.bind(gl);
-interpolShader.render(gl, null, interpolFb.fbo);
+interpolShader.render(gl, undefined, interpolFb.fbo);
 textureMixShader.bind(gl);
 textureMixShader.render(gl);
 particleShader.bind(gl);
@@ -170,7 +173,7 @@ renderLoop(20, (deltaT: number) => {
     particleShader.textures[1].texture = fbIn.fbo.texture;
     particleShader.updateUniformData(gl, 'u_deltaT', [deltaT]);
     particleShader.bind(gl);
-    particleShader.render(gl, null, fbOut.fbo);
+    particleShader.render(gl, undefined, fbOut.fbo);
 
     // texture to output
     textureMixShader.textures[1].texture = fbOut.fbo.texture;

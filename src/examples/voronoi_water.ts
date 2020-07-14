@@ -4,7 +4,9 @@ import { rectangle, triangle, flattenMatrix, edgeDetectKernel } from '../engine/
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
-
+if (!gl) {
+    throw new Error('no context');
+}
 
 const program = new Program(gl, `
     attribute vec3 a_vertex;

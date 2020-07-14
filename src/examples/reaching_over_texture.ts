@@ -5,7 +5,9 @@ import { triangle } from '../engine/engine.shapes';
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const texture = document.getElementById('boxTexture') as HTMLImageElement;
 const gl = canvas.getContext('webgl');
-
+if (!gl) {
+    throw new Error('no context');
+}
 
 const program = new Program(gl, `
     attribute vec3 a_coord;

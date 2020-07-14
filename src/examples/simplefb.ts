@@ -10,6 +10,9 @@ const textImage = createTextCanvas('test', 256, 256, 'blue');
 
 // 0. Setup
 const gl = canvas.getContext('webgl');
+if (!gl) {
+    throw new Error('no context');
+}
 setup3dScene(gl);
 const bx = triangle(1., 1.);
 

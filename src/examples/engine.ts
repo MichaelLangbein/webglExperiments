@@ -6,6 +6,9 @@ const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').defau
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
+if (!gl) {
+    throw new Error('no context');
+}
 
 const letterImg = document.getElementById('letterTexture') as HTMLImageElement;
 const boxImg = document.getElementById('boxTexture') as HTMLImageElement;

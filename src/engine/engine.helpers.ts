@@ -6,6 +6,9 @@ import { rectangle } from './engine.shapes';
 export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElement): void => {
 
     const gl = canvas.getContext('webgl');
+    if (!gl) {
+        throw new Error('No context');
+    }
 
     const vertexShaderSource = `
     attribute vec4 a_vertex;
@@ -51,6 +54,9 @@ export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElemen
 
 export const createTextCanvas = (text: string, width: number = 256, height: number = 256, color: string = 'red') => {
     const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) {
+        throw new Error('no context');
+    }
     ctx.canvas.width = width;
     ctx.canvas.height = height;
     ctx.font = `bold ${height * 5 / 6 | 0}px sans-serif`;

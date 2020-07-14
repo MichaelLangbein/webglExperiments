@@ -69,6 +69,9 @@ const textureConstructionBindPoint = 7;
  */
 export const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource: string): WebGLShader => {
     const shader = gl.createShader(typeBit);
+    if (!shader) {
+        throw new Error('No shader was created');
+    }
     gl.shaderSource(shader, shaderSource);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -88,6 +91,9 @@ export const compileShader = (gl: WebGLRenderingContext, typeBit: number, shader
 export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram => {
 
     const program = gl.createProgram();
+    if (!program) {
+        throw new Error('No program was created');
+    }
 
     const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -156,6 +162,9 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], d
     const dataFlattened = new Float32Array(flattenMatrix(data));
 
     const buffer = gl.createBuffer();
+    if (!buffer) {
+        throw new Error('No buffer was created');
+    }
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
     // STATIC_DRAW: tells WebGl that we are not likely to change this data much.
@@ -252,6 +261,9 @@ export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][]
     const indicesFlattened = new Uint16Array(flattenMatrix(indices));
 
     const buffer = gl.createBuffer();
+    if (!buffer) {
+        throw new Error('No buffer was created');
+    }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
@@ -310,6 +322,9 @@ export interface TextureObject {
 export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement | HTMLCanvasElement): TextureObject => {
 
     const texture = gl.createTexture();  // analog to createBuffer
+    if (!texture) {
+        throw new Error('No texture was created');
+    }
     gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);  // analog to bufferData
@@ -345,6 +360,9 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
         throw new Error('Width and height must be positive.');
     }
     const texture = gl.createTexture();
+    if (!texture) {
+        throw new Error('No texture was created');
+    }
     gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
@@ -422,6 +440,9 @@ export interface FramebufferObject {
 
 export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer => {
     const fb = gl.createFramebuffer();  // analog to createBuffer
+    if (!fb) {
+        throw new Error(`Error creating framebuffer`);
+    }
     return fb;
 };
 
@@ -582,6 +603,9 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
  */
 export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBuffer  => {
     const gl = canvas.getContext('webgl');
+    if (!gl) {
+        throw new Error('no context');
+    }
 
     const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT);
     const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE);

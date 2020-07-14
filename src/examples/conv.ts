@@ -11,6 +11,9 @@ const boxImg = document.getElementById('boxTexture') as HTMLImageElement;
 
 const main = () => {
     const gl = canvas.getContext('webgl');
+    if (!gl) {
+        throw new Error('no context');
+    }
     const program = new Program(gl, convVSS, convFSS);
     bindProgram(gl, program.program);
 

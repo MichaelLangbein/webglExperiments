@@ -201,7 +201,11 @@ export const embossKernel = (): Matrix => {
 };
 
 export const flattenMatrix = (m: Matrix): number[] => {
-    return [].concat.apply([], m);
+    let flat: number[] = [];
+    for (const row of m) {
+        flat = Array.prototype.concat(flat, row);
+    }
+    return flat;
 };
 
 export const sumMatrix = (m: Matrix): number => {

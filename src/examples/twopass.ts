@@ -39,6 +39,9 @@ const whiteImage2 = document.getElementById('whiteImage') as HTMLImageElement;
 const main = () => {
 
     const gl = canvas.getContext('webgl');
+    if (!gl) {
+        throw new Error('no context');
+    }
     const program = createShaderProgram(gl, convVSS, convFSS);
     bindProgram(gl, program);
 

@@ -1,5 +1,14 @@
 import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, UniformType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, updateTexture, createIndexBuffer, IndexBufferObject, drawArray } from './webgl';
-const hash = require('string-hash');
+
+
+// dead-simple hash function - not intended to be secure in any way.
+const hash = function(s: string): string {
+    let h = 0;
+    for (const c of s) {
+        h += c.charCodeAt(0);
+    }
+    return `${h}`;
+};
 
 
 export interface IProgram {
@@ -93,6 +102,7 @@ export class Attribute implements IAttribute {
         this.location = getAttributeLocation(gl, program.program, variableName);
         this.value = createFloatBuffer(gl, data, drawingMode);
         this.variableName = variableName;
+        this.drawingMode = drawingMode;
     }
 }
 
@@ -116,12 +126,13 @@ export class ElementAttribute implements IAttribute {
 
 
 
-function first<T>(arr: T[], condition: (el: T) => boolean): T {
+function first<T>(arr: T[], condition: (el: T) => boolean): T | null {
     for (const el of arr) {
         if (condition(el)) {
             return el;
         }
     }
+    return null;
 }
 
 
@@ -224,16 +235,25 @@ export class Shader implements IShader {
 
     public updateAttributeData(gl: WebGLRenderingContext, variableName: string, newData: number[][]): void {
         const attribute = first<IAttribute>(this.attributes, el => el.variableName === variableName);
+        if (!attribute) {
+            throw new Error(`No such attribute ${variableName} to be updated.`);
+        }
         updateBufferData(gl, attribute.value, newData);
     }
 
     public updateUniformData(gl: WebGLRenderingContext, variableName: string, newData: number[]): void {
         const uniform = first<IUniform>(this.uniforms, el => el.variableName === variableName);
+        if (!uniform) {
+            throw new Error(`No such uniform ${variableName} to be updated.`);
+        }
         uniform.value = newData;
     }
 
     public updateTextureData(gl: WebGLRenderingContext, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement): void {
         const original = first<ITexture>(this.textures, t => t.variableName === variableName);
+        if (!original) {
+            throw new Error(`No such original ${variableName} to be updated.`);
+        }
         const newTextureObject = updateTexture(gl, original.texture, newImage);
         original.texture = newTextureObject;
     }

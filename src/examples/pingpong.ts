@@ -5,6 +5,9 @@ import { createTextCanvas } from '../engine/engine.helpers';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
+if (!gl) {
+    throw new Error('no context');
+}
 
 const rect = rectangle(2.0, 2.0);
 const testCanvas = createTextCanvas('test', 256, 256, 'red');
@@ -76,7 +79,7 @@ renderLoop(20, (deltaT: number) => {
 
     moveShader.textures[0].texture = fbIn.fbo.texture;
     moveShader.bind(gl);
-    moveShader.render(gl, null, fbOut.fbo);
+    moveShader.render(gl, undefined, fbOut.fbo);
 
     displayShader.textures[0].texture = fbOut.fbo.texture;
     displayShader.render(gl);

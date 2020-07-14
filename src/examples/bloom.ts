@@ -4,6 +4,9 @@ import { rectangle, flattenMatrix, gaussianKernel, sumMatrix } from '../engine/e
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
+if (!gl) {
+    throw new Error('no context');
+}
 
 const program1 = new Program(gl, `
     attribute vec2 a_pos;
