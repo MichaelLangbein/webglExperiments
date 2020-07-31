@@ -1,25 +1,27 @@
-const path = require('path');
 const webpack = require('webpack');
+const path = require('path');
 
-const ROOT = path.resolve( __dirname, 'src' );
-const DESTINATION = path.resolve( __dirname, 'dist' );
+const rootPath = path.resolve( __dirname, 'src' );
+const destinationPath = path.resolve( __dirname, 'dist' );
 
 module.exports = {
-    context: ROOT,
+    context: rootPath,
 
     entry: {
-        'main': './main.ts'
+        'main': './module.main.ts'
     },
     
     output: {
-        filename: '[name].bundle.js',
-        path: DESTINATION
+        filename: 'webgl-utils.bundle.js',
+        path: destinationPath,
+        library: 'webgl-utils',
+        libraryTarget: 'umd',
     },
 
     resolve: {
         extensions: ['.ts', '.js'],
         modules: [
-            ROOT,
+            rootPath,
             'node_modules'
         ]
     },
@@ -48,19 +50,7 @@ module.exports = {
                 test: /\.ts$/,
                 exclude: [ /node_modules/ ],
                 use: 'awesome-typescript-loader'
-            },
-            // Require .vert and .frag as raw text.
-            {
-                test: /\.(vert|frag|glsl)$/i,
-                use: 'raw-loader',
             }
         ]
     },
-
-    devtool: 'cheap-module-source-map',
-    devServer: {
-        disableHostCheck: true, 
-        // public: 'localhost:9000'
-    }
 };
-
