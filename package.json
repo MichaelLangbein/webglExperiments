@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "collection of utilities for webgl",
   "main": "dist/webgl-utils.bundle.js",
+  "types": "dist/module.main.d.ts",
   "author": "Michael Langbein (https://michaellangbein.github.io/)",
   "license": "MIT",
   "scripts": {
