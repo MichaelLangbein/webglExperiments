@@ -1,6 +1,6 @@
 {
   "name": "@michaellangbein/webgl-utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "collection of utilities for webgl",
   "main": "dist/webgl-utils.bundle.js",
   "types": "dist/module.main.d.ts",
