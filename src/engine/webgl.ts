@@ -563,15 +563,15 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
             break;
 
         case 'matrix2fv':
-            gl.uniformMatrix2fv(uniformLocation, false, values);  // @TODO: set this to true? - it is very confusing to have a transformation matrices translation at bottom instead of right.
+            gl.uniformMatrix2fv(uniformLocation, true, values);
             break;
 
         case 'matrix3fv':
-            gl.uniformMatrix3fv(uniformLocation, false, values);
+            gl.uniformMatrix3fv(uniformLocation, true, values);
             break;
 
         case 'matrix4fv':
-            gl.uniformMatrix4fv(uniformLocation, false, values);
+            gl.uniformMatrix4fv(uniformLocation, true, values);
             break;
 
         default:
