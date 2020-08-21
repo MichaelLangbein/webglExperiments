@@ -563,15 +563,15 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
             break;
 
         case 'matrix2fv':
-            gl.uniformMatrix2fv(uniformLocation, true, values);
+            gl.uniformMatrix2fv(uniformLocation, false, values);
             break;
 
         case 'matrix3fv':
-            gl.uniformMatrix3fv(uniformLocation, true, values);
+            gl.uniformMatrix3fv(uniformLocation, false, values);
             break;
 
         case 'matrix4fv':
-            gl.uniformMatrix4fv(uniformLocation, true, values);
+            gl.uniformMatrix4fv(uniformLocation, false, values);
             break;
 
         default:
