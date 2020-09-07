@@ -1,1 +1,1 @@
-import './examples/windfield';
+import './examples/minimal';

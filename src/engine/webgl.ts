@@ -562,7 +562,7 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
             gl.uniform4fv(uniformLocation, values);
             break;
 
-        // In the following *matrix* calls, the 'transpose' parameter must always be false. 
+        // In the following *matrix* calls, the 'transpose' parameter must always be false.
         // Quoting the OpenGL ES 2.0 spec:
         // If the transpose parameter to any of the UniformMatrix* commands is
         // not FALSE, an INVALID_VALUE error is generated, and no uniform values are
