@@ -1,1 +1,1 @@
-import './examples/minimal';
+import './examples/bboxAndTransform';
