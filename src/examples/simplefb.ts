@@ -1,4 +1,4 @@
-import { rectangle, flattenMatrix, sumMatrix, triangle } from '../engine/engine.shapes';
+import { triangleA } from '../engine/engine.shapes';
 import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, setup3dScene, createEmptyTexture, bindTextureToFramebuffer } from '../engine/webgl';
 import { createTextCanvas } from '../engine/engine.helpers';
 const passVSS = require('./shaders/passthrough.vert.glsl').default;
@@ -14,7 +14,7 @@ if (!gl) {
     throw new Error('no context');
 }
 setup3dScene(gl);
-const bx = triangle(1., 1.);
+const bx = triangleA(1., 1.);
 
 const program = createShaderProgram(gl, passVSS, passFSS);
 bindProgram(gl, program);

@@ -1,1 +1,1 @@
-import './examples/bboxAndTransform';
+import './examples/drawElements';

@@ -1,5 +1,5 @@
 import { Engine, Program, Entity, Attribute, Uniform, IAttribute, IUniform, Texture } from '../engine/engine.core';
-import { box, rectangle } from '../engine/engine.shapes';
+import { boxA, rectangleA } from '../engine/engine.shapes';
 const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
 const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 
@@ -20,11 +20,11 @@ const program = new Program(gl, basic3dVertexShaderSource, basic3dFragmentShader
 const letterEntity = new Entity(
     program,
     [
-        new Attribute(gl, program, 'a_vertex', rectangle(.2, .2).vertices ),
-        new Attribute(gl, program, 'a_textureCoord', rectangle(.2, .2).texturePositions )
+        new Attribute(gl, program, 'a_vertex', rectangleA(.2, .2).vertices ),
+        new Attribute(gl, program, 'a_textureCoord', rectangleA(.2, .2).texturePositions )
     ], [
-        new Uniform(gl, program, 'u_translation', '3f', [.3, .3, .0]),
-        new Uniform(gl, program, 'u_rotation', '3f', [.0, .0, .0])
+        new Uniform(gl, program, 'u_translation', 'vec3', [.3, .3, .0]),
+        new Uniform(gl, program, 'u_rotation', 'vec3', [.0, .0, .0])
     ], [
         new Texture(gl, program, 'u_texture', letterImg, 0)
     ],
@@ -38,11 +38,11 @@ const letterEntity = new Entity(
 const boxEntity = new Entity(
     program,
     [
-        new Attribute(gl, program, 'a_vertex', box(.2, .1, .3).vertices),
-        new Attribute(gl, program, 'a_textureCoord', box(.2, .1, .3).texturePositions)
+        new Attribute(gl, program, 'a_vertex', boxA(.2, .1, .3).vertices),
+        new Attribute(gl, program, 'a_textureCoord', boxA(.2, .1, .3).texturePositions)
     ], [
-        new Uniform(gl, program, 'u_translation', '3f', [-.3, -.3, -.3]),
-        new Uniform(gl, program, 'u_rotation', '3f', [.0, .0, .0])
+        new Uniform(gl, program, 'u_translation', 'vec3', [-.3, -.3, -.3]),
+        new Uniform(gl, program, 'u_rotation', 'vec3', [.0, .0, .0])
     ], [
         new Texture(gl, program, 'u_texture', boxImg, 1)
     ],

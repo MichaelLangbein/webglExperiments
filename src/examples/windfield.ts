@@ -1,5 +1,5 @@
 import { Program, Shader, renderLoop, Framebuffer, Attribute, Uniform, Texture } from '../engine/engine.core';
-import { rectangle, flattenMatrix } from '../engine/engine.shapes';
+import { rectangleA } from '../engine/engine.shapes';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -8,7 +8,7 @@ if (!gl) {
     throw new Error('no context');
 }
 
-const rect = rectangle(2.0, 2.0);
+const rect = rectangleA(2.0, 2.0);
 
 
 
@@ -102,7 +102,7 @@ const particleShader = new Shader(particleProgram, [
     new Attribute(gl, particleProgram, 'a_vertex', rect.vertices),
     new Attribute(gl, particleProgram, 'a_textureCoord', rect.texturePositions)
 ], [
-    new Uniform(gl, particleProgram, 'u_deltaT', '1f', [0.01])
+    new Uniform(gl, particleProgram, 'u_deltaT', 'float', [0.01])
 ], [
     new Texture(gl, particleProgram, 'u_forceTexture', interpolFb.fbo.texture, 0),
     new Texture(gl, particleProgram, 'u_particleTexture', particleFb1.fbo.texture, 1)

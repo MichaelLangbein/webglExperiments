@@ -46,10 +46,10 @@ const renderLoop = () => {
 
     clearBackground(gl, [0, 0, 0, 1]);
 
-    bindValueToUniform(gl, uAngleLoc, '1f', [angle]);
-    bindValueToUniform(gl, uColorLoc, '4f', [.1, .1, .9, .9]);
+    bindValueToUniform(gl, uAngleLoc, 'float', [angle]);
+    bindValueToUniform(gl, uColorLoc, 'vec4', [.1, .1, .9, .9]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    bindValueToUniform(gl, uColorLoc, '4f', [.9, .1, .1, .9]); // <-- this seems inefficient. GPU needs to wait for CPU here.
+    bindValueToUniform(gl, uColorLoc, 'vec4', [.9, .1, .1, .9]); // <-- this seems inefficient. GPU needs to wait for CPU here.
     gl.drawArrays(gl.TRIANGLES, 3, 3);
 
     requestAnimationFrame(renderLoop);

@@ -1,5 +1,6 @@
 import { Program, Shader, renderLoop, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
-import { rectangle, triangle, flattenMatrix, edgeDetectKernel } from '../engine/engine.shapes';
+import { rectangleA, triangleA, edgeDetectKernel } from '../engine/engine.shapes';
+import { flattenMatrix } from '../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -45,12 +46,12 @@ const program = new Program(gl, `
     }
 `);
 
-const tri = triangle(1.6, 1.3);
+const tri = triangleA(1.6, 1.3);
 const shader = new Shader(program, [
     new Attribute(gl, program, 'a_vertex', tri.vertices)
 ], [
-    new Uniform(gl, program, 'u_size', '2f', [canvas.width, canvas.height]),
-    new Uniform(gl, program, 'u_time', '1f', [0.])
+    new Uniform(gl, program, 'u_size', 'vec2', [canvas.width, canvas.height]),
+    new Uniform(gl, program, 'u_time', 'float', [0.])
 ], []);
 
 
@@ -104,13 +105,13 @@ const program2 = new Program(gl, `
     }
 `);
 
-const rect = rectangle(2., 2.);
+const rect = rectangleA(2., 2.);
 const shader2 = new Shader(program2, [
     new Attribute(gl, program2, 'a_vertex', rect.vertices),
     new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions)
 ], [
-    new Uniform(gl, program2, 'u_size', '2f', [canvas.width, canvas.height]),
-    new Uniform(gl, program2, 'u_kernel', '1fv', flattenMatrix(edgeDetectKernel()))
+    new Uniform(gl, program2, 'u_size', 'vec2', [canvas.width, canvas.height]),
+    new Uniform(gl, program2, 'u_kernel', 'float[]', flattenMatrix(edgeDetectKernel()))
 ], [
     new Texture(gl, program2, 'u_texture', buffer.fbo.texture, 0)
 ]);

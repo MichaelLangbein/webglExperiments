@@ -1,6 +1,7 @@
 import { Shader, Program, Framebuffer, Attribute, Uniform, Texture } from '../engine/engine.core';
 import { getCurrentFramebuffersPixels } from '../engine/webgl';
-import { rectangle, flattenMatrix } from '../engine/engine.shapes';
+import { rectangleA } from '../engine/engine.shapes';
+import { flattenMatrix } from '../engine/math';
 
 
 
@@ -80,7 +81,7 @@ const rasterizerProgram = new Program(gl, `
 const rasterizerShader = new Shader(rasterizerProgram, [
     new Attribute(gl, rasterizerProgram, 'a_datapoint', dataPoints)
 ], [
-    new Uniform(gl, rasterizerProgram, 'u_bbox', '4f', bbox)
+    new Uniform(gl, rasterizerProgram, 'u_bbox', 'vec4', bbox)
 ], []);
 
 const arrangerProgram = new Program(gl, `
@@ -105,10 +106,10 @@ const arrangerProgram = new Program(gl, `
     }
 `);
 const arrangerShader = new Shader(arrangerProgram, [
-    new Attribute(gl, arrangerProgram, 'a_pos', rectangle(2, 2).vertices),
-    new Attribute(gl, arrangerProgram, 'a_texPos', rectangle(2, 2).texturePositions),
+    new Attribute(gl, arrangerProgram, 'a_pos', rectangleA(2, 2).vertices),
+    new Attribute(gl, arrangerProgram, 'a_texPos', rectangleA(2, 2).texturePositions),
 ], [
-    new Uniform(gl, arrangerProgram, 'u_transformation', 'matrix4fv', flattenMatrix(transformationMatrix))
+    new Uniform(gl, arrangerProgram, 'u_transformation', 'mat4', flattenMatrix(transformationMatrix))
 ], [
     new Texture(gl, arrangerProgram, 'u_texture', fb.fbo.texture, 0)
 ]);

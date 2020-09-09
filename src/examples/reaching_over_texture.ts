@@ -1,5 +1,5 @@
 import { Program, Shader, Attribute, Texture, Uniform } from '../engine/engine.core';
-import { triangle } from '../engine/engine.shapes';
+import { triangleA } from '../engine/engine.shapes';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -42,14 +42,14 @@ const program = new Program(gl, `
     }
 `);
 
-const tri = triangle(1.8, 1.6);
+const tri = triangleA(1.8, 1.6);
 
 const shader = new Shader(program, [
     new Attribute(gl, program, 'a_coord', tri.vertices),
     new Attribute(gl, program, 'a_textureCoord', tri.texturePositions)
 ], [
-    new Uniform(gl, program, 'u_size', '2f', [canvas.width, canvas.height]),
-    new Uniform(gl, program, 'u_backgroundColor', '4f', [.2, .0, .5, 1.])
+    new Uniform(gl, program, 'u_size', 'vec2', [canvas.width, canvas.height]),
+    new Uniform(gl, program, 'u_backgroundColor', 'vec4', [.2, .0, .5, 1.])
 ], [
     new Texture(gl, program, 'u_texture', texture, 0)
 ]);

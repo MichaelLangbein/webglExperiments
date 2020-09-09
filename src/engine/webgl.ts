@@ -1,5 +1,3 @@
-import { flattenMatrix } from './engine.shapes';
-
 /**
  * WEBGL
  *
@@ -55,6 +53,8 @@ import { flattenMatrix } from './engine.shapes';
  *
  * All `create*` functions unbind variables after setting their values. This is to avoid unwanted side-effects.
  */
+
+import { flattenMatrix } from './math';
 
 
 
@@ -246,8 +246,6 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
 };
 
 
-
-
 export interface IndexBufferObject {
     buffer: WebGLBuffer;
     count: number;
@@ -279,19 +277,14 @@ export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][]
     return bufferObject;
 };
 
+export const bindIndexBuffer = (gl: WebGLRenderingContext, ibo: IndexBufferObject) => {
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo.buffer);
+};
+
 export const drawElements = (gl: WebGLRenderingContext, ibo: IndexBufferObject): void => {
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo.buffer);  // @TODO: optimize this to somewhere else?
     gl.drawElements(ibo.drawingMode, ibo.count, ibo.type, ibo.offset);
 };
 
-
-export const draw = (gl: WebGLRenderingContext, b: BufferObject | IndexBufferObject): void => {
-    if (b.type  === gl.UNSIGNED_SHORT) {
-        drawElements(gl, b as IndexBufferObject);
-    } else {
-        drawArray(gl, b as BufferObject);
-    }
-};
 
 
 
@@ -512,7 +505,11 @@ export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProg
 
 
 
-export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' | '1fv' | '2fv' | '3fv' | '4fv' | 'matrix2fv' | 'matrix3fv' | 'matrix4fv';
+export type WebGLVariableType = 'bool'  | 'bvec2' | 'bvec3' | 'bvec4'| 'bool[]'  | 'bvec2[]' | 'bvec3[]' | 'bvec4[]'
+                              | 'int'   | 'ivec2' | 'ivec3' | 'ivec4'| 'int[]'   | 'ivec2[]' | 'ivec3[]' | 'ivec4[]'
+                              | 'float' | 'vec2'  | 'vec3'  | 'vec4' | 'float[]' | 'vec2[]'  | 'vec3[]'  | 'vec4[]'
+                                        | 'mat2'  | 'mat3'  | 'mat4';
+
 
 /**
  * Contrary to attributes, uniforms don't need to be stored in a buffer.
@@ -529,36 +526,97 @@ export type UniformType = '1i' | '2i' | '3i' | '4i' | '1f' | '2f' | '3f' | '4f' 
  * |uniform2fv(loc, [1, 2, 3, 4, 5, 6])     |  uniform vec2 u_observations[3]; |
  * |uniformMatrix3fv(loc, [[...], [...]])   |  uniform mat3 u_matrix;          |
  *
+ * A note about `structs`. A shader code like this:
+ * ```glsl
+ * struct LightInfo {
+ *    vec4 Position;
+ *    vec3 La;
+ * };
+ * uniform LightInfo Light;
+ * ```
+ * ... is accessed like that:
+ * ```js
+ * const lightPosLoc = gl.getUniformLocation(program, "Light.Position");
+ * const lightLaLoc = gl.getUniformLocation(program, "Light.La");
+ * gl.uniform4fv(lightPosLoc, [1, 2, 3, 4]);
+ * gl.uniform3fv(lightLaLoc, [1, 2, 3]);
+ * ```
+ *
  */
-export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: WebGLUniformLocation, type: UniformType, values: number[]): void => {
+export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: WebGLUniformLocation, type: WebGLVariableType, values: number[]): void => {
     switch (type) {
-        case '1i':
+        case 'bool':
             gl.uniform1i(uniformLocation, values[0]);
             break;
+        case 'bvec2':
+            gl.uniform2i(uniformLocation, values[0], values[1]);
+            break;
+        case 'bvec3':
+            gl.uniform3i(uniformLocation, values[0], values[1], values[2]);
+            break;
+        case 'bvec4':
+            gl.uniform4i(uniformLocation, values[0], values[1], values[2], values[3]);
+            break;
+        case 'bool[]':
+            gl.uniform1iv(uniformLocation, values);
+            break;
+        case 'bvec2[]':
+            gl.uniform2iv(uniformLocation, values);
+            break;
+        case 'bvec3[]':
+            gl.uniform3iv(uniformLocation, values);
+            break;
+        case 'bvec4[]':
+            gl.uniform4iv(uniformLocation, values);
+            break;
 
-        case '1f':
+        case 'int':
+            gl.uniform1i(uniformLocation, values[0]);
+            break;
+        case 'ivec2':
+            gl.uniform2i(uniformLocation, values[0], values[1]);
+            break;
+        case 'ivec3':
+            gl.uniform3i(uniformLocation, values[0], values[1], values[2]);
+            break;
+        case 'ivec4':
+            gl.uniform4i(uniformLocation, values[0], values[1], values[2], values[3]);
+            break;
+        case 'int[]':
+            gl.uniform1iv(uniformLocation, values);
+            break;
+        case 'ivec2[]':
+            gl.uniform2iv(uniformLocation, values);
+            break;
+        case 'ivec3[]':
+            gl.uniform3iv(uniformLocation, values);
+            break;
+        case 'ivec4[]':
+            gl.uniform4iv(uniformLocation, values);
+            break;
+
+        case 'float':
             gl.uniform1f(uniformLocation, values[0]);
             break;
-        case '2f':
+        case 'vec2':
             gl.uniform2f(uniformLocation, values[0], values[1]);
             break;
-        case '3f':
+        case 'vec3':
             gl.uniform3f(uniformLocation, values[0], values[1], values[2]);
             break;
-        case '4f':
+        case 'vec4':
             gl.uniform4f(uniformLocation, values[0], values[1], values[2], values[3]);
             break;
-
-        case '1fv':
+        case 'float[]':
             gl.uniform1fv(uniformLocation, values);
             break;
-        case '2fv':
+        case 'vec2[]':
             gl.uniform2fv(uniformLocation, values);
             break;
-        case '3fv':
+        case 'vec3[]':
             gl.uniform3fv(uniformLocation, values);
             break;
-        case '4fv':
+        case 'vec4[]':
             gl.uniform4fv(uniformLocation, values);
             break;
 
@@ -567,20 +625,20 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
         // If the transpose parameter to any of the UniformMatrix* commands is
         // not FALSE, an INVALID_VALUE error is generated, and no uniform values are
         // changed.
-        case 'matrix2fv':
+        case 'mat2':
             gl.uniformMatrix2fv(uniformLocation, false, values);
             break;
 
-        case 'matrix3fv':
+        case 'mat3':
             gl.uniformMatrix3fv(uniformLocation, false, values);
             break;
 
-        case 'matrix4fv':
+        case 'mat4':
             gl.uniformMatrix4fv(uniformLocation, false, values);
             break;
 
         default:
-            throw Error(`Type ${type} not yet implemented.`);
+            throw Error(`Type ${type} not implemented.`);
     }
 };
 
@@ -593,10 +651,10 @@ export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: W
  * the WebGL programmer has no explicit access to the frontbuffer whatsoever.
  *
  * Once you called `clear`, `drawElements` or `drawArrays`, the browser marks the canvas as `needs to be composited`.
- * (Assuming `preserveDrawingBuffer == false`:) Immediately before compositing, the browser
+ * Assuming `preserveDrawingBuffer == false` (the default): Immediately before compositing, the browser
  *  - swaps the back- and frontbuffer
  *  - clears the new backbuffer.
- * (If `preserveDrawingBuffer === true`: ) Immediately before compositing, the browser
+ * If `preserveDrawingBuffer === true`: Immediately before compositing, the browser
  *  - copies the drawingbuffer to the frontbuffer.
  *
  * As a consequence, if you're going to use canvas.toDataURL or canvas.toBlob or gl.readPixels or any other way of getting data from a WebGL canvas,
@@ -632,4 +690,3 @@ export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBu
 
     return pixels;
 };
-

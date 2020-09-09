@@ -1,6 +1,7 @@
-import { box, rectangle, flattenMatrix, edgeDetectKernel, gaussianKernel, embossKernel, sumMatrix, normalKernel } from '../engine/engine.shapes';
+import { boxA, rectangleA, edgeDetectKernel, embossKernel, normalKernel } from '../engine/engine.shapes';
 import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, bindTextureToFramebuffer } from '../engine/webgl';
 import { displayImageOn } from '../engine/engine.helpers';
+import { flattenMatrix, matrixSum } from '../engine/math';
 const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
 const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 const convVSS = require('./shaders/conv.vert.glsl').default;
@@ -58,7 +59,7 @@ const main = () => {
     bindFramebuffer(gl, fbo);
 
     // 1.3. Render (edge detect)
-    const bx = rectangle(.9, .9);
+    const bx = rectangleA(.9, .9);
 
     const coords = createFloatBuffer(gl, bx.vertices);
     const coordsLoc = getAttributeLocation(gl, program, 'a_coord');
@@ -70,15 +71,15 @@ const main = () => {
 
     const texSize = [boxImage.naturalWidth, boxImage.naturalHeight];
     const texSizeLoc = getUniformLocation(gl, program, 'u_textureSize');
-    bindValueToUniform(gl, texSizeLoc, '2f', texSize);
+    bindValueToUniform(gl, texSizeLoc, 'vec2', texSize);
 
     const kernel = edgeDetectKernel();
     const kernelLoc = getUniformLocation(gl, program, 'u_kernel[0]');
-    bindValueToUniform(gl, kernelLoc, '1fv', flattenMatrix(kernel));
+    bindValueToUniform(gl, kernelLoc, 'mat3', flattenMatrix(kernel));
 
-    const kernelWeight = sumMatrix(kernel);
+    const kernelWeight = matrixSum(kernel);
     const kernelWeightLoc = getUniformLocation(gl, program, 'u_kernelWeight');
-    bindValueToUniform(gl, kernelWeightLoc, '1f', [kernelWeight]);
+    bindValueToUniform(gl, kernelWeightLoc, 'float', [kernelWeight]);
 
     clearBackground(gl, [.7, .7, .7, 1]);
     gl.drawArrays(gl.TRIANGLES, 0, bx.vertices.length);
@@ -92,12 +93,12 @@ const main = () => {
     bindFramebuffer(gl, fbo2);
 
     // 2.3. Render
-    bindValueToUniform(gl, texSizeLoc, '2f', [whiteImage1.naturalWidth, whiteImage1.naturalHeight]);
+    bindValueToUniform(gl, texSizeLoc, 'vec2', [whiteImage1.naturalWidth, whiteImage1.naturalHeight]);
 
     const kernel2 = embossKernel();
-    bindValueToUniform(gl, kernelLoc, '1fv', flattenMatrix(kernel2));
+    bindValueToUniform(gl, kernelLoc, 'mat3', flattenMatrix(kernel2));
 
-    bindValueToUniform(gl, kernelWeightLoc, '1f', [sumMatrix(kernel2)]);
+    bindValueToUniform(gl, kernelWeightLoc, 'float', [matrixSum(kernel2)]);
 
     clearBackground(gl, [.7, .7, .7, 1]);
     gl.drawArrays(gl.TRIANGLES, 0, bx.vertices.length);
@@ -110,12 +111,12 @@ const main = () => {
     bindTextureToUniform(gl, destTex.texture, 0, srcTexLoc);
 
     // 3.3. Render
-    bindValueToUniform(gl, texSizeLoc, '2f', [whiteImage2.naturalWidth, whiteImage2.naturalHeight]);
+    bindValueToUniform(gl, texSizeLoc, 'vec2', [whiteImage2.naturalWidth, whiteImage2.naturalHeight]);
 
     const kernel3 = normalKernel();
-    bindValueToUniform(gl, kernelLoc, '1fv', flattenMatrix(kernel3));
+    bindValueToUniform(gl, kernelLoc, 'mat3', flattenMatrix(kernel3));
 
-    bindValueToUniform(gl, kernelWeightLoc, '1f', [sumMatrix(kernel3)]);
+    bindValueToUniform(gl, kernelWeightLoc, 'float', [matrixSum(kernel3)]);
 
     clearBackground(gl, [.7, .7, .7, 1]);
     gl.drawArrays(gl.TRIANGLES, 0, bx.vertices.length);

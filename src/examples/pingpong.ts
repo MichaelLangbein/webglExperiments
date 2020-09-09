@@ -1,5 +1,5 @@
 import { Program, Shader, Framebuffer, renderLoop, Attribute, Texture } from '../engine/engine.core';
-import { rectangle } from '../engine/engine.shapes';
+import { rectangleA } from '../engine/engine.shapes';
 import { createTextCanvas } from '../engine/engine.helpers';
 
 
@@ -9,7 +9,7 @@ if (!gl) {
     throw new Error('no context');
 }
 
-const rect = rectangle(2.0, 2.0);
+const rect = rectangleA(2.0, 2.0);
 const testCanvas = createTextCanvas('test', 256, 256, 'red');
 const fb1 = new Framebuffer(gl, canvas.width, canvas.height);
 const fb2 = new Framebuffer(gl, canvas.width, canvas.height);

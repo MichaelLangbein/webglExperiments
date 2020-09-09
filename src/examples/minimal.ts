@@ -1,5 +1,5 @@
 import { Program, Shader, Attribute } from '../engine/engine.core';
-import { triangle } from '../engine/engine.shapes';
+import { triangleA } from '../engine/engine.shapes';
 
 // 0. Setup
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -7,7 +7,7 @@ const gl = canvas.getContext('webgl');
 if (!gl) {
     throw new Error('no context');
 }
-const obj = triangle(1., 1.);
+const obj = triangleA(1., 1.);
 
 
 const program = new Program(

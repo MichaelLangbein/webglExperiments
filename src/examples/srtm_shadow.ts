@@ -1,7 +1,6 @@
-import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
-import { rectangle, flattenMatrix, gaussianKernel, sumMatrix } from '../engine/engine.shapes';
+import { Program, Shader, Attribute, Uniform, Texture } from '../engine/engine.core';
+import { rectangleA } from '../engine/engine.shapes';
 import { bindProgram } from '../engine/webgl';
-import { canvasToImage, createTextCanvas } from '../engine/engine.helpers';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -48,15 +47,15 @@ const program = new Program(gl, `
         }
     `);
 bindProgram(gl, program.program);
-const rect = rectangle(2, 2);
+const rect = rectangleA(2, 2);
 const shader = new Shader(
     program,
     [
         new Attribute(gl, program, 'a_position', rect.vertices),
         new Attribute(gl, program, 'a_texturePosition', rect.texturePositions)
     ], [
-        new Uniform(gl, program, 'u_imageSize', '1f', [2048.]),
-        new Uniform(gl, program, 'u_sun', '3f', [0., 0., 1.])  // array, pointing to sun from middle of map.
+        new Uniform(gl, program, 'u_imageSize', 'float', [2048.]),
+        new Uniform(gl, program, 'u_sun', 'vec3', [0., 0., 1.])  // array, pointing to sun from middle of map.
     ], [
         new Texture(gl, program, 'u_srtm', image, 0)
     ]

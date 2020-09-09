@@ -1,5 +1,6 @@
 import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
-import { rectangle, flattenMatrix, gaussianKernel, sumMatrix } from '../engine/engine.shapes';
+import { rectangleA, gaussianKernel } from '../engine/engine.shapes';
+import { flattenMatrix, matrixSum } from '../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -74,16 +75,16 @@ const program2 = new Program(gl, `
         }
         gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, transparency);
     }`);
-const rect = rectangle(1.7, 1.7);
+const rect = rectangleA(1.7, 1.7);
 const shader2 = new Shader(
     program2,
     [
         new Attribute(gl, program2, 'a_vertexCoord', rect.vertices),
         new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions),
     ], [
-        new Uniform(gl, program2, 'u_delta', '2f', [.01, .01]),
-        new Uniform(gl, program2, 'u_kernel', '1fv', flattenMatrix(gaussianKernel())),
-        new Uniform(gl, program2, 'u_kernelWeight', '1f', [sumMatrix(gaussianKernel())])
+        new Uniform(gl, program2, 'u_delta', 'vec2', [.01, .01]),
+        new Uniform(gl, program2, 'u_kernel', 'mat3', flattenMatrix(gaussianKernel())),
+        new Uniform(gl, program2, 'u_kernelWeight', 'float', [matrixSum(gaussianKernel())])
     ], [
         new Texture(gl, program2, 'u_texture', framebuffer.fbo.texture, 0)
     ]
