@@ -690,3 +690,30 @@ export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBu
 
     return pixels;
 };
+
+
+export const arrayToCanvas = (data: number[][][]) => {
+    const rows = data.length;
+    const cols = data[0].length;
+
+    const buffer = new Uint8ClampedArray(cols * rows * 4);
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const pos = (r * cols + c) * 4;
+            buffer[pos    ] = data[r][c][0];
+            buffer[pos + 1] = data[r][c][1];
+            buffer[pos + 2] = data[r][c][2];
+            buffer[pos + 3] = data[r][c][3];
+        }
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = cols;
+    canvas.height = rows;
+    const imageDataContainer = ctx.createImageData(cols, rows);
+    imageDataContainer.data.set(buffer);
+    ctx.putImageData(imageDataContainer, 0, 0);
+
+    return canvas;
+};
