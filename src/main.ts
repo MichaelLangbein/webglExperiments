@@ -1,1 +1,1 @@
-import './examples/drawElements';
+import './examples/textureInterpolation2';

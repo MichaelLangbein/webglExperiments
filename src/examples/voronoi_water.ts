@@ -1,6 +1,6 @@
 import { Program, Shader, renderLoop, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
 import { rectangleA, triangleA, edgeDetectKernel } from '../engine/engine.shapes';
-import { flattenMatrix } from '../engine/math';
+import { flattenRecursive } from '../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -111,7 +111,7 @@ const shader2 = new Shader(program2, [
     new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions)
 ], [
     new Uniform(gl, program2, 'u_size', 'vec2', [canvas.width, canvas.height]),
-    new Uniform(gl, program2, 'u_kernel', 'float[]', flattenMatrix(edgeDetectKernel()))
+    new Uniform(gl, program2, 'u_kernel', 'float[]', flattenRecursive(edgeDetectKernel()))
 ], [
     new Texture(gl, program2, 'u_texture', buffer.fbo.texture, 0)
 ]);

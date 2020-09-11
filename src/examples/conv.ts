@@ -1,7 +1,7 @@
 import { Program, Attribute, Uniform, IAttribute, IUniform, Texture } from '../engine/engine.core';
 import { rectangleA, edgeDetectKernel } from '../engine/engine.shapes';
 import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform } from '../engine/webgl';
-import { flattenMatrix } from '../engine/math';
+import { flattenRecursive } from '../engine/math';
 const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
 const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 const convVSS = require('./shaders/conv.vert.glsl').default;
@@ -31,7 +31,7 @@ const main = () => {
     const texSize = new Uniform(gl, program, 'u_textureSize', 'vec2', [tex.texture.width, tex.texture.height]);
     bindValueToUniform(gl, texSize.location, texSize.type, texSize.value);
 
-    const edgeKernel = new Uniform(gl, program, 'u_kernel[0]', 'mat3', flattenMatrix(edgeDetectKernel()));
+    const edgeKernel = new Uniform(gl, program, 'u_kernel[0]', 'mat3', flattenRecursive(edgeDetectKernel()));
     bindValueToUniform(gl, edgeKernel.location, edgeKernel.type, edgeKernel.value);
     const kernelWeight = new Uniform(gl, program, 'u_kernelWeight', 'float', [1]);
     bindValueToUniform(gl, kernelWeight.location, kernelWeight.type, kernelWeight.value);

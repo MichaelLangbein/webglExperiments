@@ -1,7 +1,7 @@
 import { Shader, Program, Framebuffer, Attribute, Uniform, Texture } from '../engine/engine.core';
 import { getCurrentFramebuffersPixels } from '../engine/webgl';
 import { rectangleA } from '../engine/engine.shapes';
-import { flattenMatrix } from '../engine/math';
+import { flattenRecursive } from '../engine/math';
 
 
 
@@ -109,7 +109,7 @@ const arrangerShader = new Shader(arrangerProgram, [
     new Attribute(gl, arrangerProgram, 'a_pos', rectangleA(2, 2).vertices),
     new Attribute(gl, arrangerProgram, 'a_texPos', rectangleA(2, 2).texturePositions),
 ], [
-    new Uniform(gl, arrangerProgram, 'u_transformation', 'mat4', flattenMatrix(transformationMatrix))
+    new Uniform(gl, arrangerProgram, 'u_transformation', 'mat4', flattenRecursive(transformationMatrix))
 ], [
     new Texture(gl, arrangerProgram, 'u_texture', fb.fbo.texture, 0)
 ]);

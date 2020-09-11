@@ -1,7 +1,7 @@
 import { boxA, rectangleA, edgeDetectKernel, embossKernel, normalKernel } from '../engine/engine.shapes';
 import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, bindTextureToFramebuffer } from '../engine/webgl';
 import { displayImageOn } from '../engine/engine.helpers';
-import { flattenMatrix, matrixSum } from '../engine/math';
+import { flattenRecursive, matrixSum } from '../engine/math';
 const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
 const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 const convVSS = require('./shaders/conv.vert.glsl').default;
@@ -75,7 +75,7 @@ const main = () => {
 
     const kernel = edgeDetectKernel();
     const kernelLoc = getUniformLocation(gl, program, 'u_kernel[0]');
-    bindValueToUniform(gl, kernelLoc, 'mat3', flattenMatrix(kernel));
+    bindValueToUniform(gl, kernelLoc, 'mat3', flattenRecursive(kernel));
 
     const kernelWeight = matrixSum(kernel);
     const kernelWeightLoc = getUniformLocation(gl, program, 'u_kernelWeight');
@@ -96,7 +96,7 @@ const main = () => {
     bindValueToUniform(gl, texSizeLoc, 'vec2', [whiteImage1.naturalWidth, whiteImage1.naturalHeight]);
 
     const kernel2 = embossKernel();
-    bindValueToUniform(gl, kernelLoc, 'mat3', flattenMatrix(kernel2));
+    bindValueToUniform(gl, kernelLoc, 'mat3', flattenRecursive(kernel2));
 
     bindValueToUniform(gl, kernelWeightLoc, 'float', [matrixSum(kernel2)]);
 
@@ -114,7 +114,7 @@ const main = () => {
     bindValueToUniform(gl, texSizeLoc, 'vec2', [whiteImage2.naturalWidth, whiteImage2.naturalHeight]);
 
     const kernel3 = normalKernel();
-    bindValueToUniform(gl, kernelLoc, 'mat3', flattenMatrix(kernel3));
+    bindValueToUniform(gl, kernelLoc, 'mat3', flattenRecursive(kernel3));
 
     bindValueToUniform(gl, kernelWeightLoc, 'float', [matrixSum(kernel3)]);
 

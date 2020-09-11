@@ -1,6 +1,6 @@
 import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
 import { rectangleA, gaussianKernel } from '../engine/engine.shapes';
-import { flattenMatrix, matrixSum } from '../engine/math';
+import { flattenRecursive, matrixSum } from '../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -83,7 +83,7 @@ const shader2 = new Shader(
         new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions),
     ], [
         new Uniform(gl, program2, 'u_delta', 'vec2', [.01, .01]),
-        new Uniform(gl, program2, 'u_kernel', 'mat3', flattenMatrix(gaussianKernel())),
+        new Uniform(gl, program2, 'u_kernel', 'mat3', flattenRecursive(gaussianKernel())),
         new Uniform(gl, program2, 'u_kernelWeight', 'float', [matrixSum(gaussianKernel())])
     ], [
         new Texture(gl, program2, 'u_texture', framebuffer.fbo.texture, 0)
