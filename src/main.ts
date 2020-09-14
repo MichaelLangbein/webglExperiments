@@ -1,1 +1,1 @@
-import './examples/textureInterpolation2';
+import './examples/textureInterpolation';

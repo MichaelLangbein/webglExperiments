@@ -1,6 +1,6 @@
-import { arrayToCanvas, updateViewPort } from '../engine/webgl';
 import { rectangleE } from '../engine/engine.shapes';
 import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../engine/engine.core';
+import { arrayToCanvas } from '../engine/engine.helpers';
 
 const createCircleTextureArray = (rows: number, columns: number, radius: number): number[][][] => {
     const center_x = rows / 2;
@@ -42,7 +42,11 @@ const w = 4;
 const h = 4;
 const r = 2;
 
-const data = createCircleTextureArray(w, h, r);
+const data = [[
+    [255, 0, 0, 255],
+    [255, 255, 0, 255],
+    [255, 0, 255, 255]
+]];
 const imageCanvas = arrayToCanvas(data);
 container.appendChild(imageCanvas);
 

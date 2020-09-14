@@ -1,6 +1,5 @@
 import { rectangleE } from '../engine/engine.shapes';
 import { Shader, Program, Attribute, Index } from '../engine/engine.core';
-import { createIndexBuffer, arrayToCanvas } from '../engine/webgl';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
