@@ -132,7 +132,7 @@ export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSourc
 
 
 export const setup3dScene = (gl: WebGLRenderingContext): void => {
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);  // making sure that shader-coordinate-system goes from 0 to 1.
+    gl.viewport(0, 0, gl.canvas.clientWidth, gl.canvas.clientHeight);  // making sure that shader-coordinate-system goes from 0 to 1.
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);

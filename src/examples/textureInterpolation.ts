@@ -43,9 +43,6 @@ const h = 1;
 const r = 1;
 
 const data = createCircleTextureArray(w, h, r);
-const imageCanvas = arrayToCanvas(data);
-container.appendChild(imageCanvas);
-
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl');
@@ -54,7 +51,7 @@ if (!gl) {
 }
 
 
-const rect = rectangleE(1, 1);
+const rect = rectangleE(1.0, 1.0);
 
 const rectProgram = new Program(gl, `
     precision mediump float;
@@ -81,6 +78,11 @@ const rectShader = new Shader(rectProgram, [
 ], [], [
     new DataTexture(gl, rectProgram, 'u_texture', data, 0)
 ], new Index(gl, rect.vertexIndices));
+
+
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
 
 rectShader.bind(gl);
 rectShader.render(gl, [0, 0, 0, 0]);
