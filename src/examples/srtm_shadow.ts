@@ -14,6 +14,7 @@ const yslider = document.getElementById('yrange') as HTMLInputElement;
 
 
 const program = new Program(gl, `
+        precision mediump float;
         attribute vec3 a_position;
         attribute vec2 a_texturePosition;
         varying vec2 v_texturePosition;

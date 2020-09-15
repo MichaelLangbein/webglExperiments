@@ -9,7 +9,13 @@ if (!gl) {
     throw new Error('no context');
 }
 
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+
+const buffer = new Framebuffer(gl, 200, 200);
+
 const program = new Program(gl, `
+    precision mediump float;
     attribute vec3 a_vertex;
     void main() {
         gl_Position = vec4(a_vertex.xyz, 1.);
@@ -17,14 +23,14 @@ const program = new Program(gl, `
 `, `
     precision mediump float;
     uniform float u_time;
-    uniform vec2 u_size;
+    uniform vec2 u_outputSize;
 
     vec2 random2(vec2 p) {
         return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
     }
 
     void main() {
-        vec2 relCoord = gl_FragCoord.xy / u_size;
+        vec2 relCoord = gl_FragCoord.xy / u_outputSize;
 
         // tiling the space
         float scale = 5.;
@@ -50,14 +56,13 @@ const tri = triangleA(1.6, 1.3);
 const shader = new Shader(program, [
     new Attribute(gl, program, 'a_vertex', tri.vertices)
 ], [
-    new Uniform(gl, program, 'u_size', 'vec2', [canvas.width, canvas.height]),
+    new Uniform(gl, program, 'u_outputSize', 'vec2', [buffer.fbo.width, buffer.fbo.height]),
     new Uniform(gl, program, 'u_time', 'float', [0.])
 ], []);
 
 
-const buffer = new Framebuffer(gl, canvas.width, canvas.height);
-
 const program2 = new Program(gl, `
+    precision mediump float;
     attribute vec3 a_vertex;
     attribute vec3 a_textureCoord;
     varying vec2 v_textureCoord;
@@ -70,12 +75,11 @@ const program2 = new Program(gl, `
     precision mediump float;
     uniform sampler2D u_texture;
     varying vec2 v_textureCoord;
-    uniform vec2 u_size;
+    uniform vec2 u_textureSize;
     uniform float u_kernel[9];
 
     void main() {
-        vec2 relCoord = gl_FragCoord.xy / u_size;
-        vec2 onePixel = 1. / u_size;
+        vec2 onePixel = 1. / u_textureSize;
 
         float threshold = 0.8;
 
@@ -110,7 +114,7 @@ const shader2 = new Shader(program2, [
     new Attribute(gl, program2, 'a_vertex', rect.vertices),
     new Attribute(gl, program2, 'a_textureCoord', rect.texturePositions)
 ], [
-    new Uniform(gl, program2, 'u_size', 'vec2', [canvas.width, canvas.height]),
+    new Uniform(gl, program2, 'u_textureSize', 'vec2', [buffer.fbo.width, buffer.fbo.height]),
     new Uniform(gl, program2, 'u_kernel', 'float[]', flattenRecursive(edgeDetectKernel()))
 ], [
     new Texture(gl, program2, 'u_texture', buffer.fbo.texture, 0)

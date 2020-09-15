@@ -1,7 +1,6 @@
 import { rectangleE } from '../engine/engine.shapes';
 import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../engine/engine.core';
-import { arrayToCanvas } from '../engine/engine.helpers';
-import { setup3dScene } from '../engine/webgl';
+
 
 const createCircleTextureArray = (rows: number, columns: number, radius: number): number[][][] => {
     const center_x = rows / 2;
@@ -52,7 +51,7 @@ if (!gl) {
 }
 
 
-const rect = rectangleE(1.0, 1.0);
+const rect = rectangleE(1.9, 1.9);
 
 const rectProgram = new Program(gl, `
     precision mediump float;
@@ -81,8 +80,16 @@ const rectShader = new Shader(rectProgram, [
 ], new Index(gl, rect.vertexIndices));
 
 
-canvas.width = canvas.clientWidth;
-canvas.height = canvas.clientHeight;
-
+/**
+ * Webgl renders to the viewport, which is relative to canvas.width * canvas.height.
+ * (To be more precise, only *polygons* are clipped to the viewport.
+ * Operations like `clearColor()` et.al., will draw to the *full* canvas.width * height!
+ * If you want to also constrain clearColor, use `scissor` instead of viewport.)
+ * That canvas.width * canvas.height then gets stretched to canvas.clientWidth * canvas.clientHeight.
+ * (Note: the full canvas.width gets stretched to clientWidth, not just the viewport!)
+ */
+canvas.width = 100;
+canvas.height = 100;
 rectShader.bind(gl);
-rectShader.render(gl, [0, 0, 0, 0]);
+rectShader.render(gl, [0, 0, 0, 0], null, [10, 10, 90, 90]);
+console.log(gl.getParameter(gl.VIEWPORT));

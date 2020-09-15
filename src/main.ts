@@ -1,1 +1,1 @@
-import './examples/textureInterpolation';
+import './examples/canvas_scaling';

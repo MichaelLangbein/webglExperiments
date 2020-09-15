@@ -1,4 +1,4 @@
-import { rectangleE } from '../engine/engine.shapes';
+import { rectangleE, ShapeE } from '../engine/engine.shapes';
 import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../engine/engine.core';
 import { arrayToCanvas } from '../engine/engine.helpers';
 import { setup3dScene } from '../engine/webgl';
@@ -38,6 +38,11 @@ const createCircleTextureArray = (rows: number, columns: number, radius: number)
 
 
 const container = document.getElementById('container');
+const secondCanvas = document.createElement('canvas');
+secondCanvas.style.setProperty('width', '300px');
+secondCanvas.style.setProperty('height', '300px');
+secondCanvas.style.setProperty('background-color', 'red');
+container.appendChild(secondCanvas);
 
 const w = 1;
 const h = 1;
@@ -54,35 +59,44 @@ if (!gl) {
 
 const rect = rectangleE(1.0, 1.0);
 
-const rectProgram = new Program(gl, `
-    precision mediump float;
-    attribute vec3 a_pos;
-    attribute vec2 a_texturePos;
-    varying vec2 v_texturePos;
+function createProgram(gl: WebGLRenderingContext, rect: ShapeE, data: number[][][]): Shader {
+    const rectProgram = new Program(gl, `
+        precision mediump float;
+        attribute vec3 a_pos;
+        attribute vec2 a_texturePos;
+        varying vec2 v_texturePos;
 
-    void main() {
-        v_texturePos = a_texturePos;
-        gl_Position = vec4(a_pos, 1.0);
-    }
-`, `
-    precision mediump float;
-    uniform sampler2D u_texture;
-    varying vec2 v_texturePos;
+        void main() {
+            v_texturePos = a_texturePos;
+            gl_Position = vec4(a_pos, 1.0);
+        }
+    `, `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        varying vec2 v_texturePos;
 
-    void main() {
-        gl_FragColor = texture2D(u_texture, v_texturePos);
-    }
-`);
-const rectShader = new Shader(rectProgram, [
-    new Attribute(gl, rectProgram, 'a_pos', rect.vertices),
-    new Attribute(gl, rectProgram, 'a_texturePos', rect.texturePositions)
-], [], [
-    new DataTexture(gl, rectProgram, 'u_texture', data, 0)
-], new Index(gl, rect.vertexIndices));
+        void main() {
+            gl_FragColor = texture2D(u_texture, v_texturePos);
+        }
+    `);
+    const rectShader = new Shader(rectProgram, [
+        new Attribute(gl, rectProgram, 'a_pos', rect.vertices),
+        new Attribute(gl, rectProgram, 'a_texturePos', rect.texturePositions)
+    ], [], [
+        new DataTexture(gl, rectProgram, 'u_texture', data, 0)
+    ], new Index(gl, rect.vertexIndices));
+    return rectShader;
+}
+
 
 
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
-
+const rectShader = createProgram(gl, rect, data);
 rectShader.bind(gl);
 rectShader.render(gl, [0, 0, 0, 0]);
+
+const gl2 = secondCanvas.getContext('webgl');
+const rectShader2 = createProgram(gl2, rect, data);
+rectShader2.bind(gl2);
+rectShader2.render(gl2, [0, 0, 0, 0]);

@@ -15,6 +15,7 @@ const fb1 = new Framebuffer(gl, canvas.width, canvas.height);
 const fb2 = new Framebuffer(gl, canvas.width, canvas.height);
 
 const moveProgram = new Program(gl, `
+    precision mediump float;
     attribute vec3 a_vertexCoord;
     attribute vec2 a_textureCoord;
     varying vec2 v_textureCoord;
@@ -39,6 +40,7 @@ const moveShader = new Shader(moveProgram, [
 ]);
 
 const displayProgram = new Program(gl, `
+    precision mediump float;
     attribute vec3 a_vertexCoord;
     attribute vec2 a_textureCoord;
     varying vec2 v_textureCoord;
