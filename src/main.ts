@@ -1,1 +1,1 @@
-import './examples/canvas_scaling';
+import './examples/transparence';

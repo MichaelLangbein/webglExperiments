@@ -132,10 +132,18 @@ export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSourc
 
 
 export const setup3dScene = (gl: WebGLRenderingContext): void => {
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    // allowing depth-testing
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.cullFace(gl.BACK);
+
+    // allowing for transparent objects
+    gl.enable(gl.BLEND);
+    gl.blendEquation( gl.FUNC_ADD );
+    gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
+
     clearBackground(gl, [0, 0, 0, 1]);
 };
 
@@ -849,5 +857,5 @@ export const getDebugInfo = (gl: WebGLRenderingContext): object => {
     };
     return {
         baseInfo, programInfo
-    }
+    };
 };

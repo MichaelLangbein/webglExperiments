@@ -31,7 +31,6 @@ export function bezierGenerator(ps: Vector[]): (t: number) => Vector {
  */
 
 
-
 export interface ShapeA {
     vertices: V3Matrix;
     texturePositions: V2Matrix;
@@ -42,8 +41,6 @@ export interface ShapeE {
     texturePositions: V2Matrix;
     vertexIndices: V3Matrix;
 }
-
-
 
 export const triangleA = (width: number, height: number): ShapeA => {
     return {
@@ -59,7 +56,6 @@ export const triangleA = (width: number, height: number): ShapeA => {
         ]
     };
 };
-
 
 export const triangleE = (width: number, height: number): ShapeE => {
     return {
@@ -78,7 +74,6 @@ export const triangleE = (width: number, height: number): ShapeE => {
         ]
     };
 };
-
 
 export const rectangleA = (width: number, height: number): ShapeA => {
     return {
@@ -125,7 +120,7 @@ export const rectangleE = (width: number, height: number): ShapeE => {
 export const boxA = (width: number, height: number, depth: number): ShapeA => {
     return {
         vertices: [
-                // face 1
+            // face 1
             [-width / 2,  height / 2, depth / 2],
             [ width / 2,  height / 2, depth / 2],
             [-width / 2, -height / 2, depth / 2],
@@ -225,6 +220,44 @@ export const boxA = (width: number, height: number, depth: number): ShapeA => {
     };
 };
 
+export const boxE = (width: number, height: number, depth: number): ShapeE => {
+    return {
+        vertices: [
+            [-width / 2,  height / 2,  depth / 2],
+            [ width / 2,  height / 2,  depth / 2],
+            [ width / 2, -height / 2,  depth / 2],
+            [-width / 2, -height / 2,  depth / 2],
+            [-width / 2,  height / 2, -depth / 2],
+            [ width / 2,  height / 2, -depth / 2],
+            [ width / 2, -height / 2, -depth / 2],
+            [-width / 2, -height / 2, -depth / 2],
+        ],
+        vertexIndices: [
+            [1, 0, 3],  // side 1
+            [1, 3, 2],  // side 1,
+            [7, 5, 4],  // side 6,
+            [6, 7, 5],  // side 6,
+            [5, 1, 2],  // side 2,
+            [5, 2, 6],  // side 2,
+            [3, 0, 4],  // side 5,
+            [7, 3, 4],  // side 5,
+            [5, 4, 0],  // side 3,
+            [5, 0, 1],  // side 3,
+            [3, 7, 6],  // side 4,
+            [2, 3, 6],  // side 4,
+        ],
+        texturePositions: [
+            [0, 1],
+            [1, 1],
+            [1, 0],
+            [0, 0],
+            [1, 1],
+            [0, 1],
+            [0, 0],
+            [1, 0],
+        ],
+    };
+};
 
 
 export const identity = (): Matrix => {
@@ -234,7 +267,6 @@ export const identity = (): Matrix => {
         [0, 0, 1]
     ];
 };
-
 
 export const edgeDetectKernel = (): Matrix => {
     return [
