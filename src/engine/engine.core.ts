@@ -1,3 +1,4 @@
+import { flattenRecursive, first } from './math';
 import { createShaderProgram, setup3dScene, createFloatBuffer, getAttributeLocation, bindBufferToAttribute, getUniformLocation, bindValueToUniform, clearBackground, BufferObject, WebGLVariableType, bindProgram, createTexture, bindTextureToUniform, TextureObject, FramebufferObject, bindFramebuffer, bindOutputCanvasToFramebuffer, updateBufferData, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, updateTexture, createIndexBuffer, IndexBufferObject, drawArray, drawElements, bindIndexBuffer, createDataTexture, updateViewPort } from './webgl';
 
 
@@ -34,6 +35,7 @@ export class Program implements IProgram {
 
 
 export interface IUniform {
+    id: string;
     location: WebGLUniformLocation;
     type: WebGLVariableType;
     value: number[];
@@ -43,6 +45,7 @@ export interface IUniform {
 
 export class Uniform implements IUniform {
 
+    readonly id: string;
     readonly location: WebGLUniformLocation;
     readonly type: WebGLVariableType;
     readonly value: number[];
@@ -53,6 +56,7 @@ export class Uniform implements IUniform {
         this.type = type;
         this.value = data;
         this.variableName = variableName;
+        this.id = hash(data + "");
     }
 }
 
@@ -99,6 +103,7 @@ export class DataTexture implements ITexture {
 
 
 export interface IAttribute {
+    id: string;
     location: number;
     value: BufferObject;
     variableName: string;
@@ -109,6 +114,7 @@ export type GlDrawingMode = 'triangles' | 'points' | 'lines';
 
 export class Attribute implements IAttribute {
 
+    readonly id: string;
     readonly location: number;
     readonly value: BufferObject;
     readonly variableName: string;
@@ -133,6 +139,7 @@ export class Attribute implements IAttribute {
         this.value = createFloatBuffer(gl, data, glDrawingMode);
         this.variableName = variableName;
         this.drawingMode = glDrawingMode;
+        this.id = hash(flattenRecursive(data) + "");
     }
 }
 
@@ -159,15 +166,6 @@ export class Index {
     }
 }
 
-
-function first<T>(arr: T[], condition: (el: T) => boolean): T | null {
-    for (const el of arr) {
-        if (condition(el)) {
-            return el;
-        }
-    }
-    return null;
-}
 
 
 function parseProgram(program: IProgram): [string[], string[], string[], string[]] {
@@ -203,8 +201,6 @@ function parseProgram(program: IProgram): [string[], string[], string[], string[
     return [attributeNames, uniformNames, textureNames, precisions];
 }
 
-
-export type RenderMode = 'points' | 'lines' | 'triangles';
 
 interface IShader {
     program: IProgram;
@@ -355,104 +351,4 @@ export function renderLoop(fps: number, renderFunction: (tDelta: number) => void
     };
 
     render();
-}
-
-
-
-
-
-
-
-interface IEntity {
-    program: IProgram;
-    attributes: IAttribute[]; // note that attributes must all have the same number of entries!
-    uniforms: IUniform[];
-    textures: ITexture[];
-    update: (tDelta: number) => void;
-}
-
-
-
-export class Entity implements IEntity {
-
-    constructor(
-        readonly program: IProgram,
-        readonly attributes: IAttribute[],
-        readonly uniforms: IUniform[],
-        readonly textures: ITexture[],
-        readonly updateFunction: (tDelta: number, attrs: IAttribute[], unis: IUniform[]) => void) {}
-
-    update(tDelta: number): void {
-        this.updateFunction(tDelta, this.attributes, this.uniforms);
-    }
-}
-
-
-
-
-export class Engine {
-
-    readonly entities: IEntity[] = [];
-
-    constructor() {}
-
-    public renderLoop(gl: WebGLRenderingContext, fps: number): void {
-        setup3dScene(gl);
-
-        const tDeltaTarget = 1000 * 1.0 / fps;
-        let tStart, tNow: number, tDelta: number, tSleep;
-        let currentShader = '';
-        const render = () => {
-            tStart = window.performance.now();
-
-            // Part 1: allow objects to update their state
-            for (const e of this.entities) {
-                e.update(tDeltaTarget);
-            }
-
-            // Part 2: do the actual rendering work here
-            clearBackground(gl, [.7, .7, .7, 1]);
-            for (const e of this.entities) {
-                if (e.program.id !== currentShader) {
-                    bindProgram(gl, e.program.program);
-                    currentShader = e.program.id;
-                }
-                for (const a of e.attributes) {
-                    bindBufferToAttribute(gl, a.location, a.value);
-                }
-                for (const u of e.uniforms) {
-                    bindValueToUniform(gl, u.location, u.type, u.value);
-                }
-                for (const t of e.textures) {
-                    bindTextureToUniform(gl, t.texture.texture, t.bindPoint, t.location);
-                }
-                gl.drawArrays(gl.TRIANGLES, 0, e.attributes[0].value.vectorCount);
-            }
-
-            // Part 3: time-management
-            tNow = window.performance.now();
-            tDelta = tNow - tStart;
-            tSleep = Math.max(tDeltaTarget - tDelta, 0);
-            setTimeout(() => {
-                requestAnimationFrame(render);
-            }, tSleep);
-
-        };
-
-        render();
-    }
-
-    public addEntity(entity: IEntity): void {
-        this.entities.push(entity);
-        this.sortEntities();
-    }
-
-
-    private sortEntities(): void {
-        this.entities.sort((a: IEntity, b: IEntity) => {
-            return (a.program.id > b.program.id) ? 1 : -1;
-        });
-    }
-
-
 }

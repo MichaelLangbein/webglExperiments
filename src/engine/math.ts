@@ -6,6 +6,15 @@ export type V3Matrix = Vec3[];
 export type Matrix = number[][];
 
 
+export function first<T>(arr: T[], condition: (el: T) => boolean): T | null {
+    for (const el of arr) {
+        if (condition(el)) {
+            return el;
+        }
+    }
+    return null;
+}
+
 /** ------------------------------------------------------------ /
  *       Powers
  * -------------------------------------------------------------*/
@@ -195,6 +204,10 @@ export const scaleMatrix = (sx: number, sy: number, sz: number): number[][] => {
         [0, 0, sz, 0],
         [0, 0, 0, 1]
     ];
+};
+
+export const identityMatrix = (): number[][] => {
+    return scaleMatrix(1, 1, 1);
 };
 
 export const translateMatrix = (tx: number, ty: number, tz: number): number[][] => {

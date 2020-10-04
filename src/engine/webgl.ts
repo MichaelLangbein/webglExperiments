@@ -505,9 +505,9 @@ export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTe
         If after this call another texture is built, your shader will now use that new texture instead of this one!
         Consider using another bind point.`);
     }
-    gl.activeTexture(gl.TEXTURE0 + bindPoint);  // analog to enableVertexAttribArray
+    gl.activeTexture(gl.TEXTURE0 + bindPoint);  // pick active texture-slot. analog to enableVertexAttribArray
     gl.bindTexture(gl.TEXTURE_2D, texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
-    gl.uniform1i(uniformLocation, bindPoint); // analog to vertexAttribPointer
+    gl.uniform1i(uniformLocation, bindPoint); // tell program where to find texture-uniform. analog to vertexAttribPointer
 };
 
 
