@@ -175,14 +175,15 @@ export interface BufferObject {
     normalize: boolean;
     stride: number;
     offset: number;
-    drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES
+    drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES,
+    staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW, gl.STATIC_DRAW
 }
 
 
 /**
  * Create buffer. Creation is slow! Do *before* render loop.
  */
-export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], drawingMode: number = gl.TRIANGLES): BufferObject => {
+export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], drawingMode: number = gl.TRIANGLES, changesOften = false): BufferObject => {
 
     const dataFlattened = new Float32Array(flattenRecursive(data));
 
@@ -191,7 +192,7 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], d
         throw new Error('No buffer was created');
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     // STATIC_DRAW: tells WebGl that we are not likely to change this data much.
     gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
 
@@ -203,7 +204,8 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], d
         normalize: false, // don't normalize the data
         stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
-        drawingMode: drawingMode
+        drawingMode: drawingMode,
+        staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
     };
 
     return bufferObject;
@@ -221,7 +223,7 @@ export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, ne
     const dataFlattened = new Float32Array(flattenRecursive(newData));
 
     gl.bindBuffer(gl.ARRAY_BUFFER, bo.buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, bo.staticOrDynamicDraw);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
 
     const newBufferObject: BufferObject = {
@@ -233,6 +235,7 @@ export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, ne
         stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
         drawingMode: bo.drawingMode,
+        staticOrDynamicDraw: bo.staticOrDynamicDraw
     };
 
     return newBufferObject;
@@ -277,9 +280,10 @@ export interface IndexBufferObject {
     type: number; // must be gl.UNSIGNED_SHORT
     offset: number;
     drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES
+    staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW or gl.STATIC_DRAW
 }
 
-export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][], drawingMode: number = gl.TRIANGLES): IndexBufferObject => {
+export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][], drawingMode: number = gl.TRIANGLES, changesOften = false): IndexBufferObject => {
 
     const indicesFlattened = new Uint16Array(flattenRecursive(indices));
 
@@ -288,7 +292,7 @@ export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][]
         throw new Error('No buffer was created');
     }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
     const bufferObject: IndexBufferObject = {
@@ -296,7 +300,8 @@ export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][]
         count: indicesFlattened.length,
         type: gl.UNSIGNED_SHORT,
         offset: 0,
-        drawingMode: drawingMode
+        drawingMode: drawingMode,
+        staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
     };
 
     return bufferObject;

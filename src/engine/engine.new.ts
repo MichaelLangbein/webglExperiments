@@ -396,3 +396,27 @@ export class Context {
         }
     }
 }
+
+
+/**
+ * Engine-level performance measures: 
+ *  1. Sorting: Reduces uploads and binds
+ *     1.1. Sort by program, texture, attributes & uniform
+ *     1.2. Sort by z-index (accounting for transparency, though)
+ *  2. Batching: Reduces draw-calls
+ *     Take multiple objects and merge them into one large attribute instead of many small ones.
+ *     Static batching is designed for larger unique meshes that will share the same material. It's not designed for a lot of the same mesh.
+ *     ( https://www.youtube.com/watch?v=rfQ8rKGTVlg )
+ *  3. Instancing: Reduces draw calls
+ *     Like batching, but requires objects to have identical attributes.
+ *     Instancing is great for a lot of the same mesh, and particularly awesome for being dynamic.
+ *     ( https://webglfundamentals.org/webgl/lessons/webgl-instanced-drawing.html )
+ */
+export class Engine {
+    context: Context;
+    constructor(gl: WebGLRenderingContext) {
+        this.context = new Context(gl);
+    }
+
+
+}
