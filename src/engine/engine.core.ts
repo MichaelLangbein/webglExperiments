@@ -3,7 +3,7 @@ import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform,
     createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation,
     getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced,
     GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray,
-    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture} from './webgl';
+    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground} from './webgl';
 
 
 
@@ -75,8 +75,6 @@ function parseProgram(program: Program): [string[], string[], string[], string[]
     return [attributeNames, uniformNames, textureNames, precisions];
 }
 
-
-
 function checkDataProvided(
     program: Program,
     attributes: {[k: string]: AttributeData},
@@ -109,7 +107,6 @@ function checkDataProvided(
     //     throw new Error(`Your attributes are not of the same length!`);
     // }
 }
-
 
 interface IAttributeData {
     hash: string;
@@ -494,7 +491,16 @@ export abstract class Bundle {
         original.update(context.gl, newImage);
     }
 
-    public abstract draw (context: Context): void;
+    public draw (context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
+        if (!frameBuffer) {
+            bindOutputCanvasToFramebuffer(context.gl, viewport);
+        } else {
+            bindFramebuffer(context.gl, frameBuffer, viewport);
+        }
+        if (background) {
+            clearBackground(context.gl, background);
+        }
+    }
 
 }
 
@@ -510,7 +516,8 @@ export class ArrayBundle extends Bundle {
     }
 
 
-    draw(context: Context): void {
+    draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
+        super.draw(context, background, frameBuffer, viewport);
         const firstAttributeName = Object.keys(this.attributes)[0];
         drawArray(context.gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
     }
@@ -538,7 +545,8 @@ export class ElementsBundle extends Bundle {
         this.index.bind(context.gl);
     }
 
-    draw(context: Context): void {
+    draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
+        super.draw(context, background, frameBuffer, viewport);
         this.index.bind(context.gl);
         drawElements(context.gl, this.index.index, this.drawingMode);
     }
@@ -556,7 +564,8 @@ export class InstancedArrayBundle extends Bundle {
         super(program, attributes, uniforms, textures, drawingMode);
     }
 
-    draw(context: Context): void {
+    draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
+        super.draw(context, background, frameBuffer, viewport);
         const firstAttributeName = Object.keys(this.attributes)[0];
         drawArrayInstanced(context.gl, this.attributes[firstAttributeName].buffer, this.drawingMode, this.nrInstances);
     }
@@ -585,7 +594,8 @@ export class InstancedElementsBundle extends Bundle {
         this.index.bind(context.gl);
     }
 
-    draw(context: Context): void {
+    draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
+        super.draw(context, background, frameBuffer, viewport);
         this.index.bind(context.gl);
         drawElementsInstanced(context.gl, this.index.index, this.drawingMode, this.nrInstances);
     }
