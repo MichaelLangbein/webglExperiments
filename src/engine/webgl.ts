@@ -84,7 +84,7 @@ const textureConstructionBindPoint = 7;
 /**
  * Compile shader.
  */
-export const compileShader = (gl: WebGLRenderingContext, typeBit: number, shaderSource: string): WebGLShader => {
+export const compileShader = (gl: WebGL2RenderingContext, typeBit: number, shaderSource: string): WebGLShader => {
     const shader = gl.createShader(typeBit);
     if (!shader) {
         throw new Error('No shader was created');
@@ -105,7 +105,7 @@ export const compileShader = (gl: WebGLRenderingContext, typeBit: number, shader
  * That means you cannot add multiple fragment-shaders in one program. Instead, either load them in consecutively as part of different programs,
  * or generate an über-shader that contains both codes.
  */
-export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram => {
+export const createShaderProgram = (gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram => {
 
     const program = gl.createProgram();
     if (!program) {
@@ -133,7 +133,7 @@ export const createShaderProgram = (gl: WebGLRenderingContext, vertexShaderSourc
 };
 
 
-export const setup3dScene = (gl: WebGLRenderingContext): void => {
+export const setup3dScene = (gl: WebGL2RenderingContext): void => {
     // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // allowing depth-testing
@@ -149,17 +149,17 @@ export const setup3dScene = (gl: WebGLRenderingContext): void => {
     clearBackground(gl, [0, 0, 0, 1]);
 };
 
-export const updateViewPort = (gl: WebGLRenderingContext, x0: number, y0: number, x1: number, y1: number): void => {
+export const updateViewPort = (gl: WebGL2RenderingContext, x0: number, y0: number, x1: number, y1: number): void => {
     gl.viewport(x0, y0, x1, y1);
 };
 
 
-export const bindProgram = (gl: WebGLRenderingContext, program: WebGLProgram): void => {
+export const bindProgram = (gl: WebGL2RenderingContext, program: WebGLProgram): void => {
     gl.useProgram(program);
 };
 
 
-export const clearBackground = (gl: WebGLRenderingContext, color: number[]): void => {
+export const clearBackground = (gl: WebGL2RenderingContext, color: number[]): void => {
     gl.clearColor(color[0], color[1], color[2], color[3]);
     gl.clearDepth(1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -184,7 +184,7 @@ export interface BufferObject {
 /**
  * Create buffer. Creation is slow! Do *before* render loop.
  */
-export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], changesOften = false): BufferObject => {
+export const createFloatBuffer = (gl: WebGL2RenderingContext, data: number[][], changesOften = false): BufferObject => {
 
     const dataFlattened = new Float32Array(flattenRecursive(data));
 
@@ -210,8 +210,21 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], c
     return bufferObject;
 };
 
+export interface VertexArrayObject {
+    buffers: BufferObject[];
+    vao: WebGLVertexArrayObject;
+}
 
-export const drawArray = (gl: WebGLRenderingContext, bo: BufferObject, drawingMode: GlDrawingMode): void => {
+export const createVertexArray = (gl: WebGL2RenderingContext): VertexArrayObject => {
+    const o = gl.createVertexArray();
+    return {
+        buffers: [],
+        vao: o
+    };
+};
+
+
+export const drawArray = (gl: WebGL2RenderingContext, bo: BufferObject, drawingMode: GlDrawingMode): void => {
     let glDrawingMode: number;
     switch (drawingMode) {
         case 'lines':
@@ -244,7 +257,7 @@ export const drawArrayInstanced = (gl: WebGL2RenderingContext, bo: BufferObject,
 };
 
 
-export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, newData: number[][]): BufferObject => {
+export const updateBufferData = (gl: WebGL2RenderingContext, bo: BufferObject, newData: number[][]): BufferObject => {
 
     const dataFlattened = new Float32Array(flattenRecursive(newData));
 
@@ -272,7 +285,7 @@ export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, ne
 /**
  * Fetch attribute's location (attribute declared in some shader). Slow! Do *before* render loop.
  */
-export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLProgram, attributeName: string): number => {
+export const getAttributeLocation = (gl: WebGL2RenderingContext, program: WebGLProgram, attributeName: string): number => {
     const loc = gl.getAttribLocation(program, attributeName);
     if (loc === -1) {
         throw new Error(`Couldn't find attribute ${attributeName} in program.`);
@@ -286,7 +299,7 @@ export const getAttributeLocation = (gl: WebGLRenderingContext, program: WebGLPr
  * Attributes vary from vertex to vertex - that means that there are *many* of them.
  * So it makes sense for WebGl to store attribute values in a dedicated data structure - the buffer.
  */
-export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
+export const bindBufferToAttribute = (gl: WebGL2RenderingContext, attributeLocation: number, bufferObject: BufferObject): void => {
     // Bind buffer to global-state ARRAY_BUFFER
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferObject.buffer);
     // Enable editing of vertex-array-location
@@ -297,6 +310,15 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
         bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
     // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
 };
+
+
+export const bindBufferToAttributeVertexArray = (gl: WebGL2RenderingContext, attributeLocation: number, bufferObject: BufferObject, va: VertexArrayObject): VertexArrayObject => {
+    gl.bindVertexArray(va.vao);
+    bindBufferToAttribute(gl, attributeLocation, bufferObject);
+    va.buffers.push(bufferObject);
+    return va;
+};
+
 
 /**
  * Number of instances that will be rotated through before moving along one step of this buffer.
@@ -317,6 +339,18 @@ export const bindBufferToAttributeInstanced = (gl: WebGL2RenderingContext, attri
 };
 
 
+export const bindBufferToAttributeInstancedVertexArray = (gl: WebGL2RenderingContext, attributeLocation: number, bufferObject: BufferObject, nrInstances: number, va: VertexArrayObject): VertexArrayObject => {
+    gl.bindVertexArray(va.vao);
+    bindBufferToAttributeInstanced(gl, attributeLocation, bufferObject, nrInstances);
+    va.buffers.push(bufferObject);
+    return va;
+};
+
+export const bindVertexArray = (gl: WebGL2RenderingContext, va: VertexArrayObject): void => {
+    gl.bindVertexArray(va.vao);
+};
+
+
 export interface IndexBufferObject {
     buffer: WebGLBuffer;
     count: number;
@@ -325,7 +359,7 @@ export interface IndexBufferObject {
     staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW or gl.STATIC_DRAW
 }
 
-export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][], changesOften = false): IndexBufferObject => {
+export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[][], changesOften = false): IndexBufferObject => {
 
     const indicesFlattened = new Uint16Array(flattenRecursive(indices));
 
@@ -348,11 +382,11 @@ export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][]
     return bufferObject;
 };
 
-export const bindIndexBuffer = (gl: WebGLRenderingContext, ibo: IndexBufferObject) => {
+export const bindIndexBuffer = (gl: WebGL2RenderingContext, ibo: IndexBufferObject) => {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo.buffer);
 };
 
-export const drawElements = (gl: WebGLRenderingContext, ibo: IndexBufferObject, drawingMode: GlDrawingMode): void => {
+export const drawElements = (gl: WebGL2RenderingContext, ibo: IndexBufferObject, drawingMode: GlDrawingMode): void => {
     let glDrawingMode: number;
     switch (drawingMode) {
         case 'lines':
@@ -410,7 +444,7 @@ export interface TextureObject {
  * Buffers are easier in this, since with vertexAttribPointer we are guaranteed to get a slot in the VERTEX_ARRAY that is not
  * already occupied by another buffer.
  */
-export const createTexture = (gl: WebGLRenderingContext, image: HTMLImageElement | HTMLCanvasElement): TextureObject => {
+export const createTexture = (gl: WebGL2RenderingContext, image: HTMLImageElement | HTMLCanvasElement): TextureObject => {
 
     const texture = gl.createTexture();  // analog to createBuffer
     if (!texture) {
@@ -472,7 +506,7 @@ export type textureDataType = '';
  * Plus many more in WebGL2.
  *
  */
-export const createDataTexture = (gl: WebGLRenderingContext, data: number[][][]): TextureObject => {
+export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]): TextureObject => {
     const height = data.length;
     const width = data[0].length;
     const channels = data[0][0].length;
@@ -531,7 +565,7 @@ export const createDataTexture = (gl: WebGLRenderingContext, data: number[][][])
 
 
 
-export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number): TextureObject => {
+export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, height: number): TextureObject => {
     if (width <= 0 || height <= 0) {
         throw new Error('Width and height must be positive.');
     }
@@ -568,7 +602,7 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
  * Normal uniforms have a concrete value.
  * Texture uniforms, on the other hand, are just an integer-index that points to a special slot in the GPU memory (the bindPoint) where the actual texture value lies.
  */
-export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTexture, bindPoint: number, uniformLocation: WebGLUniformLocation): void =>  {
+export const bindTextureToUniform = (gl: WebGL2RenderingContext, texture: WebGLTexture, bindPoint: number, uniformLocation: WebGLUniformLocation): void =>  {
     if (bindPoint > gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) {
         throw new Error(`There are only ${gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)} texture bind points, but you tried to bind to point nr. ${bindPoint}.`);
     }
@@ -584,7 +618,7 @@ export const bindTextureToUniform = (gl: WebGLRenderingContext, texture: WebGLTe
 
 
 
-export const updateTexture = (gl: WebGLRenderingContext, to: TextureObject, newData: HTMLImageElement | HTMLCanvasElement | number[][][]): TextureObject => {
+export const updateTexture = (gl: WebGL2RenderingContext, to: TextureObject, newData: HTMLImageElement | HTMLCanvasElement | number[][][]): TextureObject => {
 
     gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, to.texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
@@ -625,7 +659,7 @@ export interface FramebufferObject {
 }
 
 
-export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer => {
+export const createFramebuffer = (gl: WebGL2RenderingContext): WebGLFramebuffer => {
     const fb = gl.createFramebuffer();  // analog to createBuffer
     if (!fb) {
         throw new Error(`Error creating framebuffer`);
@@ -641,7 +675,7 @@ export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer =
  * In fact, if there is a bound texture, it must be the *input* to a shader, not the output.
  * Therefore, a framebuffer's texture must not be bound when the framebuffer is.
  */
-export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObject, manualViewport?: [number, number, number, number]) => {
+export const bindFramebuffer = (gl: WebGL2RenderingContext, fbo: FramebufferObject, manualViewport?: [number, number, number, number]) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.framebuffer);
     // It's EXTREMELY IMPORTANT to remember to call gl.viewport and set it to the size of the thing your rendering to.
     // https://webglfundamentals.org/webgl/lessons/webgl-render-to-texture.html
@@ -663,7 +697,7 @@ export const bindFramebuffer = (gl: WebGLRenderingContext, fbo: FramebufferObjec
  * That canvas.width * canvas.height then gets stretched to canvas.clientWidth * canvas.clientHeight.
  * (Note: the full canvas.width gets stretched to clientWidth, not just the viewport!)
  */
-export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext, manualViewport?: [number, number, number, number]) => {
+export const bindOutputCanvasToFramebuffer = (gl: WebGL2RenderingContext, manualViewport?: [number, number, number, number]) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     // It's EXTREMELY IMPORTANT to remember to call gl.viewport and set it to the size of the thing your rendering to.
     // https://webglfundamentals.org/webgl/lessons/webgl-render-to-texture.html
@@ -684,7 +718,7 @@ export const bindOutputCanvasToFramebuffer = (gl: WebGLRenderingContext, manualV
  * Shaders may also have one or more *in*put texture(s), which must be provided to the shader as a uniform sampler2D.
  * Only the shader needs to know about any potential input texture, the framebuffer will always only know about it's output texture.
  */
-export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: TextureObject, fb: WebGLFramebuffer): FramebufferObject => {
+export const bindTextureToFramebuffer = (gl: WebGL2RenderingContext, texture: TextureObject, fb: WebGLFramebuffer): FramebufferObject => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0); // analog to bufferData
 
@@ -716,7 +750,7 @@ export const bindTextureToFramebuffer = (gl: WebGLRenderingContext, texture: Tex
 /**
  * Fetch uniform's location (uniform declared in some shader). Slow! Do *before* render loop.
  */
-export const getUniformLocation = (gl: WebGLRenderingContext, program: WebGLProgram, uniformName: string): WebGLUniformLocation => {
+export const getUniformLocation = (gl: WebGL2RenderingContext, program: WebGLProgram, uniformName: string): WebGLUniformLocation => {
     const loc = gl.getUniformLocation(program, uniformName);
     if (loc === null) {
         throw new Error(`Couldn't find uniform ${uniformName} in program.`);
@@ -765,7 +799,7 @@ export type WebGLVariableType = 'bool'  | 'bvec2' | 'bvec3' | 'bvec4'| 'bool[]' 
  * ```
  *
  */
-export const bindValueToUniform = (gl: WebGLRenderingContext, uniformLocation: WebGLUniformLocation, type: WebGLVariableType, values: number[]): void => {
+export const bindValueToUniform = (gl: WebGL2RenderingContext, uniformLocation: WebGLUniformLocation, type: WebGLVariableType, values: number[]): void => {
     switch (type) {
         case 'bool':
             gl.uniform1i(uniformLocation, values[0]);
@@ -913,7 +947,7 @@ export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBu
     return pixels;
 };
 
-export const getDebugInfo = (gl: WebGLRenderingContext): object => {
+export const getDebugInfo = (gl: WebGL2RenderingContext): object => {
     const baseInfo = {
         renderer: gl.getParameter(gl.RENDERER),
         currentProgram: gl.getParameter(gl.CURRENT_PROGRAM),

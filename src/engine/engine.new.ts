@@ -104,8 +104,8 @@ interface IAttributeData {
     hash: string;
     data: number[][];
     buffer: BufferObject;
-    upload (gl: WebGLRenderingContext): void;
-    bind (gl: WebGLRenderingContext, location: number): void;
+    upload (gl: WebGL2RenderingContext): void;
+    bind (gl: WebGL2RenderingContext, location: number): void;
 }
 
 
@@ -125,11 +125,11 @@ export class AttributeData implements IAttributeData {
         this.hash = hash(flattenRecursive(data) + '');
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(gl: WebGL2RenderingContext) {
         this.buffer = createFloatBuffer(gl, this.data);
     }
 
-    bind(gl: WebGLRenderingContext, location: number) {
+    bind(gl: WebGL2RenderingContext, location: number) {
         if (!this.buffer) {
             throw Error(`No value set for AttributeData`);
         }
@@ -155,7 +155,7 @@ export class InstancedAttributeData implements IAttributeData {
         this.hash = hash(flattenRecursive(data) + '');
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(gl: WebGL2RenderingContext) {
         this.buffer = createFloatBuffer(gl, this.data);
     }
 
@@ -186,12 +186,12 @@ export class UniformData {
         this.hash = hash(value + '');
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(gl: WebGL2RenderingContext) {
         // uniforms are always uploaded directly, without a buffer.
         // (In WebGL2, however, there *are* uniform-buffers!)
     }
 
-    bind(gl: WebGLRenderingContext, location: WebGLUniformLocation) {
+    bind(gl: WebGL2RenderingContext, location: WebGLUniformLocation) {
         bindValueToUniform(gl, location, this.type, this.value);
     }
 }
@@ -213,7 +213,7 @@ export class TextureData {
         this.hash = hash(Math.random() * 1000 + ''); // @TODO: how do you hash textures?
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(gl: WebGL2RenderingContext) {
         if (this.data instanceof HTMLImageElement || this.data instanceof  HTMLCanvasElement) {
             this.texture = createTexture(gl, this.data);
         } else {
@@ -221,7 +221,7 @@ export class TextureData {
         }
     }
 
-    bind(gl: WebGLRenderingContext, location: WebGLUniformLocation, bindPoint: number) {
+    bind(gl: WebGL2RenderingContext, location: WebGLUniformLocation, bindPoint: number) {
         if (!this.texture) {
             throw new Error(`No texture for TextureData`);
         }
@@ -244,11 +244,11 @@ export class Index {
         this.data = indices;
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(gl: WebGL2RenderingContext) {
         this.index = createIndexBuffer(gl, this.data);
     }
 
-    bind(gl: WebGLRenderingContext) {
+    bind(gl: WebGL2RenderingContext) {
         bindIndexBuffer(gl, this.index);
     }
 }
@@ -267,18 +267,18 @@ export class Program {
             this.hash = hash(vertexShaderSource + fragmentShaderSource);
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(gl: WebGL2RenderingContext) {
         this.program = createShaderProgram(gl, this.vertexShaderSource, this.fragmentShaderSource);
     }
 
-    bind(gl: WebGLRenderingContext) {
+    bind(gl: WebGL2RenderingContext) {
         if (!this.program) {
             this.upload(gl);
         }
         bindProgram(gl, this.program);
     }
 
-    getUniformLocation(gl: WebGLRenderingContext, uName: string) {
+    getUniformLocation(gl: WebGL2RenderingContext, uName: string) {
         if (!this.uniformLocations[uName]) {
             const location = getUniformLocation(gl, this.program, uName);
             this.uniformLocations[uName] = location;
@@ -286,7 +286,7 @@ export class Program {
         return this.uniformLocations[uName];
     }
 
-    getAttributeLocation(gl: WebGLRenderingContext, aName: string) {
+    getAttributeLocation(gl: WebGL2RenderingContext, aName: string) {
         if (!this.attributeLocations[aName]) {
             const location = getAttributeLocation(gl, this.program, aName);
             this.attributeLocations[aName] = location;
@@ -294,7 +294,7 @@ export class Program {
         return this.attributeLocations[aName];
     }
 
-    getTextureLocation(gl: WebGLRenderingContext, tName: string) {
+    getTextureLocation(gl: WebGL2RenderingContext, tName: string) {
         return this.getUniformLocation(gl, tName);
     }
 }
@@ -305,7 +305,7 @@ export interface Bundle {
     uniforms: {[k: string]: UniformData};
     textures: {[k: string]: TextureData};
     drawingMode: GlDrawingMode;
-    draw (gl: WebGLRenderingContext): void;
+    draw (gl: WebGL2RenderingContext): void;
 }
 
 export class ArrayBundle implements Bundle {
@@ -319,7 +319,7 @@ export class ArrayBundle implements Bundle {
         checkDataProvided(program, attributes, uniforms, textures);
     }
 
-    draw(gl: WebGLRenderingContext): void {
+    draw(gl: WebGL2RenderingContext): void {
         const firstAttributeName = Object.keys(this.attributes)[0];
         drawArray(gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
     }
@@ -337,7 +337,7 @@ export class ElementsBundle implements Bundle {
         checkDataProvided(program, attributes, uniforms, textures);
     }
 
-    draw(gl: WebGLRenderingContext): void {
+    draw(gl: WebGL2RenderingContext): void {
         this.index.bind(gl);
         drawElements(gl, this.index.index, this.drawingMode);
     }
@@ -387,7 +387,7 @@ export class Context {
     private loadedUniforms: string[] = [];
     private loadedTextures: string[] = [];
 
-    constructor(private gl: WebGLRenderingContext, private verbose = false) {}
+    constructor(private gl: WebGL2RenderingContext, private verbose = false) {}
 
     upload(pd: Bundle) {
 
@@ -486,7 +486,7 @@ export class Context {
  */
 export class Engine {
     context: Context;
-    constructor(gl: WebGLRenderingContext) {
+    constructor(gl: WebGL2RenderingContext) {
         this.context = new Context(gl);
     }
 
