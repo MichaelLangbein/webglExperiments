@@ -9,3 +9,9 @@ This is just a simple repository of me experimenting with WebGl, engines, and li
   - VertexArrays: binding all attributes of a Bundle with a single call. Saves on bind-calls.
   - InstancedDrawing: loops over one attribute-array multiple times. Saves on draw-calls.
   - Sorting objects before passing to engine: reduces context-switches; saves on upload- and bind-calls.
+
+
+## TODOs:
+
+  - DataObjects: update hash when data changes?
+  - Textures: allow to update and instantiate with number[][][]

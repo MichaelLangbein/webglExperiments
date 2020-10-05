@@ -5,7 +5,7 @@ import { rectangleA } from './engine.shapes';
 
 export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElement): void => {
 
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
     if (!gl) {
         throw new Error('No context');
     }

@@ -1,8 +1,8 @@
-import { Context } from "../../engine/engine.new";
+import { Context } from "../../engine/engine.core";
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const gl = canvas.getContext('webgl2');
+const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
     throw new Error('no context');
 }

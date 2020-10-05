@@ -1,10 +1,9 @@
-import { Context, InstancedElementsBundle, Index, Program } from '../../engine/engine.new';
+import { Context, InstancedElementsBundle, Index, Program, AttributeData, renderLoop, ElementsBundle, InstancedAttributeData } from '../../engine/engine.core';
 import { boxE } from '../../engine/engine.shapes';
-import { renderLoop } from '../../engine/engine.core';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const gl = canvas.getContext('webgl2');
+const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
     throw new Error('no context');
 }
@@ -12,18 +11,27 @@ if (!gl) {
 const boxImg = document.getElementById('boxTexture') as HTMLImageElement;
 const glassImg = document.getElementById('glassTexture') as HTMLImageElement;
 
-const box = boxE(1, 1, 1);
+const box = boxE(0.25, 0.25, 0.25);
+
+const translations = [
+    [-0.5,  0.5, 0, 0],
+    [ 0.5,  0.5, 0, 0],
+    [ 0.5, -0.5, 0, 0],
+    [-0.5, -0.5, 0, 0],
+];
+
 
 const context = new Context(gl, true);
 
-
 const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     precision mediump float;
+    in vec4 a_position;
+    in vec4 a_translation;
 
     void main() {
-
+        vec4 pos = a_position + a_translation;
+        gl_Position = pos;
     }
-
 `, `#version 300 es
     precision mediump float;
     out vec4 outputColor;
@@ -31,8 +39,12 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     void main() {
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
-
-`), {}, {}, {}, 'triangles', new Index(box.vertexIndices), 10);
+`), {
+    'a_position': new AttributeData(box.vertices),
+    'a_translation': new InstancedAttributeData(translations, 1)
+}, {}, {},
+'triangles',
+new Index(box.vertexIndices), 4);
 
 bundle.upload(context);
 bundle.initVertexArray(context);

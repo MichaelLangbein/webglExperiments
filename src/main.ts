@@ -1,1 +1,1 @@
-import './examples/transparence';
+import './examples/newEngine/instancedDrawingAnimated';

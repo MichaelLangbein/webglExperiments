@@ -1,9 +1,8 @@
-precision mediump float;
-    uniform sampler2D u_texture;
-    varying vec3 v_pos;
-    varying vec2 v_texPos;
+#version 300 es
+    precision mediump float;
+    in vec4 a_position;
 
     void main() {
-        vec4 pixelColor = texture2D(u_texture, v_texPos);
-        gl_FragColor = vec4(pixelColor.xyz, 1.0);
+        vec4 pos = a_position;
+        gl_Position = pos;
     }
