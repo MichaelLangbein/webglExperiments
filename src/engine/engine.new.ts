@@ -1,23 +1,9 @@
-import { flattenRecursive } from "./math";
-import { bindBufferToAttribute, bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer, createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation, getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced, bindBufferToAttributeInstanced, GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray, bindBufferToAttributeInstancedVertexArray } from "./webgl";
-import { IAttribute } from "./engine.core";
-
-
-/**
- * Strategy
- * ========
- *
- * Before, attributes, uniforms and textures were bound to a program.
- * Their data was uploaded and immediately bound to the program.
- * That's quick, but this way we cannot share one texture over multiple programs.
- * In this new engine we decouple data from programs.
- *
- * (Attribute|Texture|Uniform)Data:
- *      construction: pass data; handled by user 
- *      upload/unload/bind/unbind: handled by context
- *    <-- this way, once unloaded data can be easily reloaded (at the price of keeping that data in memory)
- *
- */
+import { flattenRecursive } from './math';
+import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer,
+    createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation,
+    getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced,
+    GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray,
+    bindBufferToAttributeInstancedVertexArray } from './webgl';
 
 
 
@@ -301,120 +287,15 @@ export class Program {
     }
 }
 
-export interface Bundle {
-    program: Program;
-    attributes: {[k: string]: IAttributeData};
-    uniforms: {[k: string]: UniformData};
-    textures: {[k: string]: TextureData};
-    drawingMode: GlDrawingMode;
-    draw (gl: WebGL2RenderingContext): void;
-}
 
-export class ArrayBundle implements Bundle {
-    va: VertexArrayObject;
-    constructor(
-        public program: Program,
-        public attributes: {[k: string]: AttributeData},
-        public uniforms: {[k: string]: UniformData},
-        public textures: {[k: string]: TextureData},
-        public drawingMode: GlDrawingMode = 'triangles'
-    ) {
-        checkDataProvided(program, attributes, uniforms, textures);
-    }
-
-    deleteMeInit(gl: WebGL2RenderingContext) {
-        let va = createVertexArray(gl);
-        bindVertexArray(gl, va);
-
-        for (const attributeName in this.attributes) {
-            const data = this.attributes[attributeName];
-            const loc = this.program.getAttributeLocation(gl, attributeName);
-            va = data.bind(gl, loc, va);
-        }
-        this.va = va;
-
-        for (const uniformName in this.uniforms) {
-            const data = this.uniforms[uniformName];
-            const loc = this.program.getUniformLocation(gl, uniformName);
-            data.bind(gl, loc);
-        }
-
-        let bp = 1;
-        for (const textureName in this.textures) {
-            bp += 1;
-            const data = this.textures[textureName];
-            const loc = this.program.getTextureLocation(gl, textureName);
-            data.bind(gl, loc, bp);
-        }
-    }
-
-    deleteMeDraw(gl: WebGL2RenderingContext) {
-        bindVertexArray(gl, this.va);
-        const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArray(gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
-    }
-
-    draw(gl: WebGL2RenderingContext): void {
-        const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArray(gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
-    }
-}
-
-export class ElementsBundle implements Bundle {
-    constructor(
-        public program: Program,
-        public attributes: {[k: string]: AttributeData},
-        public uniforms: {[k: string]: UniformData},
-        public textures: {[k: string]: TextureData},
-        public index: Index,
-        public drawingMode: GlDrawingMode = 'triangles'
-    ) {
-        checkDataProvided(program, attributes, uniforms, textures);
-    }
-
-    draw(gl: WebGL2RenderingContext): void {
-        this.index.bind(gl);
-        drawElements(gl, this.index.index, this.drawingMode);
-    }
-}
-
-export class InstancedArrayBundle implements Bundle {
-    constructor(
-        public program: Program,
-        public attributes: {[k: string]: IAttributeData},
-        public uniforms: {[k: string]: UniformData},
-        public textures: {[k: string]: TextureData},
-        public drawingMode: GlDrawingMode = 'triangles',
-        public nrInstances: number
-    ) {
-        checkDataProvided(program, attributes, uniforms, textures);
-    }
-
-    draw(gl: WebGL2RenderingContext): void {
-        const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArrayInstanced(gl, this.attributes[firstAttributeName].buffer, this.drawingMode, this.nrInstances);
-    }
-}
-
-export class InstancedElementsBundle implements Bundle {
-    constructor(
-        public program: Program,
-        public attributes: {[k: string]: IAttributeData},
-        public uniforms: {[k: string]: UniformData},
-        public textures: {[k: string]: TextureData},
-        public index: Index,
-        public drawingMode: GlDrawingMode = 'triangles',
-        public nrInstances: number
-    ) {
-        checkDataProvided(program, attributes, uniforms, textures);
-    }
-
-    draw(gl: WebGL2RenderingContext): void {
-        this.index.bind(gl);
-        drawElementsInstanced(gl, this.index.index, this.drawingMode, this.nrInstances);
-    }
-}
-
+/**
+ * Context: a wrapper around WebGL2RenderingContext.
+ * Intercepts calls to upload, bind etc.
+ * and checks if the data is *already* uploaded, bound, etc.
+ * Saves on calls.
+ *
+ * @TODO: also wrap around bind-calls and vertex-arrays.
+ */
 export class Context {
 
     private loadedProgram: string;
@@ -422,59 +303,13 @@ export class Context {
     private loadedUniforms: string[] = [];
     private loadedTextures: string[] = [];
 
-    constructor(private gl: WebGL2RenderingContext, private verbose = false) {}
-
-    upload(pd: Bundle) {
-
-        this.uploadProgram(pd.program);
-
-        for (const attributeName in pd.attributes) {
-            const data = pd.attributes[attributeName];
-            this.uploadAttribute(data);
-        }
-
-        for (const uniformName in pd.uniforms) {
-            const data = pd.uniforms[uniformName];
-            this.uploadUniform(data);
-        }
-
-        for (const textureName in pd.textures) {
-            const data = pd.textures[textureName];
-            this.uploadTexture(data);
-        }
-    }
-
-    bindAndRender(pd: Bundle) {
-        pd.program.bind(this.gl);
-
-        for (const attributeName in pd.attributes) {
-            const data = pd.attributes[attributeName];
-            const loc = pd.program.getAttributeLocation(this.gl, attributeName);
-            data.bind(this.gl, loc);
-        }
-
-        for (const uniformName in pd.uniforms) {
-            const data = pd.uniforms[uniformName];
-            const loc = pd.program.getUniformLocation(this.gl, uniformName);
-            data.bind(this.gl, loc);
-        }
-
-        let bp = 1;
-        for (const textureName in pd.textures) {
-            bp += 1;
-            const data = pd.textures[textureName];
-            const loc = pd.program.getTextureLocation(this.gl, textureName);
-            data.bind(this.gl, loc, bp);
-        }
-
-        pd.draw(this.gl);
-    }
+    constructor(public gl: WebGL2RenderingContext, private verbose = false) {}
 
     uploadProgram(prog: Program): void {
         if (this.loadedProgram !== prog.hash) {
             prog.upload(this.gl);
             this.loadedProgram = prog.hash;
-            if (this.verbose) console.log(`Context: uploaded program ${prog.hash}`); 
+            if (this.verbose) console.log(`Context: uploaded program ${prog.hash}`);
         }
     }
 
@@ -505,25 +340,153 @@ export class Context {
 }
 
 
-/**
- * Engine-level performance measures:
- *  1. Sorting: Reduces uploads and binds
- *     1.1. Sort by program, texture, attributes & uniform
- *     1.2. Sort by z-index (accounting for transparency, though)
- *  2. Batching: Reduces draw-calls
- *     Take multiple objects and merge them into one large attribute instead of many small ones.
- *     Static batching is designed for larger unique meshes that will share the same material. It's not designed for a lot of the same mesh.
- *     ( https://www.youtube.com/watch?v=rfQ8rKGTVlg )
- *  3. Instancing: Reduces draw calls
- *     Like batching, but requires objects to have identical attributes.
- *     Instancing is great for a lot of the same mesh, and particularly awesome for being dynamic.
- *     ( https://webglfundamentals.org/webgl/lessons/webgl-instanced-drawing.html )
- */
-export class Engine {
-    context: Context;
-    constructor(gl: WebGL2RenderingContext) {
-        this.context = new Context(gl);
+
+export abstract class Bundle {
+    program: Program;
+    attributes: {[k: string]: IAttributeData};
+    uniforms: {[k: string]: UniformData};
+    textures: {[k: string]: TextureData};
+    va: VertexArrayObject;
+    drawingMode: GlDrawingMode;
+
+    constructor(
+        program: Program,
+        attributes: {[k: string]: AttributeData},
+        uniforms: {[k: string]: UniformData},
+        textures: {[k: string]: TextureData},
+        drawingMode: GlDrawingMode = 'triangles'
+    ) {
+        this.program = program;
+        this.attributes = attributes;
+        this.uniforms = uniforms;
+        this.textures = textures;
+        this.drawingMode = drawingMode;
+        checkDataProvided(program, attributes, uniforms, textures);
+    }
+
+    public upload (context: Context): void {
+        context.uploadProgram(this.program);
+
+        for (const attributeName in this.attributes) {
+            const data = this.attributes[attributeName];
+            context.uploadAttribute(data);
+        }
+
+        for (const uniformName in this.uniforms) {
+            const data = this.uniforms[uniformName];
+            context.uploadUniform(data);
+        }
+
+        for (const textureName in this.textures) {
+            const data = this.textures[textureName];
+            context.uploadTexture(data);
+        }
+    }
+
+    public initVertexArray(context: Context) {
+        this.va = createVertexArray(context.gl);
+        bindVertexArray(context.gl, this.va);
+
+        for (const attributeName in this.attributes) {
+            const data = this.attributes[attributeName];
+            const loc = this.program.getAttributeLocation(context.gl, attributeName);
+            this.va = data.bind(context.gl, loc, this.va);
+        }
+    }
+
+    public bind (context: Context): void {
+        bindVertexArray(context.gl, this.va);
+
+        for (const uniformName in this.uniforms) {
+            const data = this.uniforms[uniformName];
+            const loc = this.program.getUniformLocation(context.gl, uniformName);
+            data.bind(context.gl, loc);
+        }
+
+        let bp = 1;
+        for (const textureName in this.textures) {
+            bp += 1;
+            const data = this.textures[textureName];
+            const loc = this.program.getTextureLocation(context.gl, textureName);
+            data.bind(context.gl, loc, bp);
+        }
     }
 
 
+
+    public abstract draw (context: Context): void;
+
+}
+
+export class ArrayBundle extends Bundle {
+    constructor(
+        program: Program,
+        attributes: {[k: string]: AttributeData},
+        uniforms: {[k: string]: UniformData},
+        textures: {[k: string]: TextureData},
+        drawingMode: GlDrawingMode = 'triangles'
+    ) {
+        super(program, attributes, uniforms, textures, drawingMode);
+    }
+
+
+    draw(context: Context): void {
+        const firstAttributeName = Object.keys(this.attributes)[0];
+        drawArray(context.gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
+    }
+}
+
+export class ElementsBundle extends Bundle {
+    constructor(
+        program: Program,
+        attributes: {[k: string]: AttributeData},
+        uniforms: {[k: string]: UniformData},
+        textures: {[k: string]: TextureData},
+        drawingMode: GlDrawingMode = 'triangles',
+        public index: Index,
+    ) {
+        super(program, attributes, uniforms, textures, drawingMode);
+    }
+
+    draw(context: Context): void {
+        this.index.bind(context.gl);
+        drawElements(context.gl, this.index.index, this.drawingMode);
+    }
+}
+
+export class InstancedArrayBundle extends Bundle {
+    constructor(
+        program: Program,
+        attributes: {[k: string]: IAttributeData},
+        uniforms: {[k: string]: UniformData},
+        textures: {[k: string]: TextureData},
+        drawingMode: GlDrawingMode = 'triangles',
+        public nrInstances: number
+    ) {
+        super(program, attributes, uniforms, textures, drawingMode);
+    }
+
+    draw(context: Context): void {
+        const firstAttributeName = Object.keys(this.attributes)[0];
+        drawArrayInstanced(context.gl, this.attributes[firstAttributeName].buffer, this.drawingMode, this.nrInstances);
+    }
+}
+
+export class InstancedElementsBundle extends Bundle {
+    constructor(
+        program: Program,
+        attributes: {[k: string]: IAttributeData},
+        uniforms: {[k: string]: UniformData},
+        textures: {[k: string]: TextureData},
+        drawingMode: GlDrawingMode = 'triangles',
+        public index: Index,
+        public nrInstances: number
+    ) {
+        super(program, attributes, uniforms, textures, drawingMode);
+    }
+
+    draw(context: Context): void {
+        this.index.bind(context.gl);
+        drawElementsInstanced(context.gl, this.index.index, this.drawingMode, this.nrInstances);
+    }
 }
