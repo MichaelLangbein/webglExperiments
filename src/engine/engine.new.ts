@@ -1,5 +1,5 @@
 import { flattenRecursive } from "./math";
-import { bindBufferToAttribute, bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer, createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation, getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced, bindBufferToAttributeInstanced, GlDrawingMode } from "./webgl";
+import { bindBufferToAttribute, bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer, createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation, getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced, bindBufferToAttributeInstanced, GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray, bindBufferToAttributeInstancedVertexArray } from "./webgl";
 import { IAttribute } from "./engine.core";
 
 
@@ -105,7 +105,7 @@ interface IAttributeData {
     data: number[][];
     buffer: BufferObject;
     upload (gl: WebGL2RenderingContext): void;
-    bind (gl: WebGL2RenderingContext, location: number): void;
+    bind (gl: WebGL2RenderingContext, location: number, va: VertexArrayObject): VertexArrayObject;
 }
 
 
@@ -129,11 +129,12 @@ export class AttributeData implements IAttributeData {
         this.buffer = createFloatBuffer(gl, this.data);
     }
 
-    bind(gl: WebGL2RenderingContext, location: number) {
+    bind(gl: WebGL2RenderingContext, location: number, va: VertexArrayObject) {
         if (!this.buffer) {
             throw Error(`No value set for AttributeData`);
         }
-        bindBufferToAttribute(gl, location, this.buffer);
+        va = bindBufferToAttributeVertexArray(gl, location, this.buffer, va);
+        return va;
     }
 
 }
@@ -159,11 +160,12 @@ export class InstancedAttributeData implements IAttributeData {
         this.buffer = createFloatBuffer(gl, this.data);
     }
 
-    bind(gl: WebGL2RenderingContext, location: number) {
+    bind(gl: WebGL2RenderingContext, location: number, va: VertexArrayObject) {
         if (!this.buffer) {
             throw Error(`No value set for AttributeData`);
         }
-        bindBufferToAttributeInstanced(gl, location, this.buffer, this.nrInstances);
+        va = bindBufferToAttributeInstancedVertexArray(gl, location, this.buffer, this.nrInstances, va);
+        return va;
     }
 
 }
@@ -309,6 +311,7 @@ export interface Bundle {
 }
 
 export class ArrayBundle implements Bundle {
+    va: VertexArrayObject;
     constructor(
         public program: Program,
         public attributes: {[k: string]: AttributeData},
@@ -317,6 +320,38 @@ export class ArrayBundle implements Bundle {
         public drawingMode: GlDrawingMode = 'triangles'
     ) {
         checkDataProvided(program, attributes, uniforms, textures);
+    }
+
+    deleteMeInit(gl: WebGL2RenderingContext) {
+        let va = createVertexArray(gl);
+        bindVertexArray(gl, va);
+
+        for (const attributeName in this.attributes) {
+            const data = this.attributes[attributeName];
+            const loc = this.program.getAttributeLocation(gl, attributeName);
+            va = data.bind(gl, loc, va);
+        }
+        this.va = va;
+
+        for (const uniformName in this.uniforms) {
+            const data = this.uniforms[uniformName];
+            const loc = this.program.getUniformLocation(gl, uniformName);
+            data.bind(gl, loc);
+        }
+
+        let bp = 1;
+        for (const textureName in this.textures) {
+            bp += 1;
+            const data = this.textures[textureName];
+            const loc = this.program.getTextureLocation(gl, textureName);
+            data.bind(gl, loc, bp);
+        }
+    }
+
+    deleteMeDraw(gl: WebGL2RenderingContext) {
+        bindVertexArray(gl, this.va);
+        const firstAttributeName = Object.keys(this.attributes)[0];
+        drawArray(gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
     }
 
     draw(gl: WebGL2RenderingContext): void {
