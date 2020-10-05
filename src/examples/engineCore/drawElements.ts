@@ -1,5 +1,5 @@
-import { rectangleE } from '../engine/engine.shapes';
-import { Shader, Program, Attribute, Index } from '../engine/engine.core';
+import { rectangleE } from '../../engine/engine.shapes';
+import { Shader, Program, Attribute, Index } from '../../engine/engine.core';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

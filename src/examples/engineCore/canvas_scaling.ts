@@ -1,5 +1,5 @@
-import { rectangleE } from '../engine/engine.shapes';
-import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../engine/engine.core';
+import { rectangleE } from '../../engine/engine.shapes';
+import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../../engine/engine.core';
 
 
 const createCircleTextureArray = (rows: number, columns: number, radius: number): number[][][] => {

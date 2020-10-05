@@ -1,6 +1,6 @@
-import { Program, Shader, Attribute, Uniform, Texture } from '../engine/engine.core';
-import { rectangleA } from '../engine/engine.shapes';
-import { bindProgram } from '../engine/webgl';
+import { Program, Shader, Attribute, Uniform, Texture } from '../../engine/engine.core';
+import { rectangleA } from '../../engine/engine.shapes';
+import { bindProgram } from '../../engine/webgl';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

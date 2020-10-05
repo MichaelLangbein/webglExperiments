@@ -1,8 +1,8 @@
-import { Shader, renderLoop, Index, Program, Attribute, Texture, Uniform } from "../engine/engine.core";
-import { boxE } from "../engine/engine.shapes";
+import { Shader, renderLoop, Index, Program, Attribute, Texture, Uniform } from "../../engine/engine.core";
+import { boxE } from "../../engine/engine.shapes";
 import { flattenRecursive, transposeMatrix, matrixMultiplyList, translateMatrix, 
-  scaleMatrix, rotateYMatrix, projectionMatrix, rotateZMatrix } from "../engine/math";
-import { setup3dScene } from "../module.main";
+  scaleMatrix, rotateYMatrix, projectionMatrix, rotateZMatrix } from "../../engine/math";
+import { setup3dScene } from "../../module.main";
 
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;

@@ -1,6 +1,6 @@
-import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../engine/engine.core';
-import { rectangleA, gaussianKernel } from '../engine/engine.shapes';
-import { flattenRecursive, matrixSum } from '../engine/math';
+import { Program, Shader, Attribute, Uniform, Framebuffer, Texture } from '../../engine/engine.core';
+import { rectangleA, gaussianKernel } from '../../engine/engine.shapes';
+import { flattenRecursive, matrixSum } from '../../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

@@ -1,6 +1,6 @@
-import { triangleA } from '../engine/engine.shapes';
-import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, setup3dScene, createEmptyTexture, bindTextureToFramebuffer } from '../engine/webgl';
-import { createTextCanvas } from '../engine/engine.helpers';
+import { triangleA } from '../../engine/engine.shapes';
+import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, setup3dScene, createEmptyTexture, bindTextureToFramebuffer } from '../../engine/webgl';
+import { createTextCanvas } from '../../engine/engine.helpers';
 const passVSS = require('./shaders/passthrough.vert.glsl').default;
 const passFSS = require('./shaders/passthrough.frag.glsl').default;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

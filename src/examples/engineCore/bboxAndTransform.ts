@@ -1,7 +1,7 @@
-import { Shader, Program, Framebuffer, Attribute, Uniform, Texture } from '../engine/engine.core';
-import { getCurrentFramebuffersPixels } from '../engine/webgl';
-import { rectangleA } from '../engine/engine.shapes';
-import { flattenRecursive } from '../engine/math';
+import { Shader, Program, Framebuffer, Attribute, Uniform, Texture } from '../../engine/engine.core';
+import { getCurrentFramebuffersPixels } from '../../engine/webgl';
+import { rectangleA } from '../../engine/engine.shapes';
+import { flattenRecursive } from '../../engine/math';
 
 
 

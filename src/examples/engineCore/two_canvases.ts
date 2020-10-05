@@ -1,7 +1,7 @@
-import { rectangleE, ShapeE } from '../engine/engine.shapes';
-import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../engine/engine.core';
-import { arrayToCanvas } from '../engine/engine.helpers';
-import { setup3dScene } from '../engine/webgl';
+import { rectangleE, ShapeE } from '../../engine/engine.shapes';
+import { Program, Shader, Attribute, Index, Texture, Uniform, DataTexture } from '../../engine/engine.core';
+import { arrayToCanvas } from '../../engine/engine.helpers';
+import { setup3dScene } from '../../engine/webgl';
 
 const createCircleTextureArray = (rows: number, columns: number, radius: number): number[][][] => {
     const center_x = rows / 2;

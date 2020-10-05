@@ -1,5 +1,5 @@
-import { Program, Shader, Attribute, Texture, Uniform } from '../engine/engine.core';
-import { triangleA } from '../engine/engine.shapes';
+import { Program, Shader, Attribute, Texture, Uniform } from '../../engine/engine.core';
+import { triangleA } from '../../engine/engine.shapes';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

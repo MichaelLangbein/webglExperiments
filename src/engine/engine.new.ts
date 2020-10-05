@@ -1,26 +1,25 @@
 import { flattenRecursive } from "./math";
-import { bindBufferToAttribute, bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer, createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation, getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType } from "./webgl";
+import { bindBufferToAttribute, bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer, createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation, getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced, bindBufferToAttributeInstanced, GlDrawingMode } from "./webgl";
+import { IAttribute } from "./engine.core";
 
 
 /**
  * Strategy
  * ========
- * 
+ *
  * Before, attributes, uniforms and textures were bound to a program.
  * Their data was uploaded and immediately bound to the program.
  * That's quick, but this way we cannot share one texture over multiple programs.
  * In this new engine we decouple data from programs.
- * 
+ *
  * (Attribute|Texture|Uniform)Data:
  *      construction: pass data; handled by user 
  *      upload/unload/bind/unbind: handled by context
  *    <-- this way, once unloaded data can be easily reloaded (at the price of keeping that data in memory)
- *      
+ *
  */
 
 
-
-export type GlDrawingMode = 'triangles' | 'points' | 'lines';
 
 
 // dead-simple hash function - not intended to be secure in any way.
@@ -100,45 +99,71 @@ function checkDataProvided(
     }
 }
 
+
+interface IAttributeData {
+    hash: string;
+    data: number[][];
+    buffer: BufferObject;
+    upload (gl: WebGLRenderingContext): void;
+    bind (gl: WebGLRenderingContext, location: number): void;
+}
+
+
 /**
  * Data container.
  * Abstracts all webgl-calls to attribute-api.
  * Maintains copy of data locally, so it can be up- and unloaded by context
  * without loosing the original data.
  */
-export class AttributeData {
-    
+export class AttributeData implements IAttributeData {
+
     readonly hash: string;
-    drawingMode: GlDrawingMode;
     data: number[][];      // raw data, user-provided
     buffer: BufferObject;  // buffer on gpu
-    constructor(data: number[][], drawingMode: GlDrawingMode = 'triangles') {
+    constructor(data: number[][]) {
         this.data = data;
-        this.drawingMode = drawingMode;
-        this.hash = hash(flattenRecursive(data) + "");
+        this.hash = hash(flattenRecursive(data) + '');
     }
 
     upload(gl: WebGLRenderingContext) {
-        let glDrawingMode: number;
-        switch (this.drawingMode) {
-            case 'triangles':
-                glDrawingMode = gl.TRIANGLES;
-                break;
-            case 'lines':
-                glDrawingMode = gl.LINES;
-                break;
-            case 'points':
-                glDrawingMode = gl.POINTS;
-                break;
-        }
-        this.buffer = createFloatBuffer(gl, this.data, glDrawingMode);
+        this.buffer = createFloatBuffer(gl, this.data);
     }
-    
+
     bind(gl: WebGLRenderingContext, location: number) {
         if (!this.buffer) {
             throw Error(`No value set for AttributeData`);
         }
         bindBufferToAttribute(gl, location, this.buffer);
+    }
+
+}
+
+export class InstancedAttributeData implements IAttributeData {
+
+    readonly hash: string;
+    data: number[][];      // raw data, user-provided
+    buffer: BufferObject;  // buffer on gpu
+    /**
+     * Number of instances that will be rotated through before moving along one step of this buffer.
+     * I.e. each entry in this buffer remains the same for `nrInstances` instances,
+     * that is, for `nrInstances * data.length` vertices.
+     */
+    nrInstances: number;
+    constructor(data: number[][], nrInstances: number) {
+        this.data = data;
+        this.nrInstances = nrInstances;
+        this.hash = hash(flattenRecursive(data) + '');
+    }
+
+    upload(gl: WebGLRenderingContext) {
+        this.buffer = createFloatBuffer(gl, this.data);
+    }
+
+    bind(gl: WebGL2RenderingContext, location: number) {
+        if (!this.buffer) {
+            throw Error(`No value set for AttributeData`);
+        }
+        bindBufferToAttributeInstanced(gl, location, this.buffer, this.nrInstances);
     }
 
 }
@@ -153,16 +178,16 @@ export class AttributeData {
 export class UniformData {
 
     hash: string;
-    value: number[];  
+    value: number[];
     type: WebGLVariableType;
     constructor(type: WebGLVariableType, value: number[]) {
         this.type = type;
         this.value = value;
-        this.hash = hash(value + "");
+        this.hash = hash(value + '');
     }
 
     upload(gl: WebGLRenderingContext) {
-        // uniforms are always uploaded directly, without a buffer. 
+        // uniforms are always uploaded directly, without a buffer.
         // (In WebGL2, however, there *are* uniform-buffers!)
     }
 
@@ -185,7 +210,7 @@ export class TextureData {
     texture: TextureObject;                                      // buffer on gpu
     constructor(im: HTMLImageElement | HTMLCanvasElement | TextureObject) {
         this.data = im;
-        this.hash = hash(Math.random() * 1000 + ""); // @TODO: how do you hash textures?
+        this.hash = hash(Math.random() * 1000 + ''); // @TODO: how do you hash textures?
     }
 
     upload(gl: WebGLRenderingContext) {
@@ -212,31 +237,15 @@ export class TextureData {
  * without loosing the original data.
  */
 export class Index {
-    
-    drawingMode: GlDrawingMode;
+
     data: number[][];             // raw data, user-provided
     index: IndexBufferObject;     // buffer on gpu
-    constructor(drawingMode: GlDrawingMode = 'triangles', indices: number[][]) {
-        this.drawingMode = drawingMode;
+    constructor(indices: number[][]) {
         this.data = indices;
     }
-    
+
     upload(gl: WebGLRenderingContext) {
-        let glDrawingMode: number;
-        switch (this.drawingMode) {
-            case 'triangles':
-                glDrawingMode = gl.TRIANGLES;
-                break;
-            case 'lines':
-                glDrawingMode = gl.LINES;
-                break;
-            case 'points':
-                glDrawingMode = gl.POINTS;
-                break;
-            default:
-                throw new Error(`Invalid drawing mode ${this.drawingMode}`);
-        }
-        this.index = createIndexBuffer(gl, this.data, glDrawingMode);
+        this.index = createIndexBuffer(gl, this.data);
     }
 
     bind(gl: WebGLRenderingContext) {
@@ -252,12 +261,12 @@ export class Program {
     uniformLocations: {[uName: string]: WebGLUniformLocation};
     attributeLocations: {[aName: string]: number};
 
-    constructor(gl: WebGLRenderingContext,
+    constructor(
         readonly vertexShaderSource: string,
         readonly fragmentShaderSource: string) {
             this.hash = hash(vertexShaderSource + fragmentShaderSource);
     }
-    
+
     upload(gl: WebGLRenderingContext) {
         this.program = createShaderProgram(gl, this.vertexShaderSource, this.fragmentShaderSource);
     }
@@ -270,7 +279,7 @@ export class Program {
     }
 
     getUniformLocation(gl: WebGLRenderingContext, uName: string) {
-        if(!this.uniformLocations[uName]) {
+        if (!this.uniformLocations[uName]) {
             const location = getUniformLocation(gl, this.program, uName);
             this.uniformLocations[uName] = location;
         }
@@ -278,7 +287,7 @@ export class Program {
     }
 
     getAttributeLocation(gl: WebGLRenderingContext, aName: string) {
-        if(!this.attributeLocations[aName]) {
+        if (!this.attributeLocations[aName]) {
             const location = getAttributeLocation(gl, this.program, aName);
             this.attributeLocations[aName] = location;
         }
@@ -290,15 +299,84 @@ export class Program {
     }
 }
 
-export class ProgramDataBundle {
+export interface Bundle {
+    program: Program;
+    attributes: {[k: string]: IAttributeData};
+    uniforms: {[k: string]: UniformData};
+    textures: {[k: string]: TextureData};
+    drawingMode: GlDrawingMode;
+    draw (gl: WebGLRenderingContext): void;
+}
+
+export class ArrayBundle implements Bundle {
     constructor(
         public program: Program,
         public attributes: {[k: string]: AttributeData},
         public uniforms: {[k: string]: UniformData},
         public textures: {[k: string]: TextureData},
-        public index?: Index
+        public drawingMode: GlDrawingMode = 'triangles'
     ) {
         checkDataProvided(program, attributes, uniforms, textures);
+    }
+
+    draw(gl: WebGLRenderingContext): void {
+        const firstAttributeName = Object.keys(this.attributes)[0];
+        drawArray(gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
+    }
+}
+
+export class ElementsBundle implements Bundle {
+    constructor(
+        public program: Program,
+        public attributes: {[k: string]: AttributeData},
+        public uniforms: {[k: string]: UniformData},
+        public textures: {[k: string]: TextureData},
+        public index: Index,
+        public drawingMode: GlDrawingMode = 'triangles'
+    ) {
+        checkDataProvided(program, attributes, uniforms, textures);
+    }
+
+    draw(gl: WebGLRenderingContext): void {
+        this.index.bind(gl);
+        drawElements(gl, this.index.index, this.drawingMode);
+    }
+}
+
+export class InstancedArrayBundle implements Bundle {
+    constructor(
+        public program: Program,
+        public attributes: {[k: string]: IAttributeData},
+        public uniforms: {[k: string]: UniformData},
+        public textures: {[k: string]: TextureData},
+        public drawingMode: GlDrawingMode = 'triangles',
+        public nrInstances: number
+    ) {
+        checkDataProvided(program, attributes, uniforms, textures);
+    }
+
+    draw(gl: WebGL2RenderingContext): void {
+        const firstAttributeName = Object.keys(this.attributes)[0];
+        drawArrayInstanced(gl, this.attributes[firstAttributeName].buffer, this.drawingMode, this.nrInstances);
+    }
+}
+
+export class InstancedElementsBundle implements Bundle {
+    constructor(
+        public program: Program,
+        public attributes: {[k: string]: IAttributeData},
+        public uniforms: {[k: string]: UniformData},
+        public textures: {[k: string]: TextureData},
+        public index: Index,
+        public drawingMode: GlDrawingMode = 'triangles',
+        public nrInstances: number
+    ) {
+        checkDataProvided(program, attributes, uniforms, textures);
+    }
+
+    draw(gl: WebGL2RenderingContext): void {
+        this.index.bind(gl);
+        drawElementsInstanced(gl, this.index.index, this.drawingMode, this.nrInstances);
     }
 }
 
@@ -311,7 +389,7 @@ export class Context {
 
     constructor(private gl: WebGLRenderingContext, private verbose = false) {}
 
-    upload(pd: ProgramDataBundle) {
+    upload(pd: Bundle) {
 
         this.uploadProgram(pd.program);
 
@@ -331,7 +409,7 @@ export class Context {
         }
     }
 
-    bindAndRender(pd: ProgramDataBundle) {
+    bindAndRender(pd: Bundle) {
         pd.program.bind(this.gl);
 
         for (const attributeName in pd.attributes) {
@@ -354,13 +432,7 @@ export class Context {
             data.bind(this.gl, loc, bp);
         }
 
-        if (pd.index) {
-            pd.index.bind(this.gl);
-            drawElements(this.gl, pd.index.index);
-        } else {
-            const firstAttributeName = Object.keys(pd.attributes)[0];
-            drawArray(this.gl, pd.attributes[firstAttributeName].buffer);
-        }
+        pd.draw(this.gl);
     }
 
     uploadProgram(prog: Program): void {
@@ -399,7 +471,7 @@ export class Context {
 
 
 /**
- * Engine-level performance measures: 
+ * Engine-level performance measures:
  *  1. Sorting: Reduces uploads and binds
  *     1.1. Sort by program, texture, attributes & uniform
  *     1.2. Sort by z-index (accounting for transparency, though)

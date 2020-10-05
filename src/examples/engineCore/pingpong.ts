@@ -1,6 +1,6 @@
-import { Program, Shader, Framebuffer, renderLoop, Attribute, Texture } from '../engine/engine.core';
-import { rectangleA } from '../engine/engine.shapes';
-import { createTextCanvas } from '../engine/engine.helpers';
+import { Program, Shader, Framebuffer, renderLoop, Attribute, Texture } from '../../engine/engine.core';
+import { rectangleA } from '../../engine/engine.shapes';
+import { createTextCanvas } from '../../engine/engine.helpers';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

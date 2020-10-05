@@ -1,7 +1,7 @@
-import { boxA, rectangleA, edgeDetectKernel, embossKernel, normalKernel } from '../engine/engine.shapes';
-import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, bindTextureToFramebuffer } from '../engine/webgl';
-import { displayImageOn } from '../engine/engine.helpers';
-import { flattenRecursive, matrixSum } from '../engine/math';
+import { boxA, rectangleA, edgeDetectKernel, embossKernel, normalKernel } from '../../engine/engine.shapes';
+import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform, createFramebuffer, bindOutputCanvasToFramebuffer, bindFramebuffer, createTexture, createShaderProgram, getUniformLocation, createFloatBuffer, getAttributeLocation, bindTextureToFramebuffer } from '../../engine/webgl';
+import { displayImageOn } from '../../engine/engine.helpers';
+import { flattenRecursive, matrixSum } from '../../engine/math';
 const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
 const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 const convVSS = require('./shaders/conv.vert.glsl').default;

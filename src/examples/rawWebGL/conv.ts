@@ -1,7 +1,7 @@
-import { Program, Attribute, Uniform, IAttribute, IUniform, Texture } from '../engine/engine.core';
-import { rectangleA, edgeDetectKernel } from '../engine/engine.shapes';
-import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform } from '../engine/webgl';
-import { flattenRecursive } from '../engine/math';
+import { Program, Attribute, Uniform, IAttribute, IUniform, Texture } from '../../engine/engine.core';
+import { rectangleA, edgeDetectKernel } from '../../engine/engine.shapes';
+import { clearBackground, bindBufferToAttribute, bindTextureToUniform, bindProgram, bindValueToUniform } from '../../engine/webgl';
+import { flattenRecursive } from '../../engine/math';
 const basic3dVertexShaderSource = require('./shaders/basic3d.vert.glsl').default;
 const basic3dFragmentShaderSource = require('./shaders/basic3d.frag.glsl').default;
 const convVSS = require('./shaders/conv.vert.glsl').default;

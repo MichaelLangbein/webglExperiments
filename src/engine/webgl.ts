@@ -73,6 +73,8 @@ import { flattenRecursive, isPowerOf } from './math';
 
 
 
+
+export type GlDrawingMode = 'triangles' | 'points' | 'lines';
 const shaderInputTextureBindPoint = 0;
 const textureConstructionBindPoint = 7;
 
@@ -175,7 +177,6 @@ export interface BufferObject {
     normalize: boolean;
     stride: number;
     offset: number;
-    drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES,
     staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW, gl.STATIC_DRAW
 }
 
@@ -183,7 +184,7 @@ export interface BufferObject {
 /**
  * Create buffer. Creation is slow! Do *before* render loop.
  */
-export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], drawingMode: number = gl.TRIANGLES, changesOften = false): BufferObject => {
+export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], changesOften = false): BufferObject => {
 
     const dataFlattened = new Float32Array(flattenRecursive(data));
 
@@ -193,7 +194,6 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], d
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
-    // STATIC_DRAW: tells WebGl that we are not likely to change this data much.
     gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
 
     const bufferObject: BufferObject = {
@@ -204,7 +204,6 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], d
         normalize: false, // don't normalize the data
         stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
-        drawingMode: drawingMode,
         staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
     };
 
@@ -212,10 +211,37 @@ export const createFloatBuffer = (gl: WebGLRenderingContext, data: number[][], d
 };
 
 
-export const drawArray = (gl: WebGLRenderingContext, bo: BufferObject): void => {
-    gl.drawArrays(bo.drawingMode, bo.offset, bo.vectorCount);
+export const drawArray = (gl: WebGLRenderingContext, bo: BufferObject, drawingMode: GlDrawingMode): void => {
+    let glDrawingMode: number;
+    switch (drawingMode) {
+        case 'lines':
+            glDrawingMode = gl.LINES;
+            break;
+        case 'points':
+            glDrawingMode = gl.POINTS;
+            break;
+        case 'triangles':
+            glDrawingMode = gl.TRIANGLES;
+            break;
+    }
+    gl.drawArrays(glDrawingMode, bo.offset, bo.vectorCount);
 };
 
+export const drawArrayInstanced = (gl: WebGL2RenderingContext, bo: BufferObject, drawingMode: GlDrawingMode, nrLoops: number): void => {
+    let glDrawingMode: number;
+    switch (drawingMode) {
+        case 'lines':
+            glDrawingMode = gl.LINES;
+            break;
+        case 'points':
+            glDrawingMode = gl.POINTS;
+            break;
+        case 'triangles':
+            glDrawingMode = gl.TRIANGLES;
+            break;
+    }
+    gl.drawArraysInstanced(glDrawingMode, bo.offset, bo.vectorCount, nrLoops);
+};
 
 
 export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, newData: number[][]): BufferObject => {
@@ -234,7 +260,6 @@ export const updateBufferData = (gl: WebGLRenderingContext, bo: BufferObject, ne
         normalize: false, // don't normalize the data
         stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
-        drawingMode: bo.drawingMode,
         staticOrDynamicDraw: bo.staticOrDynamicDraw
     };
 
@@ -273,17 +298,34 @@ export const bindBufferToAttribute = (gl: WebGLRenderingContext, attributeLocati
     // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
 };
 
+/**
+ * Number of instances that will be rotated through before moving along one step of this buffer.
+ * I.e. each entry in this buffer remains the same for `nrInstances` instances,
+ * that is, for `nrInstances * data.length` vertices.
+ */
+export const bindBufferToAttributeInstanced = (gl: WebGL2RenderingContext, attributeLocation: number, bufferObject: BufferObject, nrInstances: number): void => {
+    // Bind buffer to global-state ARRAY_BUFFER
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferObject.buffer);
+    // Enable editing of vertex-array-location
+    gl.enableVertexAttribArray(attributeLocation);
+    // Bind the buffer currently at global-state ARRAY_BUFFER to a vertex-array-location.
+    gl.vertexAttribPointer(
+        attributeLocation,
+        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
+    // only proceed along this attribute's elements every `nrInstances` loops.
+    gl.vertexAttribDivisor(attributeLocation, nrInstances);
+};
+
 
 export interface IndexBufferObject {
     buffer: WebGLBuffer;
     count: number;
     type: number; // must be gl.UNSIGNED_SHORT
     offset: number;
-    drawingMode: number; // gl.TRIANGLES, gl.POINTS, or gl.LINES
     staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW or gl.STATIC_DRAW
 }
 
-export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][], drawingMode: number = gl.TRIANGLES, changesOften = false): IndexBufferObject => {
+export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][], changesOften = false): IndexBufferObject => {
 
     const indicesFlattened = new Uint16Array(flattenRecursive(indices));
 
@@ -300,7 +342,6 @@ export const createIndexBuffer = (gl: WebGLRenderingContext, indices: number[][]
         count: indicesFlattened.length,
         type: gl.UNSIGNED_SHORT,
         offset: 0,
-        drawingMode: drawingMode,
         staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
     };
 
@@ -311,11 +352,37 @@ export const bindIndexBuffer = (gl: WebGLRenderingContext, ibo: IndexBufferObjec
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo.buffer);
 };
 
-export const drawElements = (gl: WebGLRenderingContext, ibo: IndexBufferObject): void => {
-    gl.drawElements(ibo.drawingMode, ibo.count, ibo.type, ibo.offset);
+export const drawElements = (gl: WebGLRenderingContext, ibo: IndexBufferObject, drawingMode: GlDrawingMode): void => {
+    let glDrawingMode: number;
+    switch (drawingMode) {
+        case 'lines':
+            glDrawingMode = gl.LINES;
+            break;
+        case 'points':
+            glDrawingMode = gl.POINTS;
+            break;
+        case 'triangles':
+            glDrawingMode = gl.TRIANGLES;
+            break;
+    }
+    gl.drawElements(glDrawingMode, ibo.count, ibo.type, ibo.offset);
 };
 
-
+export const drawElementsInstanced = (gl: WebGL2RenderingContext, ibo: IndexBufferObject, drawingMode: GlDrawingMode, nrLoops: number): void => {
+    let glDrawingMode: number;
+    switch (drawingMode) {
+        case 'lines':
+            glDrawingMode = gl.LINES;
+            break;
+        case 'points':
+            glDrawingMode = gl.POINTS;
+            break;
+        case 'triangles':
+            glDrawingMode = gl.TRIANGLES;
+            break;
+    }
+    gl.drawElementsInstanced(glDrawingMode, ibo.count, ibo.type, ibo.offset, nrLoops);
+};
 
 
 
