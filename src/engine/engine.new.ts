@@ -19,6 +19,7 @@ const hash = function(s: string): string {
 
 
 function parseProgram(program: Program): [string[], string[], string[], string[]] {
+    // @TODO: adjust this to use WebGL2 syntax.
     const attributeRegex = /^\s*attribute (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*);/gm;
     const uniformRegex = /^\s*uniform (int|float|vec2|vec3|vec4|mat2|mat3|mat4) (\w*)(\[\d\])*;/gm;
     const textureRegex = /^\s*uniform sampler2D (\w*);/gm;
@@ -54,7 +55,7 @@ function parseProgram(program: Program): [string[], string[], string[], string[]
 
 
 function checkDataProvided(
-    program: Program, 
+    program: Program,
     attributes: {[k: string]: AttributeData},
     uniforms: {[k: string]: UniformData},
     textures: {[k: string]: TextureData},
@@ -295,20 +296,21 @@ export class Program {
  * Saves on calls.
  *
  * @TODO: also wrap around bind-calls and vertex-arrays.
+ * @TODO: check for overloading too many textures.
  */
 export class Context {
 
-    private loadedProgram: string;
+    private loadedPrograms: string[] = [];
     private loadedAttributes: string[] = [];
     private loadedUniforms: string[] = [];
     private loadedTextures: string[] = [];
 
-    constructor(public gl: WebGL2RenderingContext, private verbose = false) {}
+    constructor(readonly gl: WebGL2RenderingContext, private verbose = false) {}
 
     uploadProgram(prog: Program): void {
-        if (this.loadedProgram !== prog.hash) {
+        if (!this.loadedPrograms.includes(prog.hash)) {
             prog.upload(this.gl);
-            this.loadedProgram = prog.hash;
+            this.loadedPrograms.push(prog.hash);
             if (this.verbose) console.log(`Context: uploaded program ${prog.hash}`);
         }
     }
@@ -330,7 +332,6 @@ export class Context {
     }
 
     uploadTexture(data: TextureData): void {
-        // @TODO: check for overloading!
         if (!this.loadedTextures.includes(data.hash)) {
             data.upload(this.gl);
             this.loadedTextures.push(data.hash);
