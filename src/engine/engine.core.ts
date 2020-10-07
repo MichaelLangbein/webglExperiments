@@ -1,9 +1,9 @@
 import { flattenRecursive } from './math';
-import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createFloatBuffer,
+import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createBuffer,
     createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation,
-    getUniformLocation, IndexBufferObject, TextureObject, WebGLVariableType, drawElementsInstanced, drawArrayInstanced,
+    getUniformLocation, IndexBufferObject, TextureObject, WebGLUniformType, drawElementsInstanced, drawArrayInstanced,
     GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray,
-    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground} from './webgl';
+    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground, WebGLAttributeType} from './webgl';
 
 
 
@@ -111,11 +111,12 @@ function checkDataProvided(
 interface IAttributeData {
     hash: string;
     changesOften: boolean;
-    data: number[][];
+    attributeType: WebGLAttributeType;
+    data: number[];
     buffer: BufferObject;
     upload (gl: WebGL2RenderingContext): void;
     bind (gl: WebGL2RenderingContext, location: number, va: VertexArrayObject): VertexArrayObject;
-    update (gl: WebGL2RenderingContext, newData: number[][]): void;
+    update (gl: WebGL2RenderingContext, newData: number[]): void;
 }
 
 
@@ -129,16 +130,18 @@ export class AttributeData implements IAttributeData {
 
     readonly hash: string;
     changesOften: boolean;
-    data: number[][];      // raw data, user-provided
+    attributeType: WebGLAttributeType;
+    data: number[];      // raw data, user-provided
     buffer: BufferObject;  // buffer on gpu
-    constructor(data: number[][], changesOften: boolean) {
+    constructor(data: number[], attrType: WebGLAttributeType, changesOften: boolean) {
         this.data = data;
+        this.attributeType = attrType;
         this.changesOften = changesOften;
         this.hash = hash(flattenRecursive(data) + '');
     }
 
     upload(gl: WebGL2RenderingContext) {
-        this.buffer = createFloatBuffer(gl, this.data, this.changesOften);
+        this.buffer = createBuffer(gl, this.attributeType, this.data, this.changesOften);
     }
 
     bind(gl: WebGL2RenderingContext, location: number, va: VertexArrayObject) {
@@ -149,7 +152,7 @@ export class AttributeData implements IAttributeData {
         return va;
     }
 
-    update(gl: WebGL2RenderingContext, newData: number[][]) {
+    update(gl: WebGL2RenderingContext, newData: number[]) {
         this.data = newData;
         this.buffer = updateBufferData(gl, this.buffer, this.data);
     }
@@ -159,8 +162,9 @@ export class AttributeData implements IAttributeData {
 export class InstancedAttributeData implements IAttributeData {
 
     readonly hash: string;
+    attributeType: WebGLAttributeType;
     changesOften: boolean;
-    data: number[][];      // raw data, user-provided
+    data: number[];      // raw data, user-provided
     buffer: BufferObject;  // buffer on gpu
     /**
      * Number of instances that will be rotated through before moving along one step of this buffer.
@@ -168,15 +172,16 @@ export class InstancedAttributeData implements IAttributeData {
      * that is, for `nrInstances * data.length` vertices.
      */
     nrInstances: number;
-    constructor(data: number[][], changesOften: boolean, nrInstances: number) {
+    constructor(data: number[], attrType: WebGLAttributeType, changesOften: boolean, nrInstances: number) {
         this.data = data;
+        this.attributeType = attrType;
         this.changesOften = changesOften;
         this.nrInstances = nrInstances;
         this.hash = hash(flattenRecursive(data) + '');
     }
 
     upload(gl: WebGL2RenderingContext) {
-        this.buffer = createFloatBuffer(gl, this.data, this.changesOften);
+        this.buffer = createBuffer(gl, this.attributeType, this.data, this.changesOften);
     }
 
     bind(gl: WebGL2RenderingContext, location: number, va: VertexArrayObject) {
@@ -187,7 +192,7 @@ export class InstancedAttributeData implements IAttributeData {
         return va;
     }
 
-    update(gl: WebGL2RenderingContext, newData: number[][]) {
+    update(gl: WebGL2RenderingContext, newData: number[]) {
         this.data = newData;
         this.buffer = updateBufferData(gl, this.buffer, this.data);
     }
@@ -204,9 +209,9 @@ export class UniformData {
 
     hash: string;
     value: number[];
-    type: WebGLVariableType;
-    constructor(type: WebGLVariableType, value: number[]) {
-        this.type = type;
+    uniformType: WebGLUniformType;
+    constructor(type: WebGLUniformType, value: number[]) {
+        this.uniformType = type;
         this.value = value;
         this.hash = hash(value + '');
     }
@@ -217,7 +222,7 @@ export class UniformData {
     }
 
     bind(gl: WebGL2RenderingContext, location: WebGLUniformLocation) {
-        bindValueToUniform(gl, location, this.type, this.value);
+        bindValueToUniform(gl, location, this.uniformType, this.value);
     }
 
     update(gl: WebGL2RenderingContext, newData: number[], location: WebGLUniformLocation) {
@@ -466,7 +471,7 @@ export abstract class Bundle {
     }
 
 
-    public updateAttributeData(context: Context, variableName: string, newData: number[][]): void {
+    public updateAttributeData(context: Context, variableName: string, newData: number[]): void {
         const attribute = this.attributes[variableName];
         if (!attribute) {
             throw new Error(`No such attribute ${variableName} to be updated.`);
@@ -519,7 +524,7 @@ export class ArrayBundle extends Bundle {
     draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
         super.draw(context, background, frameBuffer, viewport);
         const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArray(context.gl, this.attributes[firstAttributeName].buffer, this.drawingMode);
+        drawArray(context.gl, this.drawingMode, this.attributes[firstAttributeName].data.length, 0);
     }
 }
 
@@ -567,7 +572,7 @@ export class InstancedArrayBundle extends Bundle {
     draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
         super.draw(context, background, frameBuffer, viewport);
         const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArrayInstanced(context.gl, this.attributes[firstAttributeName].buffer, this.drawingMode, this.nrInstances);
+        drawArrayInstanced(context.gl, this.drawingMode, this.attributes[firstAttributeName].data.length, 0, this.nrInstances);
     }
 }
 

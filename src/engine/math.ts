@@ -1,8 +1,10 @@
 export type Vec2 = [number, number];
 export type Vec3 = [number, number, number];
+export type Vec4 = [number, number, number, number];
 export type Vector = number[];
 export type V2Matrix = Vec2[];
 export type V3Matrix = Vec3[];
+export type V4Matrix = Vec4[];
 export type Matrix = number[][];
 
 

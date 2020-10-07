@@ -1,4 +1,4 @@
-import { Vector, vectorAddition, scalarProduct, V3Matrix, V2Matrix, Matrix } from './math';
+import { Vector, vectorAddition, scalarProduct, V4Matrix, V3Matrix, V2Matrix, Matrix } from './math';
 
 
 export function bezier(p0: Vector, p1: Vector, t: number): Vector {
@@ -32,12 +32,12 @@ export function bezierGenerator(ps: Vector[]): (t: number) => Vector {
 
 
 export interface ShapeA {
-    vertices: V3Matrix;
+    vertices: V4Matrix;
     texturePositions: V2Matrix;
 }
 
 export interface ShapeE {
-    vertices: V3Matrix;
+    vertices: V4Matrix;
     texturePositions: V2Matrix;
     vertexIndices: V3Matrix;
 }
@@ -45,9 +45,9 @@ export interface ShapeE {
 export const triangleA = (width: number, height: number): ShapeA => {
     return {
         vertices: [
-            [-width / 2, -height / 2, 0],
-            [         0,  height / 2, 0],
-            [ width / 2, -height / 2, 0]
+            [-width / 2, -height / 2, 0, 1],
+            [         0,  height / 2, 0, 1],
+            [ width / 2, -height / 2, 0, 1]
         ],
         texturePositions: [
             [0, 0],
@@ -60,9 +60,9 @@ export const triangleA = (width: number, height: number): ShapeA => {
 export const triangleE = (width: number, height: number): ShapeE => {
     return {
         vertices: [
-            [-width / 2, -height / 2, 0],
-            [         0,  height / 2, 0],
-            [ width / 2, -height / 2, 0]
+            [-width / 2, -height / 2, 0, 1],
+            [         0,  height / 2, 0, 1],
+            [ width / 2, -height / 2, 0, 1]
         ],
         texturePositions: [
             [0, 0],
@@ -78,12 +78,12 @@ export const triangleE = (width: number, height: number): ShapeE => {
 export const rectangleA = (width: number, height: number): ShapeA => {
     return {
         vertices: [
-            [-width / 2,  height / 2, 0],
-            [-width / 2, -height / 2, 0],
-            [ width / 2, -height / 2, 0],
-            [-width / 2,  height / 2, 0],
-            [ width / 2, -height / 2, 0],
-            [ width / 2,  height / 2, 0],
+            [-width / 2,  height / 2, 0, 1],
+            [-width / 2, -height / 2, 0, 1],
+            [ width / 2, -height / 2, 0, 1],
+            [-width / 2,  height / 2, 0, 1],
+            [ width / 2, -height / 2, 0, 1],
+            [ width / 2,  height / 2, 0, 1],
         ],
         texturePositions: [
             [0, 1],
@@ -99,10 +99,10 @@ export const rectangleA = (width: number, height: number): ShapeA => {
 export const rectangleE = (width: number, height: number): ShapeE => {
     return {
         vertices: [
-            [-width / 2,  height / 2, 0],
-            [-width / 2, -height / 2, 0],
-            [ width / 2, -height / 2, 0],
-            [ width / 2,  height / 2, 0],
+            [-width / 2,  height / 2, 0, 1],
+            [-width / 2, -height / 2, 0, 1],
+            [ width / 2, -height / 2, 0, 1],
+            [ width / 2,  height / 2, 0, 1],
         ],
         texturePositions: [
             [0, 1],
@@ -121,52 +121,52 @@ export const boxA = (width: number, height: number, depth: number): ShapeA => {
     return {
         vertices: [
             // face 1
-            [-width / 2,  height / 2, depth / 2],
-            [ width / 2,  height / 2, depth / 2],
-            [-width / 2, -height / 2, depth / 2],
-            [ width / 2,  height / 2, depth / 2],
-            [-width / 2, -height / 2, depth / 2],
-            [ width / 2, -height / 2, depth / 2],
+            [-width / 2,  height / 2, depth / 2, 1],
+            [ width / 2,  height / 2, depth / 2, 1],
+            [-width / 2, -height / 2, depth / 2, 1],
+            [ width / 2,  height / 2, depth / 2, 1],
+            [-width / 2, -height / 2, depth / 2, 1],
+            [ width / 2, -height / 2, depth / 2, 1],
 
             // face 2
-            [-width / 2,  height / 2,  depth / 2],
-            [ width / 2,  height / 2,  depth / 2],
-            [ width / 2,  height / 2, -depth / 2],
-            [-width / 2,  height / 2,  depth / 2],
-            [ width / 2,  height / 2, -depth / 2],
-            [-width / 2,  height / 2, -depth / 2],
+            [-width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2,  height / 2, -depth / 2, 1],
+            [-width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2,  height / 2, -depth / 2, 1],
+            [-width / 2,  height / 2, -depth / 2, 1],
 
             // face 3
-            [ width / 2,  height / 2,  depth / 2],
-            [ width / 2,  height / 2, -depth / 2],
-            [ width / 2, -height / 2, -depth / 2],
-            [ width / 2,  height / 2,  depth / 2],
-            [ width / 2, -height / 2, -depth / 2],
-            [ width / 2, -height / 2,  depth / 2],
+            [ width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2,  height / 2, -depth / 2, 1],
+            [ width / 2, -height / 2, -depth / 2, 1],
+            [ width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2, -height / 2, -depth / 2, 1],
+            [ width / 2, -height / 2,  depth / 2, 1],
 
             // face 4
-            [-width / 2, -height / 2,  depth / 2],
-            [ width / 2, -height / 2,  depth / 2],
-            [ width / 2, -height / 2, -depth / 2],
-            [-width / 2, -height / 2,  depth / 2],
-            [ width / 2, -height / 2, -depth / 2],
-            [-width / 2, -height / 2, -depth / 2],
+            [-width / 2, -height / 2,  depth / 2, 1],
+            [ width / 2, -height / 2,  depth / 2, 1],
+            [ width / 2, -height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2,  depth / 2, 1],
+            [ width / 2, -height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2, -depth / 2, 1],
 
             // face 5
-            [-width / 2,  height / 2, -depth / 2],
-            [ width / 2,  height / 2, -depth / 2],
-            [-width / 2, -height / 2, -depth / 2],
-            [ width / 2,  height / 2, -depth / 2],
-            [-width / 2, -height / 2, -depth / 2],
-            [ width / 2, -height / 2, -depth / 2],
+            [-width / 2,  height / 2, -depth / 2, 1],
+            [ width / 2,  height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2, -depth / 2, 1],
+            [ width / 2,  height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2, -depth / 2, 1],
+            [ width / 2, -height / 2, -depth / 2, 1],
 
             // face 6
-            [-width / 2,  height / 2,  depth / 2],
-            [-width / 2,  height / 2, -depth / 2],
-            [-width / 2, -height / 2, -depth / 2],
-            [-width / 2,  height / 2,  depth / 2],
-            [-width / 2, -height / 2, -depth / 2],
-            [-width / 2, -height / 2,  depth / 2]
+            [-width / 2,  height / 2,  depth / 2, 1],
+            [-width / 2,  height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2, -depth / 2, 1],
+            [-width / 2,  height / 2,  depth / 2, 1],
+            [-width / 2, -height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2,  depth / 2, 1]
         ],
         texturePositions: [
             // face 1
@@ -223,14 +223,14 @@ export const boxA = (width: number, height: number, depth: number): ShapeA => {
 export const boxE = (width: number, height: number, depth: number): ShapeE => {
     return {
         vertices: [
-            [-width / 2,  height / 2,  depth / 2],
-            [ width / 2,  height / 2,  depth / 2],
-            [ width / 2, -height / 2,  depth / 2],
-            [-width / 2, -height / 2,  depth / 2],
-            [-width / 2,  height / 2, -depth / 2],
-            [ width / 2,  height / 2, -depth / 2],
-            [ width / 2, -height / 2, -depth / 2],
-            [-width / 2, -height / 2, -depth / 2],
+            [-width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2,  height / 2,  depth / 2, 1],
+            [ width / 2, -height / 2,  depth / 2, 1],
+            [-width / 2, -height / 2,  depth / 2, 1],
+            [-width / 2,  height / 2, -depth / 2, 1],
+            [ width / 2,  height / 2, -depth / 2, 1],
+            [ width / 2, -height / 2, -depth / 2, 1],
+            [-width / 2, -height / 2, -depth / 2, 1],
         ],
         vertexIndices: [
             [1, 0, 3],  // side 1

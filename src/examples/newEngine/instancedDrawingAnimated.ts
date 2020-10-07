@@ -1,5 +1,6 @@
 import { Context, InstancedElementsBundle, Index, Program, AttributeData, renderLoop, ElementsBundle, InstancedAttributeData } from '../../engine/engine.core';
 import { boxE } from '../../engine/engine.shapes';
+import { flattenRecursive } from '../../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -7,9 +8,6 @@ const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
     throw new Error('no context');
 }
-
-const boxImg = document.getElementById('boxTexture') as HTMLImageElement;
-const glassImg = document.getElementById('glassTexture') as HTMLImageElement;
 
 const box = boxE(0.25, 0.25, 0.25);
 
@@ -27,7 +25,7 @@ const startPositions = [
 function calculateTranslations(nrInstances: number, t: number, startPositions: number[][]) {
     const translations = [];
     for (let i = 0; i < nrInstances; i++) {
-        const pos = [0, 0, 0];
+        const pos = [0, 0, 0, 1];
         pos[0] = startPositions[i][0] + Math.sin(t + i);
         pos[1] = startPositions[i][1] + Math.sin(t + i);
         pos[2] = startPositions[i][2] + Math.sin(t + i);
@@ -60,8 +58,8 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(box.vertices, false),
-    'a_translation': new InstancedAttributeData(translations, true, 1)
+    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
+    'a_translation': new InstancedAttributeData(flattenRecursive(translations), 'vec4', true, 1)
 }, {}, {},
 'triangles',
 new Index(box.vertexIndices), 4);
@@ -72,6 +70,6 @@ bundle.bind(context);
 renderLoop(100, (tDelta: number) => {
     time += tDelta;
     const newTranslations = calculateTranslations(nrInstances, time, startPositions);
-    bundle.updateAttributeData(context, 'a_translation', newTranslations);
+    bundle.updateAttributeData(context, 'a_translation', flattenRecursive(newTranslations));
     bundle.draw(context);
 });

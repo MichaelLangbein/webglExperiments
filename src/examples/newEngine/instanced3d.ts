@@ -1,7 +1,7 @@
 import { Context, InstancedElementsBundle, Index, Program, AttributeData,
     renderLoop, ElementsBundle, InstancedAttributeData, UniformData } from '../../engine/engine.core';
 import { boxE, identity } from '../../engine/engine.shapes';
-import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix, 
+import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
     rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive } from '../../engine/math';
 
 
@@ -10,9 +10,6 @@ const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
     throw new Error('no context');
 }
-
-const boxImg = document.getElementById('boxTexture') as HTMLImageElement;
-const glassImg = document.getElementById('glassTexture') as HTMLImageElement;
 
 const box = boxE(0.25, 0.25, 0.25);
 
@@ -70,7 +67,7 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(box.vertices, false),
+    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
     // 'a_transform': new InstancedAttributeData(transformMatrices, true, 1)
 }, {
     'u_projection': new UniformData('mat4', flattenRecursive(projection))
@@ -85,6 +82,6 @@ let time = 0;
 renderLoop(100, (tDelta: number) => {
     time += tDelta;
     transformMatrices = updateTransformMatrices(nrInstances, time, transformMatrices);
-    // bundle.updateAttributeData(context, 'a_transform', transformMatrices);
+    bundle.updateAttributeData(context, 'a_transform', flattenRecursive(transformMatrices));
     bundle.draw(context);
 });

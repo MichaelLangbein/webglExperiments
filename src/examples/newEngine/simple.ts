@@ -1,5 +1,6 @@
-import { Context, InstancedElementsBundle, Index, Program, AttributeData, renderLoop, ElementsBundle } from '../../engine/engine.core';
+import { Context, Index, Program, AttributeData, renderLoop, ElementsBundle } from '../../engine/engine.core';
 import { boxE } from '../../engine/engine.shapes';
+import { flattenRecursive } from '../../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -29,7 +30,7 @@ const bundle = new ElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(box.vertices, false),
+    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
 }, {}, {},
 'triangles',
 new Index(box.vertexIndices));

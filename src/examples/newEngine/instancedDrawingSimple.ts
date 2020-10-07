@@ -1,5 +1,6 @@
 import { Context, InstancedElementsBundle, Index, Program, AttributeData, renderLoop, ElementsBundle, InstancedAttributeData } from '../../engine/engine.core';
 import { boxE } from '../../engine/engine.shapes';
+import { flattenRecursive } from '../../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -7,9 +8,6 @@ const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
     throw new Error('no context');
 }
-
-const boxImg = document.getElementById('boxTexture') as HTMLImageElement;
-const glassImg = document.getElementById('glassTexture') as HTMLImageElement;
 
 const box = boxE(0.25, 0.25, 0.25);
 
@@ -40,8 +38,8 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(box.vertices, false),
-    'a_translation': new InstancedAttributeData(translations, false, 1)
+    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
+    'a_translation': new InstancedAttributeData(flattenRecursive(translations), 'vec4', false, 1)
 }, {}, {},
 'triangles',
 new Index(box.vertexIndices), 4);
