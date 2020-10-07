@@ -40,8 +40,8 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(box.vertices),
-    'a_translation': new InstancedAttributeData(translations, 1)
+    'a_position': new AttributeData(box.vertices, false),
+    'a_translation': new InstancedAttributeData(translations, false, 1)
 }, {}, {},
 'triangles',
 new Index(box.vertexIndices), 4);

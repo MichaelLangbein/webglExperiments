@@ -29,7 +29,7 @@ const bundle = new ElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(box.vertices),
+    'a_position': new AttributeData(box.vertices, false),
 }, {}, {},
 'triangles',
 new Index(box.vertexIndices));

@@ -168,14 +168,20 @@ export const clearBackground = (gl: WebGL2RenderingContext, color: number[]): vo
 
  /**
   * A generic buffer, together with it's metadata.
+  *
+  * Really, a buffer is only a array, with no information about count, length, stride, offset etc.
+  * It is up to the vertex-array to interpret the buffer as having any of these properties.
+  * However, in reality we rarely have a case where two vertex-array entries interpret the same buffer in different ways.
+  * So we store the dimensions of a buffer together with the buffer here, so that it can be
+  * consistently interpreted everywhere.
   */
 export interface BufferObject {
     buffer: WebGLBuffer;
     vectorSize: number;
     vectorCount: number;
-    type: number;
+    dataPointType: number;
+    bytesPerEntry: number;   // default: 0 === sizeof(dataPointType)
     normalize: boolean;
-    stride: number;
     offset: number;
     staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW, gl.STATIC_DRAW
 }
@@ -200,15 +206,46 @@ export const createFloatBuffer = (gl: WebGL2RenderingContext, data: number[][], 
         buffer: buffer,
         vectorSize: data[0].length,
         vectorCount: data.length,
-        type: gl.FLOAT,   // the data is 32bit floats
+        dataPointType: gl.FLOAT,   // the data is 32bit floats
         normalize: false, // don't normalize the data
-        stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
+        bytesPerEntry: 0,        // Bytes per set of values. Eg. vec4: `stride = 4 * sizeof(float)`. Default `0 = sizeof(type)`. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
         staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
     };
 
     return bufferObject;
 };
+
+export const createMatrixBuffer = (gl: WebGL2RenderingContext, data: number[][][], changesOften = false): BufferObject => {
+    const nrVectors = data.length;
+    const nrRows = data[0].length;
+    const nrCols = data[0][0].length;
+    
+    const dataFlattened = new Float32Array(flattenRecursive(data));
+
+    const buffer = gl.createBuffer();
+    if (!buffer) {
+        throw new Error('No buffer was created');
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    const bufferObject: BufferObject = {
+        buffer: buffer,
+        vectorSize: nrRows,
+        vectorCount: nrVectors,
+        dataPointType: gl.FLOAT,   // the data is 32bit floats
+        normalize: false, // don't normalize the data
+        bytesPerEntry: 0,        // Bytes per set of values. Eg. vec4: `stride = 4 * sizeof(float)`. Default `0 = sizeof(type)`. Only change this in very-high-performance jobs.
+        offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
+        staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
+    };
+
+    return bufferObject;
+}
+
 
 export interface VertexArrayObject {
     buffers: BufferObject[];
@@ -269,9 +306,9 @@ export const updateBufferData = (gl: WebGL2RenderingContext, bo: BufferObject, n
         buffer: bo.buffer,
         vectorSize: newData[0].length,
         vectorCount: newData.length,
-        type: gl.FLOAT,   // the data is 32bit floats
+        dataPointType: gl.FLOAT,   // the data is 32bit floats
         normalize: false, // don't normalize the data
-        stride: 0,        // 0 = move forward size * sizeof(type) each iteration to get the next position. Only change this in very-high-performance jobs.
+        bytesPerEntry: 0,        // Bytes per set of values. Eg. vec4: `stride = 4 * sizeof(float)`. Default `0 = sizeof(type)`. Only change this in very-high-performance jobs.
         offset: 0,        // start at the beginning of the buffer. Only change this in very-high-performance jobs.
         staticOrDynamicDraw: bo.staticOrDynamicDraw
     };
@@ -307,8 +344,86 @@ export const bindBufferToAttribute = (gl: WebGL2RenderingContext, attributeLocat
     // Bind the buffer currently at global-state ARRAY_BUFFER to a vertex-array-location.
     gl.vertexAttribPointer(
         attributeLocation,
-        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
+        bufferObject.vectorSize, bufferObject.dataPointType, bufferObject.normalize, bufferObject.bytesPerEntry, bufferObject.offset);
     // gl.disableVertexAttribArray(attributeLocation); <-- must not do this!
+};
+
+
+export interface DelmeBufferDataObject {
+    buffer: WebGLBuffer;
+    dataPointType: number;
+    normalize: boolean;
+    bytesPerEntry: 0;
+    staticOrDynamicDraw: number;
+}
+
+export interface DelmeBufferDataInterpretation {
+    datatype: WebGLVariableType;
+}
+
+export interface DelmeBufferObject {
+    bdo: DelmeBufferDataObject;
+    bdi: DelmeBufferDataInterpretation;
+}
+
+/**
+ * Create buffer. Creation is slow! Do *before* render loop.
+ */
+export const delmeCreateFloatBuffer = (gl: WebGL2RenderingContext, datatype: WebGLVariableType, data: number[], changesOften = false): DelmeBufferObject => {
+
+    const dataFlattened = new Float32Array(flattenRecursive(data));
+
+    const buffer = gl.createBuffer();
+    if (!buffer) {
+        throw new Error('No buffer was created');
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
+
+    const bufferObject: DelmeBufferDataObject = {
+        buffer: buffer,
+        dataPointType: gl.FLOAT,   // the data is 32bit floats
+        normalize: false,         // don't normalize the data
+        bytesPerEntry: 0,        // Bytes per set of values. Eg. vec4: `stride = 4 * sizeof(float)`. Default `0 = sizeof(type)`. Only change this in very-high-performance jobs.
+        staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
+    };
+
+    const interpretationObject: DelmeBufferDataInterpretation = {
+        datatype: datatype
+    };
+
+    return {bdo: bufferObject, bdi: interpretationObject};
+};
+
+
+export const DeleteMebindBufferToMatrixAttribute = (gl: WebGL2RenderingContext, attributeLocation: number, bo: DelmeBufferObject): void => {
+    // Bind buffer to global-state ARRAY_BUFFER
+    gl.bindBuffer(gl.ARRAY_BUFFER, bo.bdo.buffer);
+    // Enable editing of vertex-array-location
+    gl.enableVertexAttribArray(attributeLocation);
+    // Bind the buffer currently at global-state ARRAY_BUFFER to a vertex-array-location.
+    switch (bo.bdi.datatype) {
+        case 'vec2':
+        case 'vec3':
+        case 'vec4':
+            break;
+        case 'mat2':
+            gl.vertexAttribPointer(attributeLocation + 0, 4, bo.bdo.dataPointType, bo.bdo.normalize, 2 * 16, 0 * 16);
+            gl.vertexAttribPointer(attributeLocation + 1, 4, bo.bdo.dataPointType, bo.bdo.normalize, 2 * 16, 1 * 16);
+            break;
+        case 'mat3':
+            gl.vertexAttribPointer(attributeLocation + 0, 4, bo.bdo.dataPointType, bo.bdo.normalize, 3 * 16, 0 * 16);
+            gl.vertexAttribPointer(attributeLocation + 1, 4, bo.bdo.dataPointType, bo.bdo.normalize, 3 * 16, 1 * 16);
+            gl.vertexAttribPointer(attributeLocation + 2, 4, bo.bdo.dataPointType, bo.bdo.normalize, 3 * 16, 2 * 16);
+            break;
+        case 'mat4':
+            gl.vertexAttribPointer(attributeLocation + 0, 4, bo.bdo.dataPointType, bo.bdo.normalize, 4 * 16, 0 * 16);
+            gl.vertexAttribPointer(attributeLocation + 1, 4, bo.bdo.dataPointType, bo.bdo.normalize, 4 * 16, 1 * 16);
+            gl.vertexAttribPointer(attributeLocation + 2, 4, bo.bdo.dataPointType, bo.bdo.normalize, 4 * 16, 2 * 16);
+            gl.vertexAttribPointer(attributeLocation + 3, 4, bo.bdo.dataPointType, bo.bdo.normalize, 4 * 16, 3 * 16);
+            break;
+    }
 };
 
 
@@ -333,7 +448,7 @@ export const bindBufferToAttributeInstanced = (gl: WebGL2RenderingContext, attri
     // Bind the buffer currently at global-state ARRAY_BUFFER to a vertex-array-location.
     gl.vertexAttribPointer(
         attributeLocation,
-        bufferObject.vectorSize, bufferObject.type, bufferObject.normalize, bufferObject.stride, bufferObject.offset);
+        bufferObject.vectorSize, bufferObject.dataPointType, bufferObject.normalize, bufferObject.bytesPerEntry, bufferObject.offset);
     // only proceed along this attribute's elements every `nrInstances` loops.
     gl.vertexAttribDivisor(attributeLocation, nrInstances);
 };

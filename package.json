@@ -7,8 +7,8 @@
   "author": "Michael Langbein (https://michaellangbein.github.io/)",
   "license": "MIT",
   "scripts": {
-    "start": "webpack-dev-server --config webpack-dev.config.js --port 9000 --inline --progress --profile --colors --watch --content-base src/ --mode development",
-    "build.lib": "webpack --config webpack-package.config.js --mode production"
+    "start": "npx webpack-dev-server --config webpack-dev.config.js --port 9000 --inline --progress --profile --colors --watch --content-base src/ --mode development",
+    "build.lib": "npx webpack --config webpack-package.config.js --mode production"
   },
   "keywords": [
     "webgl",

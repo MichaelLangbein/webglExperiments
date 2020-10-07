@@ -1,1 +1,1 @@
-import './examples/newEngine/instancedDrawingAnimated';
+import './examples/newEngine/instanced3d';
