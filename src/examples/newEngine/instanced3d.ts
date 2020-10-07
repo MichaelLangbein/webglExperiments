@@ -3,8 +3,10 @@ import { Context, InstancedElementsBundle, Index, Program, AttributeData,
 import { boxE, identity } from '../../engine/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
     rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive, transposeMatrix } from '../../engine/math';
+import Stats from 'stats.js';
 
 
+const body = document.getElementById('container') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
@@ -57,17 +59,22 @@ new Index(box.vertexIndices), nrInstances);
 bundle.upload(context);
 bundle.initVertexArray(context);
 bundle.bind(context);
+
 let time = 0;
+const stats = new Stats();
+stats.showPanel(0);
+body.appendChild(stats.dom);
+
 renderLoop(60, (tDelta: number) => {
-    time += tDelta;
+    time += tDelta; stats.begin();
 
     transformMatrices = [
-        transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5,  0.5, -3.5), rotateXMatrix(time * 0.1), ])),
-        transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5,  0.5, -2.5), rotateYMatrix(time * 0.1), ])),
-        transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, -1.5), rotateZMatrix(time * 0.1), ])),
-        transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, -0.5), rotateXMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5,  0.5, 0.5 * Math.sin(time * 0.10) + -3.5), rotateXMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5,  0.5, 1.0 * Math.sin(time * 0.20) + -2.5), rotateYMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, 0.5 * Math.sin(time * 0.10) + -1.5), rotateZMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, 1.0 * Math.sin(time * 0.05) + -0.5), rotateXMatrix(time * 0.1), ])),
     ];
     bundle.updateAttributeData(context, 'a_transform', flattenRecursive(transformMatrices));
 
-    bundle.draw(context);
+    bundle.draw(context); stats.end();
 });
