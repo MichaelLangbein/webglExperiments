@@ -1,8 +1,8 @@
 #version 300 es
-    precision mediump float;
-    in vec4 a_position;
+    precision highp float;
+    out vec4 outputColor;
+    in vec4 v_color;
 
     void main() {
-        vec4 pos = a_position;
-        gl_Position = pos;
+        outputColor = vec4(1.0, 1.0, 0.0, 1.0);
     }

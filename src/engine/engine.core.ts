@@ -515,7 +515,8 @@ export class ArrayBundle extends Bundle {
         attributes: {[k: string]: AttributeData},
         uniforms: {[k: string]: UniformData},
         textures: {[k: string]: TextureData},
-        drawingMode: GlDrawingMode = 'triangles'
+        drawingMode: GlDrawingMode = 'triangles',
+        readonly nrAttributes: number
     ) {
         super(program, attributes, uniforms, textures, drawingMode);
     }
@@ -523,8 +524,7 @@ export class ArrayBundle extends Bundle {
 
     draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
         super.draw(context, background, frameBuffer, viewport);
-        const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArray(context.gl, this.drawingMode, this.attributes[firstAttributeName].data.length, 0);
+        drawArray(context.gl, this.drawingMode, this.nrAttributes, 0);
     }
 }
 
@@ -564,6 +564,7 @@ export class InstancedArrayBundle extends Bundle {
         uniforms: {[k: string]: UniformData},
         textures: {[k: string]: TextureData},
         drawingMode: GlDrawingMode = 'triangles',
+        readonly nrAttributes: number,
         public nrInstances: number
     ) {
         super(program, attributes, uniforms, textures, drawingMode);
@@ -572,7 +573,7 @@ export class InstancedArrayBundle extends Bundle {
     draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
         super.draw(context, background, frameBuffer, viewport);
         const firstAttributeName = Object.keys(this.attributes)[0];
-        drawArrayInstanced(context.gl, this.drawingMode, this.attributes[firstAttributeName].data.length, 0, this.nrInstances);
+        drawArrayInstanced(context.gl, this.drawingMode, this.nrAttributes, 0, this.nrInstances);
     }
 }
 
