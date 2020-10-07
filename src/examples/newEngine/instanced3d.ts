@@ -17,29 +17,12 @@ const box = boxE(0.25, 0.25, 0.25);
 
 const nrInstances = 4;
 
-const getInitialTransformationMatrices = (nrInstances: number): number[][][] => {
-    const matrices: number[][][] = [];
-    for (let i = 0; i < nrInstances; i++) {
-        const t = translateMatrix(Math.random() * 2 - 1, Math.random() * 2 - 1, -30);
-        matrices.push(transposeMatrix(t));
-    }
-    return matrices;
-};
-
-const updateTransformMatrices = (nrInstances: number, time: number, lastMatrices: number[][][]): number[][][] => {
-    // return lastMatrices;
-    const matrices: number[][][] = [];
-    for (let i = 0; i < nrInstances; i++) {
-        const t = matrixMultiplyList([
-            rotateXMatrix(i * 0.01),
-            transposeMatrix(lastMatrices[i])
-        ]);
-        matrices.push(transposeMatrix(t));
-    }
-    return matrices;
-};
-
-let transformMatrices = getInitialTransformationMatrices(nrInstances);
+let transformMatrices = [
+    transposeMatrix(translateMatrix(-0.5,  0.5, -3.5)),
+    transposeMatrix(translateMatrix( 0.5,  0.5, -2.5)),
+    transposeMatrix(translateMatrix( 0.5, -0.5, -1.5)),
+    transposeMatrix(translateMatrix(-0.5, -0.5, -0.5)),
+];
 
 const projection = transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 100));
 
@@ -52,7 +35,7 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     uniform mat4 u_projection;
 
     void main() {
-        vec4 pos = u_projection * a_transform * a_position + vec4(0.0, 0.0, 0.0, 0.0) * u_projection * a_transform * a_position;
+        vec4 pos = u_projection * a_transform * a_position;
         gl_Position = pos;
     }
 `, `#version 300 es
@@ -75,9 +58,16 @@ bundle.upload(context);
 bundle.initVertexArray(context);
 bundle.bind(context);
 let time = 0;
-renderLoop(100, (tDelta: number) => {
+renderLoop(60, (tDelta: number) => {
     time += tDelta;
-    transformMatrices = updateTransformMatrices(nrInstances, time, transformMatrices);
+
+    transformMatrices = [
+        transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5,  0.5, -3.5), rotateXMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5,  0.5, -2.5), rotateYMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, -1.5), rotateZMatrix(time * 0.1), ])),
+        transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, -0.5), rotateXMatrix(time * 0.1), ])),
+    ];
     bundle.updateAttributeData(context, 'a_transform', flattenRecursive(transformMatrices));
+
     bundle.draw(context);
 });

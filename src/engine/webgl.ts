@@ -318,7 +318,10 @@ const sizeOf = (gl: WebGL2RenderingContext, type: number): number => {
 };
 
 
-export const bindBufferToAttribute = (gl: WebGL2RenderingContext, attributeLocation: number, bo: BufferObject): void => {
+/**
+ * If nrInstances !== 0: binding with vertexAttribDivisor(loc, nrInstances)
+ */
+export const bindBufferToAttribute = (gl: WebGL2RenderingContext, attributeLocation: number, bo: BufferObject, nrInstances = 0): void => {
     // Bind buffer to global-state ARRAY_BUFFER
     gl.bindBuffer(gl.ARRAY_BUFFER, bo.buffer);
     // Enable editing of vertex-array-location
@@ -339,43 +342,56 @@ export const bindBufferToAttribute = (gl: WebGL2RenderingContext, attributeLocat
         //                             index,              size, type,             norml, stride,        offset
         case 'float':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(    attributeLocation,     1, bo.dataPointType, false, 1 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     1, bo.dataPointType, false, 1 * byteSize,  0               );
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             break;
         case 'vec2':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(    attributeLocation,     2, bo.dataPointType, false, 2 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     2, bo.dataPointType, false, 2 * byteSize,  0               );
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             break;
         case 'vec3':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(    attributeLocation,     3, bo.dataPointType, false, 3 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     3, bo.dataPointType, false, 3 * byteSize,  0               );
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             break;
         case 'vec4':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(    attributeLocation,     4, bo.dataPointType, false, 4 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     4, bo.dataPointType, false, 4 * byteSize,  0               );
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             break;
         case 'mat2':
             gl.enableVertexAttribArray(attributeLocation + 0);
             gl.vertexAttribPointer(    attributeLocation + 0, 2, bo.dataPointType, false, 4 * byteSize,  0 * 2 * byteSize);
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             gl.enableVertexAttribArray(attributeLocation + 1);
             gl.vertexAttribPointer(    attributeLocation + 1, 2, bo.dataPointType, false, 4 * byteSize,  1 * 2 * byteSize);
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation + 1, nrInstances);
             break;
         case 'mat3':
             gl.enableVertexAttribArray(attributeLocation + 0);
             gl.vertexAttribPointer(    attributeLocation + 0, 3, bo.dataPointType, false, 9 * byteSize,  0 * 3 * byteSize);
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             gl.enableVertexAttribArray(attributeLocation + 1);
             gl.vertexAttribPointer(    attributeLocation + 1, 3, bo.dataPointType, false, 9 * byteSize,  1 * 3 * byteSize);
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation + 1, nrInstances);
             gl.enableVertexAttribArray(attributeLocation + 2);
             gl.vertexAttribPointer(    attributeLocation + 2, 3, bo.dataPointType, false, 9 * byteSize,  2 * 3 * byteSize);
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation + 2, nrInstances);
             break;
         case 'mat4':
             gl.enableVertexAttribArray(attributeLocation + 0);
             gl.vertexAttribPointer(    attributeLocation + 0, 4, bo.dataPointType, false, 16 * byteSize, 0 * 4 * byteSize); // col 0
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation, nrInstances);
             gl.enableVertexAttribArray(attributeLocation + 1);
             gl.vertexAttribPointer(    attributeLocation + 1, 4, bo.dataPointType, false, 16 * byteSize, 1 * 4 * byteSize); // col 1
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation + 1, nrInstances);
             gl.enableVertexAttribArray(attributeLocation + 2);
             gl.vertexAttribPointer(    attributeLocation + 2, 4, bo.dataPointType, false, 16 * byteSize, 2 * 4 * byteSize); // col 2
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation + 2, nrInstances);
             gl.enableVertexAttribArray(attributeLocation + 3);
             gl.vertexAttribPointer(    attributeLocation + 3, 4, bo.dataPointType, false, 16 * byteSize, 3 * 4 * byteSize); // col 3
+            if (nrInstances) gl.vertexAttribDivisor(attributeLocation + 3, nrInstances);
             break;
     }
 };
@@ -395,9 +411,7 @@ export const bindBufferToAttributeVertexArray = (gl: WebGL2RenderingContext, att
  * that is, for `nrInstances * data.length` vertices.
  */
 export const bindBufferToAttributeInstanced = (gl: WebGL2RenderingContext, attributeLocation: number, bufferObject: BufferObject, nrInstances: number): void => {
-    bindBufferToAttribute(gl, attributeLocation, bufferObject);
-    // only proceed along this attribute's elements every `nrInstances` loops.
-    gl.vertexAttribDivisor(attributeLocation, nrInstances);
+    bindBufferToAttribute(gl, attributeLocation, bufferObject, nrInstances);
 };
 
 
