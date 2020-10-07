@@ -1,1 +1,1 @@
-import './examples/newEngine/matrixAttribute';
+import './examples/newEngine/instanced3d';

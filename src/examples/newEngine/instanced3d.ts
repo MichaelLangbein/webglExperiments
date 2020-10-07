@@ -2,7 +2,7 @@ import { Context, InstancedElementsBundle, Index, Program, AttributeData,
     renderLoop, ElementsBundle, InstancedAttributeData, UniformData } from '../../engine/engine.core';
 import { boxE, identity } from '../../engine/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
-    rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive } from '../../engine/math';
+    rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive, transposeMatrix } from '../../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -17,46 +17,42 @@ const box = boxE(0.25, 0.25, 0.25);
 
 const nrInstances = 4;
 
-const getInitialTransformationMatrices = (nrInstances: number): number[][] => {
-    let matrices: number[][] = [];
+const getInitialTransformationMatrices = (nrInstances: number): number[][][] => {
+    const matrices: number[][][] = [];
     for (let i = 0; i < nrInstances; i++) {
-        const t = matrixMultiplyList([
-            translateMatrix(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1),
-            rotateXMatrix(Math.random() * 2 * Math.PI),
-            rotateYMatrix(Math.random() * 2 * Math.PI),
-            rotateZMatrix(Math.random() * 2 * Math.PI),
-        ]);
-        matrices = Array.prototype.concat(matrices, t);
+        const t = translateMatrix(Math.random() * 2 - 1, Math.random() * 2 - 1, -30);
+        matrices.push(transposeMatrix(t));
     }
     return matrices;
 };
 
-const updateTransformMatrices = (nrInstances: number, time: number, lastMatrices: number[][]): number[][] => {
-    let matrices: number[][] = [];
+const updateTransformMatrices = (nrInstances: number, time: number, lastMatrices: number[][][]): number[][][] => {
+    // return lastMatrices;
+    const matrices: number[][][] = [];
     for (let i = 0; i < nrInstances; i++) {
-        // const t = matrixMultiplyList([
-        //     rotateXMatrix(Math.random() * 2 * Math.PI),
-        //     rotateYMatrix(Math.random() * 2 * Math.PI),
-        //     rotateZMatrix(Math.random() * 2 * Math.PI),
-        // ]);
-        matrices = Array.prototype.concat(matrices, identityMatrix());
+        const t = matrixMultiplyList([
+            rotateXMatrix(i * 0.01),
+            transposeMatrix(lastMatrices[i])
+        ]);
+        matrices.push(transposeMatrix(t));
     }
     return matrices;
 };
 
 let transformMatrices = getInitialTransformationMatrices(nrInstances);
 
-const projection = projectionMatrix(Math.PI / 2, 1, 0.01, 100);
+const projection = transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 100));
 
 const context = new Context(gl, true);
 
 const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     precision mediump float;
     in vec4 a_position;
+    in mat4 a_transform;
     uniform mat4 u_projection;
 
     void main() {
-        vec4 pos = u_projection * a_position;
+        vec4 pos = u_projection * a_transform * a_position + vec4(0.0, 0.0, 0.0, 0.0) * u_projection * a_transform * a_position;
         gl_Position = pos;
     }
 `, `#version 300 es
@@ -68,7 +64,7 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     }
 `), {
     'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
-    // 'a_transform': new InstancedAttributeData(transformMatrices, true, 1)
+    'a_transform': new InstancedAttributeData(flattenRecursive(transformMatrices), 'mat4', true, 1)
 }, {
     'u_projection': new UniformData('mat4', flattenRecursive(projection))
 }, {},

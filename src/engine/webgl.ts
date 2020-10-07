@@ -336,46 +336,46 @@ export const bindBufferToAttribute = (gl: WebGL2RenderingContext, attributeLocat
          * stride: A GLsizei specifying the offset in bytes between the beginning of consecutive vertex attributes. Cannot be larger than 255. If stride is 0, the attribute is assumed to be tightly packed, that is, the attributes are not interleaved but each attribute is in a separate block, and the next vertex' attribute follows immediately after the current vertex.
          * offset: A GLintptr specifying an offset in bytes of the first component in the vertex attribute array. Must be a multiple of the byte length of type.
          */
-        //                         index,              size, type,             norml, stride,        offset
+        //                             index,              size, type,             norml, stride,        offset
         case 'float':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation,     1, bo.dataPointType, false, 1 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     1, bo.dataPointType, false, 1 * byteSize,  0            );
             break;
         case 'vec2':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation,     2, bo.dataPointType, false, 2 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     2, bo.dataPointType, false, 2 * byteSize,  0            );
             break;
         case 'vec3':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation,     3, bo.dataPointType, false, 3 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     3, bo.dataPointType, false, 3 * byteSize,  0            );
             break;
         case 'vec4':
             gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation,     4, bo.dataPointType, false, 4 * byteSize,  0            );
+            gl.vertexAttribPointer(    attributeLocation,     4, bo.dataPointType, false, 4 * byteSize,  0            );
             break;
         case 'mat2':
-            gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation + 0, 2, bo.dataPointType, false, 4 * byteSize,  0 * 2 * byteSize);
+            gl.enableVertexAttribArray(attributeLocation + 0);
+            gl.vertexAttribPointer(    attributeLocation + 0, 2, bo.dataPointType, false, 4 * byteSize,  0 * 2 * byteSize);
             gl.enableVertexAttribArray(attributeLocation + 1);
-            gl.vertexAttribPointer(attributeLocation + 1, 2, bo.dataPointType, false, 4 * byteSize,  1 * 2 * byteSize);
+            gl.vertexAttribPointer(    attributeLocation + 1, 2, bo.dataPointType, false, 4 * byteSize,  1 * 2 * byteSize);
             break;
         case 'mat3':
-            gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation + 0, 3, bo.dataPointType, false, 9 * byteSize,  0 * 3 * byteSize);
+            gl.enableVertexAttribArray(attributeLocation + 0);
+            gl.vertexAttribPointer(    attributeLocation + 0, 3, bo.dataPointType, false, 9 * byteSize,  0 * 3 * byteSize);
             gl.enableVertexAttribArray(attributeLocation + 1);
-            gl.vertexAttribPointer(attributeLocation + 1, 3, bo.dataPointType, false, 9 * byteSize,  1 * 3 * byteSize);
+            gl.vertexAttribPointer(    attributeLocation + 1, 3, bo.dataPointType, false, 9 * byteSize,  1 * 3 * byteSize);
             gl.enableVertexAttribArray(attributeLocation + 2);
-            gl.vertexAttribPointer(attributeLocation + 2, 3, bo.dataPointType, false, 9 * byteSize,  2 * 3 * byteSize);
+            gl.vertexAttribPointer(    attributeLocation + 2, 3, bo.dataPointType, false, 9 * byteSize,  2 * 3 * byteSize);
             break;
         case 'mat4':
-            gl.enableVertexAttribArray(attributeLocation);
-            gl.vertexAttribPointer(attributeLocation + 0, 4, bo.dataPointType, false, 16 * byteSize, 0 * 4 * byteSize); // col 0
+            gl.enableVertexAttribArray(attributeLocation + 0);
+            gl.vertexAttribPointer(    attributeLocation + 0, 4, bo.dataPointType, false, 16 * byteSize, 0 * 4 * byteSize); // col 0
             gl.enableVertexAttribArray(attributeLocation + 1);
-            gl.vertexAttribPointer(attributeLocation + 1, 4, bo.dataPointType, false, 16 * byteSize, 1 * 4 * byteSize); // col 1
+            gl.vertexAttribPointer(    attributeLocation + 1, 4, bo.dataPointType, false, 16 * byteSize, 1 * 4 * byteSize); // col 1
             gl.enableVertexAttribArray(attributeLocation + 2);
-            gl.vertexAttribPointer(attributeLocation + 2, 4, bo.dataPointType, false, 16 * byteSize, 2 * 4 * byteSize); // col 2
+            gl.vertexAttribPointer(    attributeLocation + 2, 4, bo.dataPointType, false, 16 * byteSize, 2 * 4 * byteSize); // col 2
             gl.enableVertexAttribArray(attributeLocation + 3);
-            gl.vertexAttribPointer(attributeLocation + 3, 4, bo.dataPointType, false, 16 * byteSize, 3 * 4 * byteSize); // col 3
+            gl.vertexAttribPointer(    attributeLocation + 3, 4, bo.dataPointType, false, 16 * byteSize, 3 * 4 * byteSize); // col 3
             break;
     }
 };
