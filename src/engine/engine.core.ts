@@ -3,7 +3,7 @@ import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform,
     createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation,
     getUniformLocation, IndexBufferObject, TextureObject, WebGLUniformType, drawElementsInstanced, drawArrayInstanced,
     GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray,
-    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground, WebGLAttributeType} from './webgl';
+    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground, WebGLAttributeType, createFramebuffer, bindTextureToFramebuffer, createEmptyTexture} from './webgl';
 
 
 
@@ -82,25 +82,25 @@ function checkDataProvided(
     textures: {[k: string]: TextureData},
     ) {
     const [attributeNames, uniformNames, textureNames, precisions] = parseProgram(program);
-    for (const attrName of attributeNames) {
-        if (!attributes[attrName]) {
-            throw new Error(`Provided no values for shader's attribute ${attrName}.`);
-        }
-    }
-    for (const uniformName of uniformNames) {
-        if (!uniforms[uniformName]) {
-            throw new Error(`Provided no values for shader's uniform ${uniformName}.`);
-        }
-    }
-    for (const texName of textureNames) {
-        if (!textures[texName]) {
-            throw new Error(`Provided no values for shader's texture ${texName}.`);
-        }
-    }
-    if (precisions.length === 1) {
-        console.warn(`You have only provided one precision qualifier.
-        This can cause issues when you want to use a uniform in both the vertex- and the fragment-shader.`);
-    }
+    // for (const attrName of attributeNames) {
+    //     if (!attributes[attrName]) {
+    //         throw new Error(`Provided no values for shader's attribute ${attrName}.`);
+    //     }
+    // }
+    // for (const uniformName of uniformNames) {
+    //     if (!uniforms[uniformName]) {
+    //         throw new Error(`Provided no values for shader's uniform ${uniformName}.`);
+    //     }
+    // }
+    // for (const texName of textureNames) {
+    //     if (!textures[texName]) {
+    //         throw new Error(`Provided no values for shader's texture ${texName}.`);
+    //     }
+    // }
+    // if (precisions.length === 1) {
+    //     console.warn(`You have only provided one precision qualifier.
+    //     This can cause issues when you want to use a uniform in both the vertex- and the fragment-shader.`);
+    // }
     // @TODO: the below code does not account for instanced attributes.
     // const lengths = Object.values(attributes).map(a => a.data.length);
     // if (Math.min(...lengths) !== Math.max(...lengths)) {
@@ -296,6 +296,9 @@ export class Index {
 }
 
 
+
+
+
 export class Program {
 
     program: WebGLProgram;
@@ -342,6 +345,7 @@ export class Program {
         return this.getUniformLocation(gl, tName);
     }
 }
+
 
 
 /**
@@ -392,6 +396,10 @@ export class Context {
             this.loadedTextures.push(data.hash);
             if (this.verbose) console.log(`Context: uploaded texture ${data.hash}`);
         }
+    }
+
+    bindFramebuffer(fbo: FramebufferObject): void {
+        throw new Error('Not yet implemented');
     }
 }
 
