@@ -2,7 +2,7 @@ import { Context, InstancedElementsBundle, Index, Program, AttributeData,
     renderLoop, ElementsBundle, InstancedAttributeData, UniformData } from '../../engine/engine.core';
 import { boxE, identity } from '../../engine/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
-    rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive, transposeMatrix } from '../../engine/math';
+    rotateYMatrix, rotateZMatrix, translateMatrix, flatten2, flatten3, transposeMatrix } from '../../engine/math';
 import Stats from 'stats.js';
 
 
@@ -48,10 +48,10 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
-    'a_transform': new InstancedAttributeData(flattenRecursive(transformMatrices), 'mat4', true, 1)
+    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
+    'a_transform': new InstancedAttributeData(flatten3(transformMatrices), 'mat4', true, 1)
 }, {
-    'u_projection': new UniformData('mat4', flattenRecursive(projection))
+    'u_projection': new UniformData('mat4', flatten2(projection))
 }, {},
 'triangles',
 new Index(box.vertexIndices), nrInstances);
@@ -74,7 +74,7 @@ renderLoop(60, (tDelta: number) => {
         transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, 0.5 * Math.sin(time * 0.10) + -1.5), rotateZMatrix(time * 0.1), ])),
         transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, 1.0 * Math.sin(time * 0.05) + -0.5), rotateXMatrix(time * 0.1), ])),
     ];
-    bundle.updateAttributeData(context, 'a_transform', flattenRecursive(transformMatrices));
+    bundle.updateAttributeData(context, 'a_transform', flatten3(transformMatrices));
 
     bundle.draw(context); stats.end();
 });

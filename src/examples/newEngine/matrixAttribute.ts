@@ -1,8 +1,5 @@
-import { Context, InstancedElementsBundle, Index, Program, AttributeData,
-    renderLoop, ElementsBundle, InstancedAttributeData, UniformData, ArrayBundle } from '../../engine/engine.core';
-import { boxE, identity } from '../../engine/engine.shapes';
-import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
-    rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive, transposeMatrix } from '../../engine/math';
+import { Context, Program, AttributeData, renderLoop, ArrayBundle } from '../../engine/engine.core';
+import { flatten3, transposeMatrix } from '../../engine/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -52,7 +49,7 @@ const bundle = new ArrayBundle(new Program(`#version 300 es
         outputColor = vec4(v_color.xyz, 1.0);
     }
 `), {
-    'a_matrix': new AttributeData(flattenRecursive(matrices0), 'mat4', false)
+    'a_matrix': new AttributeData(flatten3(matrices0), 'mat4', false)
 }, {}, {},
 'triangles',
 3);

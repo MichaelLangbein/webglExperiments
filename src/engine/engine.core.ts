@@ -1,4 +1,3 @@
-import { flattenRecursive } from './math';
 import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform, BufferObject, createBuffer,
     createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation,
     getUniformLocation, IndexBufferObject, TextureObject, WebGLUniformType, drawElementsInstanced, drawArrayInstanced,
@@ -137,7 +136,7 @@ export class AttributeData implements IAttributeData {
         this.data = data;
         this.attributeType = attrType;
         this.changesOften = changesOften;
-        this.hash = hash(flattenRecursive(data) + '');
+        this.hash = hash(data + '');
     }
 
     upload(gl: WebGL2RenderingContext) {
@@ -177,7 +176,7 @@ export class InstancedAttributeData implements IAttributeData {
         this.attributeType = attrType;
         this.changesOften = changesOften;
         this.nrInstances = nrInstances;
-        this.hash = hash(flattenRecursive(data) + '');
+        this.hash = hash(data + '');
     }
 
     upload(gl: WebGL2RenderingContext) {

@@ -1,8 +1,8 @@
-import { AttributeData, Context, ElementsBundle, Index, InstancedAttributeData, InstancedElementsBundle, Program, renderLoop, UniformData } from '../../engine/engine.core';
+import { AttributeData, Context, Index, InstancedAttributeData, InstancedElementsBundle, Program, renderLoop, UniformData } from '../../engine/engine.core';
 import { boxE } from '../../engine/engine.shapes';
-import { flattenRecursive, identityMatrix, projectionMatrix, translateMatrix, transposeMatrix } from '../../engine/math';
+import { projectionMatrix, translateMatrix, transposeMatrix, flatten2, flatten3 } from '../../engine/math';
 import { setup3dScene } from '../../engine/webgl';
-
+import Stats from 'stats.js';
 
 
 class Entity {
@@ -10,7 +10,7 @@ class Entity {
     private position: number[];
     constructor() {
         this.color = [Math.random(), Math.random(), Math.random(), 1];
-        this.position = [3 * Math.random() - 1.5, 3 * Math.random() - 1.5, -20 * (Math.random()* 0.5 + 0.5), 1];
+        this.position = [3 * Math.random() - 1.5, 3 * Math.random() - 1.5, -20 * (Math.random() * 0.5 + 0.5), 1];
     }
     getTransformationMatrix(time: number): number[][] {
         const deltaX = -0.05 * Math.sin(time * 0.01);
@@ -18,19 +18,19 @@ class Entity {
         this.position[0] += deltaX;
         this.position[2] += deltaZ;
         return translateMatrix(this.position[0], this.position[1], this.position[2]);
-    }   
+    }
     getColor(): number[] {
         return this.color;
     }
 }
 
-const nrInstances = 10000;
+const nrEntities = 50000;
 const entities: Entity[] = [];
-for (let i = 0; i < nrInstances; i++) {
+for (let i = 0; i < nrEntities; i++) {
     entities.push(new Entity());
 }
-const initialTransforms = [];
-const colors = [];
+let initialTransforms: number[][][] = [];
+let colors: number[][] = [];
 for (let entity of entities) {
     const transform = entity.getTransformationMatrix(0);
     initialTransforms.push(transposeMatrix(transform));
@@ -38,7 +38,7 @@ for (let entity of entities) {
 }
 
 
-
+const body = document.getElementById('container') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
@@ -46,6 +46,9 @@ const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 if (!gl) {
     throw new Error('no context');
 }
+const stats = new Stats();
+stats.showPanel(0);
+body.appendChild(stats.dom);
 
 const box = boxE(0.25, 0.25, 0.25);
 
@@ -53,7 +56,7 @@ const box = boxE(0.25, 0.25, 0.25);
 
 const context = new Context(gl, true);
 
-const instancedBundle = new InstancedElementsBundle(new Program(`#version 300 es
+const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     precision highp float;
     in vec4 a_position;
     in mat4 a_transform;
@@ -74,28 +77,28 @@ const instancedBundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = v_color;
     }
 `), {
-    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
-    'a_transform': new InstancedAttributeData(flattenRecursive(initialTransforms), 'mat4', true, 1),
-    'a_color': new InstancedAttributeData(flattenRecursive(colors), 'vec4', false, 1)
+    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
+    'a_transform': new InstancedAttributeData(flatten3(initialTransforms), 'mat4', true, 1),
+    'a_color': new InstancedAttributeData(flatten2(colors), 'vec4', false, 1)
 }, {
-    'u_projection': new UniformData('mat4', flattenRecursive(transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 1000)))),
-}, {}, 'triangles', new Index(box.vertexIndices), nrInstances);
+    'u_projection': new UniformData('mat4', flatten2(transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 1000)))),
+}, {}, 'triangles', new Index(box.vertexIndices), nrEntities);
 
 
 setup3dScene(context.gl);
-instancedBundle.upload(context);
-instancedBundle.initVertexArray(context);
-instancedBundle.bind(context);
+bundle.upload(context);
+bundle.initVertexArray(context);
+bundle.bind(context);
 
 let time = 0;
 renderLoop(60, (tDelta: number) => {
-    time += tDelta;
+    time += tDelta;    stats.begin();
 
-    const newTransforms = [];
+    const newTransforms: number[][][] = [];
     for (let entity of entities) {
-        const transform = entity.getTransformationMatrix(time);
-        newTransforms.push(transposeMatrix(transform));
+        newTransforms.push(transposeMatrix(entity.getTransformationMatrix(time)));
     }
-    instancedBundle.updateAttributeData(context, 'a_transform', flattenRecursive(newTransforms));
-    instancedBundle.draw(context);
+
+    bundle.updateAttributeData(context, 'a_transform', flatten3(newTransforms));
+    bundle.draw(context);    stats.end();
 });

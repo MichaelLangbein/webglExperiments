@@ -69,7 +69,7 @@
  *        - WebGL 2.0: allows you to create your own vertex-arrays, whereas 1.0 always only used one global vertex-array.
  */
 
-import { flattenRecursive, isPowerOf } from './math';
+import { isPowerOf, flatten3 } from './math';
 
 
 
@@ -435,9 +435,9 @@ export interface IndexBufferObject {
     staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW or gl.STATIC_DRAW
 }
 
-export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[][], changesOften = false): IndexBufferObject => {
+export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[], changesOften = false): IndexBufferObject => {
 
-    const indicesFlattened = new Uint16Array(flattenRecursive(indices));
+    const indicesFlattened = new Uint16Array(indices);
 
     const buffer = gl.createBuffer();
     if (!buffer) {
@@ -607,7 +607,7 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
     const format = gl.RGBA;
     const type = gl.UNSIGNED_BYTE;
 
-    const binData = new Uint8Array(flattenRecursive(data));
+    const binData = new Uint8Array(flatten3(data));
 
     if (channels !== 4) {
         // have WebGL digest data one byte at a time.
@@ -705,7 +705,7 @@ export const updateTexture = (gl: WebGL2RenderingContext, to: TextureObject, new
         if ( !isPowerOf(width, 2) || !isPowerOf(height, 2) ) {
             throw new Error(`Texture-data-dimensions must be a power of two, but are ${height} x ${width}`);
         }
-        const binData = new Uint8Array(flattenRecursive(newData));  // @todo: use another ArrayBufferView depending on to.format?
+        const binData = new Uint8Array(flatten3(newData));  // @todo: use another ArrayBufferView depending on to.format?
         gl.texImage2D(gl.TEXTURE_2D, to.level, to.internalformat, to.width, to.height, to.border, to.format, to.type, binData);
     }
     gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.

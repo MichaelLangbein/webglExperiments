@@ -84,18 +84,56 @@ export const pointDistance = (p0: Vector, p1: Vector): number => {
 };
 
 
-export const flattenRecursive = (m: any[]): number[] => {
-    let flat: number[] = [];
-    for (const row of m) {
-        let flattenedRow;
-        if (Array.isArray(row[0])) {
-            flattenedRow = flattenRecursive(row);
-        } else {
-            flattenedRow = row;
+
+export const flatten2 = (m: number[][]): number[] => {
+    const nrRows = m.length;
+    const nrCols = m[0].length;
+    const out = Array(nrRows * nrCols);
+    let i = 0;
+    for (let r = 0; r < nrRows; r++) {
+        for (let c = 0; c < nrCols; c++) {
+            out[i] = m[r][c];
+            i++;
         }
-        flat = Array.prototype.concat(flat, flattenedRow);
     }
-    return flat;
+    return out;
+};
+
+export const flatten3 = (m: number[][][]): number[] => {
+    const nrRows = m.length;
+    const nrCols = m[0].length;
+    const nrEls = m[0][0].length;
+    const out = Array(nrRows * nrCols * nrEls);
+    let i = 0;
+    for (let r = 0; r < nrRows; r++) {
+        for (let c = 0; c < nrCols; c++) {
+            for (let e = 0; e < nrEls; e++) {
+                out[i] = m[r][c][e];
+                i++;
+            }
+        }
+    }
+    return out;
+};
+
+export const flatten4 = (m: number[][][][]): number[] => {
+    const nrMatrices = m.length;
+    const nrRows = m[0].length;
+    const nrCols = m[0][0].length;
+    const nrEls = m[0][0][0].length;
+    const out = Array(nrMatrices * nrRows * nrCols * nrEls);
+    let i = 0;
+    for (let n = 0; n < nrMatrices; n++) {
+        for (let r = 0; r < nrRows; r++) {
+            for (let c = 0; c < nrCols; c++) {
+                for (let e = 0; e < nrEls; e++) {
+                    out[i] = m[n][r][c][e];
+                    i++;
+                }
+            }
+        }
+    }
+    return out;
 };
 
 

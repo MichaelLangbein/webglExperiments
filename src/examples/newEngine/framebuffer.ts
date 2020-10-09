@@ -3,7 +3,7 @@ import { Context, InstancedElementsBundle, Index, Program, AttributeData,
     renderLoop, ElementsBundle, InstancedAttributeData, UniformData, ArrayBundle, TextureData } from '../../engine/engine.core';
 import { boxE, gaussianKernel, rectangleA } from '../../engine/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
-    rotateYMatrix, rotateZMatrix, translateMatrix, flattenRecursive, transposeMatrix } from '../../engine/math';
+    rotateYMatrix, rotateZMatrix, translateMatrix, transposeMatrix, flatten2, flatten3 } from '../../engine/math';
 
 
 const body = document.getElementById('container') as HTMLDivElement;
@@ -61,11 +61,11 @@ const drawingBundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = v_color;
     }
 `), {
-    'a_position': new AttributeData(flattenRecursive(box.vertices), 'vec4', false),
-    'a_transform': new InstancedAttributeData(flattenRecursive(transformMatrices), 'mat4', true, 1),
-    'a_color': new InstancedAttributeData(flattenRecursive(colors), 'vec4', false, 1)
+    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
+    'a_transform': new InstancedAttributeData(flatten3(transformMatrices), 'mat4', true, 1),
+    'a_color': new InstancedAttributeData(flatten2(colors), 'vec4', false, 1)
 }, {
-    'u_projection': new UniformData('mat4', flattenRecursive(projection))
+    'u_projection': new UniformData('mat4', flatten2(projection))
 }, {},
 'triangles',
 new Index(box.vertexIndices), nrInstances);
@@ -113,10 +113,10 @@ const blurBundle = new ArrayBundle(new Program(`#version 300 es
         outputColor = color;
     }
 `), {
-    'a_position': new AttributeData(flattenRecursive(rectangleA(2, 2).vertices), 'vec4', false),
-    'a_texPosition': new AttributeData(flattenRecursive(rectangleA(2, 2).texturePositions), 'vec2', false),
+    'a_position': new AttributeData(flatten2(rectangleA(2, 2).vertices), 'vec4', false),
+    'a_texPosition': new AttributeData(flatten2(rectangleA(2, 2).texturePositions), 'vec2', false),
 }, {
-    'u_blur': new UniformData('mat3', flattenRecursive(transposeMatrix(gaussianKernel()))),
+    'u_blur': new UniformData('mat3', flatten2(transposeMatrix(gaussianKernel()))),
     'u_textureSize': new UniformData('vec2', [fbo.width, fbo.height])
 }, {
     'u_texture': new TextureData(fbo.texture)
@@ -143,7 +143,7 @@ renderLoop(60, (tDelta: number) => {
         transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, 0.5 * Math.sin(time * 0.10) + -1.5), rotateZMatrix(time * 0.1), ])),
         transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, 1.0 * Math.sin(time * 0.05) + -0.5), rotateXMatrix(time * 0.1), ])),
     ];
-    drawingBundle.updateAttributeData(context, 'a_transform', flattenRecursive(transformMatrices));
+    drawingBundle.updateAttributeData(context, 'a_transform', flatten3(transformMatrices));
     drawingBundle.draw(context, [0, 0, 0, 0], fbo);
 
     blurBundle.bind(context);
