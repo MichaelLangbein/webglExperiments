@@ -1,1 +1,1 @@
-import './examples/newEngine/performance2';
+import './examples/ol/polygons';

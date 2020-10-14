@@ -33,7 +33,7 @@ const bundle = new ElementsBundle(new Program(`#version 300 es
     'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
 }, {}, {},
 'triangles',
-new Index(box.vertexIndices));
+new Index(flatten2(box.vertexIndices)));
 
 bundle.upload(context);
 bundle.initVertexArray(context);

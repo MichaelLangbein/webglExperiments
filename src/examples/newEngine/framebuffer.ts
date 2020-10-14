@@ -68,7 +68,7 @@ const drawingBundle = new InstancedElementsBundle(new Program(`#version 300 es
     'u_projection': new UniformData('mat4', flatten2(projection))
 }, {},
 'triangles',
-new Index(box.vertexIndices), nrInstances);
+new Index(flatten2(box.vertexIndices)), nrInstances);
 
 
 const fb = createFramebuffer(gl);

@@ -276,9 +276,9 @@ export class TextureData {
  */
 export class Index {
 
-    data: number[][];             // raw data, user-provided
+    data: number[];             // raw data, user-provided
     index: IndexBufferObject;     // buffer on gpu
-    constructor(indices: number[][]) {
+    constructor(indices: number[]) {
         this.data = indices;
     }
 

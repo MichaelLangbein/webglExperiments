@@ -62,7 +62,7 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     'a_translation': new InstancedAttributeData(flatten2(translations), 'vec4', true, 1)
 }, {}, {},
 'triangles',
-new Index(box.vertexIndices), 4);
+new Index(flatten2(box.vertexIndices)), 4);
 
 bundle.upload(context);
 bundle.initVertexArray(context);

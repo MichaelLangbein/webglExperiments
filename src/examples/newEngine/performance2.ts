@@ -82,7 +82,7 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
     'a_color': new InstancedAttributeData(flatten2(colors), 'vec4', false, 1)
 }, {
     'u_projection': new UniformData('mat4', flatten2(transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 1000)))),
-}, {}, 'triangles', new Index(box.vertexIndices), nrEntities);
+}, {}, 'triangles', new Index(flatten2(box.vertexIndices)), nrEntities);
 
 
 setup3dScene(context.gl);
