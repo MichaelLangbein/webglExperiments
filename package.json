@@ -41,6 +41,8 @@
   },
   "dependencies": {
     "@types/delaunator": "^3.0.0",
-    "delaunator": "^4.0.1"
+    "@types/earcut": "^2.1.1",
+    "delaunator": "^4.0.1",
+    "earcut": "^2.2.2"
   }
 }

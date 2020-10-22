@@ -1,5 +1,6 @@
 import { ElementsBundle, Program, Index, AttributeData, Context, UniformData } from '../../engine/engine.core';
 import Delaunator from 'delaunator';
+import earcut from 'earcut';
 
 import { Map, View } from 'ol';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
@@ -283,18 +284,9 @@ const data = {
       }
     ]
   };
-const lengths = data.features.map(f => f.geometry.coordinates[0].length);
 const coords = data.features.map((f, i) => f.geometry.coordinates[0]).flat();
 const colors = data.features.map((f, i) => Array(f.geometry.coordinates[0].length).fill(i));
-let indices = data.features.map(f => Array.from(new Delaunator(f.geometry.coordinates.flat(2)).triangles));
-indices = indices.map((indxs, i) => {
-    let offset = 0;
-    for (let j = 0; j < i; j++) {
-        offset += lengths[j];
-    }
-    return indxs.map(idx => idx + offset);
-});
-console.log(indices);
+const indices = earcut(coords.flat());
 
 const geoshader = new ElementsBundle(new Program(`#version 300 es
     precision highp float;
@@ -312,13 +304,13 @@ const geoshader = new ElementsBundle(new Program(`#version 300 es
     out vec4 vertexColor;
 
     void main() {
-        vertexColor = vec4(v_color / 4.0, 0.0, v_color / 4.0, 0.5);
+        vertexColor = vec4(v_color / 4.0, v_color / 4.0, v_color / 4.0, 0.5);
     }`), {
         a_coord: new AttributeData(coords.flat(), 'vec2', false),
         a_color: new AttributeData(colors.flat(), 'float', false)
     }, {
         u_bbox: new UniformData('vec4', bbox)
-    }, {}, 'triangles', new Index(Array.from(indices.flat())));
+    }, {}, 'triangles', new Index(indices));
 
 const context = new Context(canvas.getContext('webgl2') as WebGL2RenderingContext, true);
 
