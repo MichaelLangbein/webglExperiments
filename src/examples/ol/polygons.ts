@@ -27,7 +27,7 @@ const view = new View({
 
 fetch('./assets/data_ts-exposure.json').then(response => {
     response.json().then(data => {
-        const dataLayer = new VectorLayer({
+        const dataLayer = new PolygonLayer({
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data)
             })
@@ -45,25 +45,69 @@ const map = new Map({
 
 
 class PolygonRenderer extends LayerRenderer<VectorLayer> {
-  polyShader: ElementsBundle;
-  context: Context;
-  canvas: HTMLCanvasElement;
+    polyShader: ElementsBundle;
+    lineShader: ElementsBundle;
+    context: Context;
+    canvas: HTMLCanvasElement;
 
-  constructor(layer: VectorLayer) {
-    super(layer);
+    constructor(layer: VectorLayer) {
+        super(layer);
 
-    const features = layer.getSource().getFeatures() as Feature<Polygon>[];
-    const coords = features.map(f => f.getGeometry().getCoordinates()[0]).flat();
-    const indices: number[][] = [];
-    let prevIndx = 0;
-    for (let feat = 0; feat < features.length; feat++) {
-      const polygonIndices = earcut(features[feat].getGeometry().getCoordinates()[0].flat()).map(i => i + prevIndx);
-      prevIndx += features[feat].getGeometry().getCoordinates()[0].length;
-      indices.push(polygonIndices);
-    }
-    const colors = Array(coords.length).fill([Math.random(), Math.random(), Math.random()]);
+        const features = layer.getSource().getFeatures() as Feature<Polygon>[];
+        const coords = features.map(f => f.getGeometry().getCoordinates()[0]).flat();
+        const polygonIndices: number[][] = [];
+        const lineIndices: number[][] = [];
+        let colors: number[][] = [];
+        let prevIndx = 0;
+        for (let feat = 0; feat < features.length; feat++) {
+            const nrPoints = features[feat].getGeometry().getCoordinates()[0].length;
 
-    const polyShader = new ElementsBundle(new Program(`#version 300 es
+            const pIndices = earcut(features[feat].getGeometry().getCoordinates()[0].flat()).map(i => i + prevIndx);
+            polygonIndices.push(pIndices);
+
+            const lIndices = [];
+            for (let n = 0; n < nrPoints - 1; n++) {
+                lIndices.push(prevIndx + n);
+                lIndices.push(prevIndx + n + 1);
+            }
+            lIndices.push(prevIndx + nrPoints - 1);
+            lIndices.push(prevIndx);
+            lineIndices.push(lIndices);
+
+            prevIndx += nrPoints;
+
+            const color = [Math.random(), Math.random(), Math.random()];
+            colors = Array.prototype.concat(colors, Array(nrPoints).fill(color));
+        }
+
+        const coordAttr = new AttributeData(coords.flat(), 'vec2', false);
+        const colorsAttr = new AttributeData(colors.flat(), 'vec3', false);
+
+        const polyShader = new ElementsBundle(new Program(`#version 300 es
+        precision mediump float;
+        in vec2 a_coord;
+        in vec3 a_color;
+        flat out vec3 v_color;
+        uniform vec4 u_bbox;
+
+        void main() {
+            gl_Position = vec4( -1.0 + 2.0 * (a_coord.x - u_bbox.x) / (u_bbox.z - u_bbox.x),  -1.0 + 2.0 * (a_coord.y - u_bbox.y) / (u_bbox.w - u_bbox.y), 0, 1);
+            v_color = a_color;
+        }`, `#version 300 es
+        precision mediump float;
+        flat in vec3 v_color;
+        out vec4 vertexColor;
+
+        void main() {
+            vertexColor = vec4(v_color.xyz, 0.8);
+        }`), {
+                a_coord: coordAttr,
+                a_color: colorsAttr
+            }, {
+                u_bbox: new UniformData('vec4', [0, 0, 360, 180])
+            }, {}, 'triangles', new Index(polygonIndices.flat()));
+
+        const lineShader = new ElementsBundle(new Program(`#version 300 es
         precision highp float;
         in vec2 a_coord;
         in vec3 a_color;
@@ -79,54 +123,60 @@ class PolygonRenderer extends LayerRenderer<VectorLayer> {
         out vec4 vertexColor;
 
         void main() {
-            vertexColor = vec4(v_color.xyz, 0.9);
+            vertexColor = vec4(v_color.xyz, 1.0);
         }`), {
-            a_coord: new AttributeData(coords.flat(), 'vec2', false),
-            a_color: new AttributeData(colors.flat(), 'vec3', false)
-        }, {
-            u_bbox: new UniformData('vec4', [0, 0, 360, 180])
-        }, {}, 'triangles', new Index(indices.flat()));
+                a_coord: coordAttr,
+                a_color: colorsAttr
+            }, {
+                u_bbox: new UniformData('vec4', [0, 0, 360, 180])
+            }, {}, 'lines', new Index(lineIndices.flat()));
 
-    const canvas = document.createElement('canvas') as HTMLCanvasElement;
-    canvas.width = 600;
-    canvas.height = 600;
-    canvas.style.setProperty('position', 'absolute');
-    canvas.style.setProperty('left', '0px');
-    canvas.style.setProperty('top', '0px');
-    canvas.style.setProperty('width', '100%');
-    canvas.style.setProperty('height', '100%');
-    const context = new Context(canvas.getContext('webgl2') as WebGL2RenderingContext, true);
+        const canvas = document.createElement('canvas') as HTMLCanvasElement;
+        canvas.width = 600;
+        canvas.height = 600;
+        canvas.style.setProperty('position', 'absolute');
+        canvas.style.setProperty('left', '0px');
+        canvas.style.setProperty('top', '0px');
+        canvas.style.setProperty('width', '100%');
+        canvas.style.setProperty('height', '100%');
+        const context = new Context(canvas.getContext('webgl2') as WebGL2RenderingContext, true);
 
-    setup3dScene(context.gl);
-    polyShader.upload(context);
-    polyShader.initVertexArray(context);
+        setup3dScene(context.gl);
+        polyShader.upload(context);
+        polyShader.initVertexArray(context);
+        lineShader.upload(context);
+        lineShader.initVertexArray(context);
 
-    this.polyShader = polyShader;
-    this.context = context;
-    this.canvas = canvas;
-  }
+        this.polyShader = polyShader;
+        this.lineShader = lineShader;
+        this.context = context;
+        this.canvas = canvas;
+    }
 
-  prepareFrame(frameState: FrameState): boolean {
-    const bbox = frameState.extent;
-    this.polyShader.updateUniformData(this.context, 'u_bbox', bbox);
-    return true;
-  }
+    prepareFrame(frameState: FrameState): boolean {
+        return true;
+    }
 
-  renderFrame(frameState: FrameState, target: HTMLElement): HTMLElement {
-    this.polyShader.bind(this.context);
-    this.polyShader.draw(this.context);
-    return this.canvas;
-  }
+    renderFrame(frameState: FrameState, target: HTMLElement): HTMLElement {
+        const bbox = frameState.extent;
+        this.polyShader.bind(this.context);
+        this.polyShader.updateUniformData(this.context, 'u_bbox', bbox);
+        this.polyShader.draw(this.context);
+        this.lineShader.bind(this.context);
+        this.lineShader.updateUniformData(this.context, 'u_bbox', bbox);
+        this.lineShader.draw(this.context);
+        return this.canvas;
+    }
 }
 
 class PolygonLayer extends VectorLayer {
-  constructor(opt_options?: Options) {
-    super(opt_options);
-  }
+    constructor(opt_options?: Options) {
+        super(opt_options);
+    }
 
-  createRenderer(): LayerRenderer<VectorLayer> {
-    return new PolygonRenderer(this);
-  }
+    createRenderer(): LayerRenderer<VectorLayer> {
+        return new PolygonRenderer(this);
+    }
 }
 
 
