@@ -8,4 +8,3 @@ coverage
 ts-out
 npm-debug.log
 debug.log
-./src/assets/data_ts-exposure.json

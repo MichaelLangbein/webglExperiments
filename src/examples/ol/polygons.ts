@@ -23,13 +23,18 @@ const bg = new TileLayer({
 });
 
 const view = new View({
-    center: [-72, -33],
+    center: [-71.5, -33],
     zoom: 10,
     projection: 'EPSG:4326'
 });
 
+let layers = 0;
 button.addEventListener('click', () => {
     fetch('./assets/data_ts-exposure.json').then(response => {
+        layers += 1;
+        console.log(`${layers} layers`);
+        const offsetX = Math.random() - 0.5;
+        const offsetY = Math.random() - 0.5;
         response.json().then(data => {
             console.log('nr features: ', data.features.length);
             const subset = {
@@ -37,12 +42,23 @@ button.addEventListener('click', () => {
                 features: data.features.filter((f: any) => {
                     const l = f.geometry.coordinates.length;
                     return (f.geometry.coordinates[0] === f.geometry.coordinates[l-1]);
+                }).map((f: any) => {
+                    f.geometry.coordinates[0] = f.geometry.coordinates[0].map((c: number[]) => {
+                        return [c[0] + offsetX, c[1] + offsetY];
+                    });
+                    return f;
                 })
             };
-            const dataLayer = new PolygonLayer({
+            const dataLayer = new WebGlPolygonLayer({
                 source: new VectorSource({
                     features: new GeoJSON().readFeatures(subset)
-                })
+                }),
+                colorFunc: (f: Feature<Polygon>) => {
+                    const props = f.getProperties();
+                    const maxval = 10000;
+                    const sum = props["expo"]["Population"].reduce((carry: number, val: number) => carry + val, 0);
+                    return [sum / maxval, (maxval - sum) / maxval, 0];
+                }
             });
             map.addLayer(dataLayer);
         });
@@ -57,44 +73,68 @@ const map = new Map({
 });
 
 
-class PolygonRenderer extends LayerRenderer<VectorLayer> {
+interface PolygonRendererData {
+    coords: AttributeData;
+    colors: AttributeData;
+    polyIndex: Index;
+    lineIndex: Index;
+}
+
+function parseFeaturesToRendererData(features: Feature<Polygon>[], colorFunction: (f: Feature<Polygon>) => number[]): PolygonRendererData {
+    const coords = features.map(f => f.getGeometry().getCoordinates()[0]).flat();
+    const polygonIndices: number[][] = [];
+    const lineIndices: number[][] = [];
+    let colors: number[][] = [];
+    let prevIndx = 0;
+    for (let feat = 0; feat < features.length; feat++) {
+        const nrPoints = features[feat].getGeometry().getCoordinates()[0].length;
+
+        const pIndices = earcut(features[feat].getGeometry().getCoordinates()[0].flat()).map(i => i + prevIndx);
+        polygonIndices.push(pIndices);
+
+        const lIndices = [];
+        for (let n = 0; n < nrPoints - 1; n++) {
+            lIndices.push(prevIndx + n);
+            lIndices.push(prevIndx + n + 1);
+        }
+        lIndices.push(prevIndx + nrPoints - 1);
+        lIndices.push(prevIndx);
+        lineIndices.push(lIndices);
+
+        prevIndx += nrPoints;
+
+        const color = colorFunction(features[feat]);
+        colors = Array.prototype.concat(colors, Array(nrPoints).fill(color));
+    }
+
+    const coordAttr = new AttributeData(coords.flat(), 'vec2', false);
+    const colorsAttr = new AttributeData(colors.flat(), 'vec3', false);
+    const polyIndex = new Index(polygonIndices.flat());
+    const lineIndex = new Index(lineIndices.flat());
+
+    return {
+        colors: colorsAttr,
+        coords: coordAttr,
+        polyIndex: polyIndex,
+        lineIndex: lineIndex
+    };
+}
+
+
+class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
     polyShader: ElementsBundle;
     lineShader: ElementsBundle;
     context: Context;
     canvas: HTMLCanvasElement;
 
-    constructor(layer: VectorLayer) {
+    constructor(layer: VectorLayer, colorFunc: (f: Feature<Polygon>) => number[], data?: PolygonRendererData) {
         super(layer);
 
-        const features = layer.getSource().getFeatures() as Feature<Polygon>[];
-        const coords = features.map(f => f.getGeometry().getCoordinates()[0]).flat();
-        const polygonIndices: number[][] = [];
-        const lineIndices: number[][] = [];
-        let colors: number[][] = [];
-        let prevIndx = 0;
-        for (let feat = 0; feat < features.length; feat++) {
-            const nrPoints = features[feat].getGeometry().getCoordinates()[0].length;
-
-            const pIndices = earcut(features[feat].getGeometry().getCoordinates()[0].flat()).map(i => i + prevIndx);
-            polygonIndices.push(pIndices);
-
-            const lIndices = [];
-            for (let n = 0; n < nrPoints - 1; n++) {
-                lIndices.push(prevIndx + n);
-                lIndices.push(prevIndx + n + 1);
-            }
-            lIndices.push(prevIndx + nrPoints - 1);
-            lIndices.push(prevIndx);
-            lineIndices.push(lIndices);
-
-            prevIndx += nrPoints;
-
-            const color = [Math.random(), Math.random(), Math.random()];
-            colors = Array.prototype.concat(colors, Array(nrPoints).fill(color));
+        if (!data) {
+            const features = layer.getSource().getFeatures() as Feature<Polygon>[];
+            data = parseFeaturesToRendererData(features, colorFunc);
         }
 
-        const coordAttr = new AttributeData(coords.flat(), 'vec2', false);
-        const colorsAttr = new AttributeData(colors.flat(), 'vec3', false);
 
         const polyShader = new ElementsBundle(new Program(`#version 300 es
         precision mediump float;
@@ -114,11 +154,11 @@ class PolygonRenderer extends LayerRenderer<VectorLayer> {
         void main() {
             vertexColor = vec4(v_color.xyz, 0.8);
         }`), {
-                a_coord: coordAttr,
-                a_color: colorsAttr
+                a_coord: data.coords,
+                a_color: data.colors
             }, {
                 u_bbox: new UniformData('vec4', [0, 0, 360, 180])
-            }, {}, 'triangles', new Index(polygonIndices.flat()));
+            }, {}, 'triangles', data.polyIndex);
 
         const lineShader = new ElementsBundle(new Program(`#version 300 es
         precision highp float;
@@ -138,11 +178,11 @@ class PolygonRenderer extends LayerRenderer<VectorLayer> {
         void main() {
             vertexColor = vec4(v_color.xyz, 1.0);
         }`), {
-                a_coord: coordAttr,
-                a_color: colorsAttr
+            a_coord: data.coords,
+            a_color: data.colors
             }, {
                 u_bbox: new UniformData('vec4', [0, 0, 360, 180])
-            }, {}, 'lines', new Index(lineIndices.flat()));
+            }, {}, 'lines', data.lineIndex);
 
         const canvas = document.createElement('canvas') as HTMLCanvasElement;
         canvas.width = 600;
@@ -182,24 +222,25 @@ class PolygonRenderer extends LayerRenderer<VectorLayer> {
     }
 }
 
-class PolygonLayer extends VectorLayer {
-    constructor(opt_options?: Options) {
+interface WebGlPolygonLayerOptions extends Options {
+    colorFunc: (f: Feature<Polygon>) => number[];
+    webGlData?: PolygonRendererData;
+}
+
+class WebGlPolygonLayer extends VectorLayer {
+
+    webGlData: PolygonRendererData;
+    colorFunc: (f: Feature<Polygon>) => number[];
+
+    constructor(opt_options: WebGlPolygonLayerOptions) {
         super(opt_options);
+        this.colorFunc = opt_options.colorFunc;
+        if (opt_options.webGlData) {
+            this.webGlData = opt_options.webGlData;
+        }
     }
 
     createRenderer(): LayerRenderer<VectorLayer> {
-        return new PolygonRenderer(this);
+        return new WebGlPolygonRenderer(this, this.colorFunc, this.webGlData);
     }
-}
-
-
-// with CPU: 22% 554 (346m) dropped of 2468
-// with GPU: 99% 26 (260m) dropped of 1658
-
-function shuffle(a: any[]) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
 }

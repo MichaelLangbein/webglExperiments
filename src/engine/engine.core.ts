@@ -579,7 +579,6 @@ export class InstancedArrayBundle extends Bundle {
 
     draw(context: Context, background?: number[], frameBuffer?: FramebufferObject, viewport?: [number, number, number, number]): void {
         super.draw(context, background, frameBuffer, viewport);
-        const firstAttributeName = Object.keys(this.attributes)[0];
         drawArrayInstanced(context.gl, this.drawingMode, this.nrAttributes, 0, this.nrInstances);
     }
 }

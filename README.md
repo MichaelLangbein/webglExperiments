@@ -15,3 +15,5 @@ This is just a simple repository of me experimenting with WebGl, engines, and li
 
   - DataObjects: update hash when data changes?
   - Textures: allow to update and instantiate with number[][][]
+  - polygons:
+    - handle multipolygons
