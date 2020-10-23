@@ -13,7 +13,10 @@ import Polygon from 'ol/geom/Polygon';
 import { Options } from 'ol/layer/BaseVector';
 
 const body = document.getElementById('body') as HTMLDivElement;
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const mapDiv = document.getElementById('map') as HTMLDivElement;
+const button = document.getElementById('button') as HTMLButtonElement;
+canvas.style.setProperty('height', '0px');
 
 const bg = new TileLayer({
     source: new OSM()
@@ -25,14 +28,24 @@ const view = new View({
     projection: 'EPSG:4326'
 });
 
-fetch('./assets/data_ts-exposure.json').then(response => {
-    response.json().then(data => {
-        const dataLayer = new PolygonLayer({
-            source: new VectorSource({
-                features: new GeoJSON().readFeatures(data)
-            })
+button.addEventListener('click', () => {
+    fetch('./assets/data_ts-exposure.json').then(response => {
+        response.json().then(data => {
+            console.log('nr features: ', data.features.length);
+            const subset = {
+                type: 'FeatureCollection',
+                features: data.features.filter((f: any) => {
+                    const l = f.geometry.coordinates.length;
+                    return (f.geometry.coordinates[0] === f.geometry.coordinates[l-1]);
+                })
+            };
+            const dataLayer = new PolygonLayer({
+                source: new VectorSource({
+                    features: new GeoJSON().readFeatures(subset)
+                })
+            });
+            map.addLayer(dataLayer);
         });
-        map.addLayer(dataLayer);
     });
 });
 
@@ -182,3 +195,11 @@ class PolygonLayer extends VectorLayer {
 
 // with CPU: 22% 554 (346m) dropped of 2468
 // with GPU: 99% 26 (260m) dropped of 1658
+
+function shuffle(a: any[]) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
