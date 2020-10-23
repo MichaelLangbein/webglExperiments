@@ -23,30 +23,20 @@ const bg = new TileLayer({
 });
 
 const view = new View({
-    center: [-71.5, -33],
+    center: [-78.70441449457037, -0.961133719198561],
     zoom: 10,
     projection: 'EPSG:4326'
 });
 
-let layers = 0;
+
 button.addEventListener('click', () => {
-    fetch('./assets/data_ts-exposure.json').then(response => {
-        layers += 1;
-        console.log(`${layers} layers`);
-        const offsetX = Math.random() - 0.5;
-        const offsetY = Math.random() - 0.5;
+    fetch('./assets/data_ashfallDamage.json').then(response => {
         response.json().then(data => {
-            console.log('nr features: ', data.features.length);
             const subset = {
                 type: 'FeatureCollection',
                 features: data.features.filter((f: any) => {
                     const l = f.geometry.coordinates.length;
                     return (f.geometry.coordinates[0] === f.geometry.coordinates[l-1]);
-                }).map((f: any) => {
-                    f.geometry.coordinates[0] = f.geometry.coordinates[0].map((c: number[]) => {
-                        return [c[0] + offsetX, c[1] + offsetY];
-                    });
-                    return f;
                 })
             };
             const dataLayer = new WebGlPolygonLayer({
@@ -54,10 +44,7 @@ button.addEventListener('click', () => {
                     features: new GeoJSON().readFeatures(subset)
                 }),
                 colorFunc: (f: Feature<Polygon>) => {
-                    const props = f.getProperties();
-                    const maxval = 10000;
-                    const sum = props["expo"]["Population"].reduce((carry: number, val: number) => carry + val, 0);
-                    return [sum / maxval, (maxval - sum) / maxval, 0];
+                    return [Math.random(), Math.random(), Math.random()];
                 }
             });
             map.addLayer(dataLayer);
@@ -121,6 +108,9 @@ function parseFeaturesToRendererData(features: Feature<Polygon>[], colorFunction
 }
 
 
+
+
+
 class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
     polyShader: ElementsBundle;
     lineShader: ElementsBundle;
@@ -133,11 +123,23 @@ class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
         if (!data) {
             const features = layer.getSource().getFeatures() as Feature<Polygon>[];
             data = parseFeaturesToRendererData(features, colorFunc);
+            console.log(data)
         }
 
 
+        const canvas = document.createElement('canvas') as HTMLCanvasElement;
+        canvas.width = 600;
+        canvas.height = 600;
+        canvas.style.setProperty('position', 'absolute');
+        canvas.style.setProperty('left', '0px');
+        canvas.style.setProperty('top', '0px');
+        canvas.style.setProperty('width', '100%');
+        canvas.style.setProperty('height', '100%');
+        const context = new Context(canvas.getContext('webgl2') as WebGL2RenderingContext, true);
+
+
         const polyShader = new ElementsBundle(new Program(`#version 300 es
-        precision mediump float;
+        precision lowp float;
         in vec2 a_coord;
         in vec3 a_color;
         flat out vec3 v_color;
@@ -147,7 +149,7 @@ class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
             gl_Position = vec4( -1.0 + 2.0 * (a_coord.x - u_bbox.x) / (u_bbox.z - u_bbox.x),  -1.0 + 2.0 * (a_coord.y - u_bbox.y) / (u_bbox.w - u_bbox.y), 0, 1);
             v_color = a_color;
         }`, `#version 300 es
-        precision mediump float;
+        precision lowp float;
         flat in vec3 v_color;
         out vec4 vertexColor;
 
@@ -161,7 +163,7 @@ class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
             }, {}, 'triangles', data.polyIndex);
 
         const lineShader = new ElementsBundle(new Program(`#version 300 es
-        precision highp float;
+        precision lowp float;
         in vec2 a_coord;
         in vec3 a_color;
         flat out vec3 v_color;
@@ -171,7 +173,7 @@ class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
             gl_Position = vec4( -1.0 + 2.0 * (a_coord.x - u_bbox.x) / (u_bbox.z - u_bbox.x),  -1.0 + 2.0 * (a_coord.y - u_bbox.y) / (u_bbox.w - u_bbox.y), 0, 1);
             v_color = a_color;
         }`, `#version 300 es
-        precision highp float;
+        precision lowp float;
         flat in vec3 v_color;
         out vec4 vertexColor;
 
@@ -184,15 +186,6 @@ class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
                 u_bbox: new UniformData('vec4', [0, 0, 360, 180])
             }, {}, 'lines', data.lineIndex);
 
-        const canvas = document.createElement('canvas') as HTMLCanvasElement;
-        canvas.width = 600;
-        canvas.height = 600;
-        canvas.style.setProperty('position', 'absolute');
-        canvas.style.setProperty('left', '0px');
-        canvas.style.setProperty('top', '0px');
-        canvas.style.setProperty('width', '100%');
-        canvas.style.setProperty('height', '100%');
-        const context = new Context(canvas.getContext('webgl2') as WebGL2RenderingContext, true);
 
         setup3dScene(context.gl);
         polyShader.upload(context);

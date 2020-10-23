@@ -437,7 +437,7 @@ export interface IndexBufferObject {
 
 export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[], changesOften = false): IndexBufferObject => {
 
-    const indicesFlattened = new Uint16Array(indices);
+    const indicesFlattened = new Uint32Array(indices);
 
     const buffer = gl.createBuffer();
     if (!buffer) {
@@ -447,10 +447,13 @@ export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[],
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
+    // Tack in WebGl 1, index-buffers were restricted to UShort (max allowed value inside `indicesFlattened`: 65535).
+    // That was for also supporting very low-end devices.
+    // Thank god we now also have UInt indices (max allowed value inside `indicesFlattened`: 4294967296).
     const bufferObject: IndexBufferObject = {
         buffer: buffer,
         count: indicesFlattened.length,
-        type: gl.UNSIGNED_SHORT,
+        type: gl.UNSIGNED_INT,
         offset: 0,
         staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
     };
