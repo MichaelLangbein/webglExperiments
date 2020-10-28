@@ -447,7 +447,7 @@ export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[],
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
-    // Tack in WebGl 1, index-buffers were restricted to UShort (max allowed value inside `indicesFlattened`: 65535).
+    // Back in WebGl 1, index-buffers were restricted to UShort (max allowed value inside `indicesFlattened`: 65535).
     // That was for also supporting very low-end devices.
     // Thank god we now also have UInt indices (max allowed value inside `indicesFlattened`: 4294967296).
     const bufferObject: IndexBufferObject = {
@@ -501,6 +501,7 @@ export const drawElementsInstanced = (gl: WebGL2RenderingContext, ibo: IndexBuff
 
 
 export interface TextureObject {
+    textureType: TextureType;
     texture: WebGLTexture;
     width: number;
     height: number;
@@ -510,6 +511,141 @@ export interface TextureObject {
     type: number;
     border: number;
 }
+
+export type TextureType = 'ubyte4' | 'float1' | 'float4';
+
+
+/**
+ * Note that float-textures are not renderable. They may be inputs, but they cannot be outputs.
+ * (At least, not without extensions).
+ * Table from here: https://stackoverflow.com/questions/45571488/webgl-2-readpixels-on-framebuffers-with-float-textures
+ *
+ *
+ * | Internal Format    | Format          | Type                           | Source Bytes Per Pixel | Can be rendered to | Requires gl.NEAREST |
+ * |--------------------|-----------------|--------------------------------|------------------------|--------------------|---------------------|
+ * | RGBA               | RGBA            | UNSIGNED_BYTE                  | 4                      | t                  | f                   |
+ * | RGB	            | RGB             | UNSIGNED_BYTE                  | 3                      | t                  | f                   |
+ * | RGBA               | RGBA            | UNSIGNED_SHORT_4_4_4_4         | 2                      | t                  | f                   |
+ * | RGBA               | RGBA            | UNSIGNED_SHORT_5_5_5_1	       | 2                      | t                  | f                   |
+ * | RGB                | RGB             | UNSIGNED_SHORT_5_6_5           | 2                      | t                  | f                   |
+ * | LUMINANCE_ALPHA    | LUMINANCE_ALPHA | UNSIGNED_BYTE	               | 2                      | t                  | f                   |
+ * | LUMINANCE          | LUMINANCE       | UNSIGNED_BYTE                  | 1                      | t                  | f                   |
+ * | ALPHA              | ALPHA           | UNSIGNED_BYTE                  | 1                      | t                  | f                   |
+ * |--------------------|-----------------|--------------------------------|------------------------|--------------------|---------------------| 
+ * | RGBA8              | RGBA            | UNSIGNED_BYTE                  | 4                      |                    |                     |
+ * | RGB5_A1            |                 |                                |                        |                    |                     |
+ * | RGBA4              |                 |                                |                        |                    |                     |
+ * | SRGB8_ALPHA8       |                 |                                |                        |                    |                     |
+ * | RGBA8_SNORM        | RGBA            | BYTE                           | 4                      |                    |                     |
+ * | RGBA4              | RGBA            | UNSIGNED_SHORT_4_4_4_4         | 2                      |                    |                     |
+ * | RGB5_A1            | RGBA            | UNSIGNED_SHORT_5_5_5_1         | 2                      |                    |                     |
+ * | RGB10_A2           | RGBA            | UNSIGNED_INT_2_10_10_10_REV    | 4                      |                    |                     |
+ * | RGB5_A1            |                 |                                |                        |                    |                     |
+ * | RGBA16F            | RGBA            | HALF_FLOAT                     | 8                      |                    |                     |
+ * | RGBA32F            | RGBA            | FLOAT                          | 16                     |                    |                     |
+ * | RGBA16F            |                 |                                |                        |                    |                     |
+ * | RGBA8UI            | RGBA_INTEGER    | UNSIGNED_BYTE                  | 4                      |                    |                     |
+ * | RGBA8I             | RGBA_INTEGER    | BYTE                           | 4                      |                    |                     |
+ * | RGBA16UI           | RGBA_INTEGER    | UNSIGNED_SHORT                 | 8                      |                    |                     |
+ * | RGBA16I            | RGBA_INTEGER    | SHORT                          | 8                      |                    |                     |
+ * | RGBA32UI           | RGBA_INTEGER    | UNSIGNED_INT                   | 16                     |                    |                     |
+ * | RGBA32I            | RGBA_INTEGER    | INT                            | 16                     |                    |                     |
+ * | RGB10_A2UI         | RGBA_INTEGER    | UNSIGNED_INT_2_10_10_10_REV    | 4                      |                    |                     |
+ * | RGB8               | RGB             | UNSIGNED_BYTE                  | 3                      |                    |                     |
+ * | RGB565             |                 |                                |                        |                    |                     |
+ * | SRGB8              |                 |                                |                        |                    |                     |
+ * | RGB8_SNORM         | RGB             | BYTE                           | 3                      |                    |                     |
+ * | RGB565             | RGB             | UNSIGNED_SHORT_5_6_5           | 2                      |                    |                     |
+ * | R11F_G11F_B10F     | RGB             | UNSIGNED_INT_10F_11F_11F_REV   | 4                      |  f                 |                     |
+ * | RGB9_E5            | RGB             | UNSIGNED_INT_5_9_9_9_REV       | 4                      |  f                 |                     |
+ * | RGB16F             | RGB             | HALF_FLOAT                     | 6                      |                    |                     |
+ * | R11F_G11F_B10F     |                 |                                |                        |  f                 |                     |
+ * | RGB9_E5            |                 |                                |                        |                    |                     |
+ * | RGB32F             | RGB             | FLOAT                          | 12                     |  f                 |                     |
+ * | RGB16F             |                 |                                |                        |  f                 |                     |
+ * | R11F_G11F_B10F     |                 |                                |                        |                    |                     |
+ * | RGB9_E5            |                 |                                |                        |                    |                     |
+ * | RGB8UI             | RGB_INTEGER     | UNSIGNED_BYTE                  | 3                      |                    |                     |
+ * | RGB8I              | RGB_INTEGER     | BYTE                           | 3                      |                    |                     |
+ * | RGB16UI            | RGB_INTEGER     | UNSIGNED_SHORT                 | 6                      |                    |                     |
+ * | RGB16I             | RGB_INTEGER     | SHORT                          | 6                      |                    |                     |
+ * | RGB32UI            | RGB_INTEGER     | UNSIGNED_INT                   | 12                     |                    |                     |
+ * | RGB32I             | RGB_INTEGER     | INT                            | 12                     |                    |                     |
+ * | RG8                | RG              | UNSIGNED_BYTE                  | 2                      |                    |                     |
+ * | RG8_SNORM          | RG              | BYTE                           | 2                      |                    |                     |
+ * | RG16F              | RG              | HALF_FLOAT                     | 4                      |   f                |                     |
+ * | RG32F              | RG              | FLOAT                          | 8                      |   f                |                     |
+ * | RG16F              |                 |                                |                        |   f                |                     |
+ * | RG8UI              | RG_INTEGER      | UNSIGNED_BYTE                  | 2                      |                    |                     |
+ * | RG8I               | RG_INTEGER      | BYTE                           | 2                      |                    |                     |
+ * | RG16UI             | RG_INTEGER      | UNSIGNED_SHORT                 | 4                      |                    |                     |
+ * | RG16I              | RG_INTEGER      | SHORT                          | 4                      |                    |                     |
+ * | RG32UI             | RG_INTEGER      | UNSIGNED_INT                   | 8                      |                    |                     |
+ * | RG32I              | RG_INTEGER      | INT                            | 8                      |                    |                     |
+ * | R8                 | RED             | UNSIGNED_BYTE                  | 1                      |                    |                     |
+ * | R8_SNORM           | RED             | BYTE                           | 1                      |                    |                     |
+ * | R16F               | RED             | HALF_FLOAT                     | 2                      |                    |                     |
+ * | R32F               | RED             | FLOAT                          | 4                      |                    |                     |
+ * | R16F               |                 |                                |                        |                    |                     |
+ * | R8UI               | RED_INTEGER     | UNSIGNED_BYTE                  | 1                      |                    |                     |
+ * | R8I                | RED_INTEGER     | BYTE                           | 1                      |                    |                     |
+ * | R16UI              | RED_INTEGER     | UNSIGNED_SHORT                 | 2                      |                    |                     |
+ * | R16I               | RED_INTEGER     | SHORT                          | 2                      |                    |                     |
+ * | R32UI              | RED_INTEGER     | UNSIGNED_INT                   | 4                      |                    |                     |
+ * | R32I               | RED_INTEGER     | INT                            | 4                      |                    |                     |
+ * | DEPTH_COMPONENT16  | DEPTH_COMPONENT | UNSIGNED_SHORT                 | 2                      |                    |                     |
+ * | DEPTH_COMPONENT24  | DEPTH_COMPONENT | UNSIGNED_INT                   | 4                      |                    |                     |
+ * | DEPTH_COMPONENT16  |                 |                                |                        |                    |                     |
+ * | DEPTH_COMPONENT32F | DEPTH_COMPONENT | FLOAT                          | 4                      |                    |                     |
+ * | DEPTH24_STENCIL8   | DEPTH_STENCIL   | UNSIGNED_INT_24_8              | 4                      |                    |                     |
+ * | DEPTH32F_STENCIL8  | DEPTH_STENCIL   | FLOAT_32_UNSIGNED_INT_24_8_REV | 8                      |                    |                     |
+ * | RGBA               | RGBA            | UNSIGNED_BYTE                  | 4                      |                    |                     |
+ * | RGBA               | RGBA            | UNSIGNED_SHORT_4_4_4_4         | 2                      |                    |                     |
+ * | RGBA               | RGBA            | UNSIGNED_SHORT_5_5_5_1         | 2                      |                    |                     |
+ * | RGB                | RGB             | UNSIGNED_BYTE                  | 3                      |                    |                     |
+ * | RGB                | RGB             | UNSIGNED_SHORT_5_6_5           | 2                      |                    |                     |
+ * | LUMINANCE_ALPHA    | LUMINANCE_ALPHA | UNSIGNED_BYTE                  | 2                      |                    |                     |
+ * | LUMINANCE          | LUMINANCE       | UNSIGNED_BYTE                  | 1                      |                    |                     |
+ * | ALPHA              | ALPHA           | UNSIGNED_BYTE                  | 1                      |                    |                     |
+ **/
+
+export const getTextureParas = (gl: WebGL2RenderingContext, t: TextureType, data: number[]) => {
+    switch (t) {
+        case 'ubyte4':
+            return {
+                internalFormat: gl.RGBA,
+                format: gl.RGBA,
+                type: gl.UNSIGNED_BYTE,
+                binData: new Uint8Array(data),
+            };
+        case 'float1':
+            return {
+                internalFormat: gl.R32F,
+                format: gl.RED,
+                type: gl.FLOAT,
+                binData: new Float32Array(data),
+            };
+        case 'float4':
+            return {
+                internalFormat: gl.RGBA32F,
+                format: gl.RGBA,
+                type: gl.FLOAT,
+                binData: new Float32Array(data),
+            };
+    }
+};
+
+export const inferTextureType = (gl: WebGL2RenderingContext, to: TextureObject): TextureType => {
+    if (to.internalformat === gl.RGBA && to.type === gl.UNSIGNED_BYTE) {
+        return 'ubyte4';
+    } else if (to.internalformat === gl.R32F && to.type === gl.FLOAT) {
+        return 'float1';
+    } else if (to.internalformat === gl.RGBA32F && to.type === gl.FLOAT){
+        return 'float4';
+    } else {
+        throw new Error(`Unknkown texture-object-paras: internalformat ${to.internalformat}, type: ${to.type}`);
+    }
+};
 
 /**
  * A shader's attributes get their buffer-values from the VERTEX_ARRAY, but they are constructed in the ARRAY_BUFFER.
@@ -551,6 +687,7 @@ export const createTexture = (gl: WebGL2RenderingContext, image: HTMLImageElemen
     }
 
     const textureObj: TextureObject = {
+        textureType: 'ubyte4',
         texture: texture,
         level: level,
         internalformat: internalFormat,
@@ -566,35 +703,22 @@ export const createTexture = (gl: WebGL2RenderingContext, image: HTMLImageElemen
 
 
 
+
 /**
  * This is just another texture, but optimized for carrying data, not for display.
  *
- * Valid combinations of texture-data parameters:
- *
- * | Internal Format | Format          | Type                      | Source Bytes Per Pixel |
- * |-----------------|-----------------|---------------------------|------------------------|
- * | RGBA            | RGBA            | UNSIGNED_BYTE             | 4                      |
- * | RGB	         | RGB             | UNSIGNED_BYTE             | 3                      |
- * | RGBA            | RGBA            | UNSIGNED_SHORT_4_4_4_4    | 2                      |
- * | RGBA            | RGBA            | UNSIGNED_SHORT_5_5_5_1	   | 2                      |
- * | RGB             | RGB             | UNSIGNED_SHORT_5_6_5      | 2                      |
- * | LUMINANCE_ALPHA | LUMINANCE_ALPHA | UNSIGNED_BYTE	           | 2                      |
- * | LUMINANCE       | LUMINANCE       | UNSIGNED_BYTE             | 1                      |
- * | ALPHA           | ALPHA           | UNSIGNED_BYTE             | 1                      |
- * Plus many more in WebGL2.
- *
  */
-export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]): TextureObject => {
+export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][], t: TextureType = 'ubyte4'): TextureObject => {
     const height = data.length;
     const width = data[0].length;
     const channels = data[0][0].length;
     if ( !isPowerOf(width, 2) || !isPowerOf(height, 2) ) {
         throw new Error(`Texture-data-dimensions must be a power of two, but are ${width} x ${height}`);
     }
-    if ( channels !== 4) {
-        // @todo: remove this when we implement non-rgba data-textures.
-        throw new Error(`Expecting 4 channels, but ${channels} provided`);
-    }
+    // if ( channels !== 4) {
+    //     // @todo: remove this when we implement non-rgba data-textures.
+    //     throw new Error(`Expecting 4 channels, but ${channels} provided`);
+    // }
 
     const texture = gl.createTexture();  // analog to createBuffer
     if (!texture) {
@@ -606,11 +730,7 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
     // to be used for data. we want no interpolation of data, so disallow mipmap and interpolation.
     const level = 0;
     const border = 0;
-    const internalFormat = gl.RGBA;
-    const format = gl.RGBA;
-    const type = gl.UNSIGNED_BYTE;
-
-    const binData = new Uint8Array(flatten3(data));
+    const paras = getTextureParas(gl, t, flatten3(data));
 
     if (channels !== 4) {
         // have WebGL digest data one byte at a time.
@@ -619,7 +739,7 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, alignment);
     }
 
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, format, type, binData); // analog to bufferData
+    gl.texImage2D(gl.TEXTURE_2D, level, paras.internalFormat, width, height, border, paras.format, paras.type, paras.binData); // analog to bufferData
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -628,11 +748,12 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
 
 
     const textureObj: TextureObject = {
+        textureType: t,
         texture: texture,
         level: level,
-        internalformat: internalFormat,
-        format: format,
-        type: type,
+        internalformat: paras.internalFormat,
+        format: paras.format,
+        type: paras.type,
         width: width,
         height: height,
         border: border
@@ -642,8 +763,7 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
 };
 
 
-
-export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, height: number): TextureObject => {
+export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, height: number, type: TextureType = 'ubyte4'): TextureObject => {
     if (width <= 0 || height <= 0) {
         throw new Error('Width and height must be positive.');
     }
@@ -651,9 +771,12 @@ export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, he
     if (!texture) {
         throw new Error('No texture was created');
     }
+
+    const paras = getTextureParas(gl, type, []);
+
     gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, paras.internalFormat, width, height, 0, paras.format, paras.type, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -661,11 +784,12 @@ export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, he
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     const textureObj: TextureObject = {
+        textureType: type,
         texture: texture,
         level: 0,
-        internalformat: gl.RGBA,
-        format: gl.RGBA,
-        type: gl.UNSIGNED_BYTE,
+        internalformat: paras.internalFormat,
+        format: paras.format,
+        type: paras.type,
         width: width,
         height: height,
         border: 0
@@ -701,15 +825,16 @@ export const updateTexture = (gl: WebGL2RenderingContext, to: TextureObject, new
     gl.activeTexture(gl.TEXTURE0 + textureConstructionBindPoint); // so that we don't overwrite another texture in the next line.
     gl.bindTexture(gl.TEXTURE_2D, to.texture);  // analog to bindBuffer. Binds texture to currently active texture-bindpoint (aka. texture unit).
     if (newData instanceof HTMLImageElement || newData instanceof HTMLCanvasElement) {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, newData);  // analog to bufferData
+        gl.texImage2D(gl.TEXTURE_2D, 0, to.internalformat, to.format, to.type, newData);  // analog to bufferData
     } else {
         const width = newData[0].length;
         const height = newData.length;
         if ( !isPowerOf(width, 2) || !isPowerOf(height, 2) ) {
             throw new Error(`Texture-data-dimensions must be a power of two, but are ${height} x ${width}`);
         }
-        const binData = new Uint8Array(flatten3(newData));  // @todo: use another ArrayBufferView depending on to.format?
-        gl.texImage2D(gl.TEXTURE_2D, to.level, to.internalformat, to.width, to.height, to.border, to.format, to.type, binData);
+
+        const paras = getTextureParas(gl, to.textureType, flatten3(newData));
+        gl.texImage2D(gl.TEXTURE_2D, to.level, to.internalformat, to.width, to.height, to.border, to.format, to.type, paras.binData);
     }
     gl.generateMipmap(gl.TEXTURE_2D); // mipmaps are mini-versions of the texture.
     gl.bindTexture(gl.TEXTURE_2D, null);  // unbinding
@@ -988,14 +1113,18 @@ export const bindValueToUniform = (gl: WebGL2RenderingContext, uniformLocation: 
  *  - copies the drawingbuffer to the frontbuffer.
  *
  * As a consequence, if you're going to use canvas.toDataURL or canvas.toBlob or gl.readPixels or any other way of getting data from a WebGL canvas,
- * unless you read it in the same event then it will likely be clear when you try to read it.
+ * unless you read it in the same event it will likely have been cleared when you try to read it.
  *
  * In the past, old games always preserved the drawing buffer, so they'd only have to change those pixels that have actually changed. Nowadays preserveDrawingBuffer is false by default.
  *
  * A (almost brutal) workaround to get the canvas to preserve the drawingBuffer can be found here: https://stackoverflow.com/questions/26783586/canvas-todataurl-returns-blank-image
+ *
+ *
+ *
+ * @TODO: WebGL2 allows to use `drawBuffer` and `readBuffer`, so that we are no longer limited to only the current framebuffer.
  */
 export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBuffer  => {
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
     if (!gl) {
         throw new Error('no context');
     }
