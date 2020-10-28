@@ -1121,6 +1121,17 @@ export const bindValueToUniform = (gl: WebGL2RenderingContext, uniformLocation: 
  *
  *
  *
+ * glReadPixels returns pixel data from the frame buffer, starting with the pixel whose lower left corner is at location (x, y),
+ * into client memory starting at location data. The GL_PACK_ALIGNMENT parameter, set with the glPixelStorei command,
+ * affects the processing of the pixel data before it is placed into client memory.
+ * glReadPixels returns values from each pixel with lower left corner at x + i y + j for 0 <= i < width and 0 <= j < height .
+ * This pixel is said to be the ith pixel in the jth row. Pixels are returned in row order from the lowest to the highest row,
+ * left to right in each row.
+ * Return values are placed in memory as follows. If format is GL_ALPHA, a single value is returned and the data for the ith pixel
+ * in the jth row is placed in location j ⁢ width + i . GL_RGB returns three values and GL_RGBA returns four values for each pixel,
+ * with all values corresponding to a single pixel occupying contiguous space in data. Storage parameter GL_PACK_ALIGNMENT,
+ * set by glPixelStorei, affects the way that data is written into memory. See glPixelStorei for a description.
+ *
  * @TODO: WebGL2 allows to use `drawBuffer` and `readBuffer`, so that we are no longer limited to only the current framebuffer.
  */
 export const getCurrentFramebuffersPixels = (canvas: HTMLCanvasElement): ArrayBuffer  => {

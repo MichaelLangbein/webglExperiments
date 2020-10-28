@@ -370,6 +370,8 @@ export class Context {
             prog.upload(this.gl);
             this.loadedPrograms.push(prog.hash);
             if (this.verbose) console.log(`Context: uploaded program ${prog.hash}`);
+        } else {
+            if (this.verbose) console.log(`Context: did not need to upload program ${prog.hash}`);
         }
     }
 
@@ -378,6 +380,8 @@ export class Context {
             data.upload(this.gl);
             this.loadedAttributes.push(data.hash);
             if (this.verbose) console.log(`Context: uploaded attribute ${data.hash}`);
+        } else {
+            if (this.verbose) console.log(`Context: did not need to upload attribute ${data.hash}`);
         }
     }
 
@@ -386,6 +390,8 @@ export class Context {
             data.upload(this.gl);
             this.loadedUniforms.push(data.hash);
             if (this.verbose) console.log(`Context: uploaded uniform ${data.hash}`);
+        } else {
+            if (this.verbose) console.log(`Context: did not need to upload uniform ${data.hash}`);
         }
     }
 
@@ -394,6 +400,8 @@ export class Context {
             data.upload(this.gl);
             this.loadedTextures.push(data.hash);
             if (this.verbose) console.log(`Context: uploaded texture ${data.hash}`);
+        } else {
+            if (this.verbose) console.log(`Context: did not need to upload texture ${data.hash}`);
         }
     }
 

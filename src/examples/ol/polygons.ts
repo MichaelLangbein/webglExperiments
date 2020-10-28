@@ -20,6 +20,7 @@ const body = document.getElementById('body') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const mapDiv = document.getElementById('map') as HTMLDivElement;
 const button = document.getElementById('button') as HTMLButtonElement;
+const slider = document.getElementById('xrange') as HTMLInputElement;
 canvas.style.setProperty('height', '0px');
 
 const bg = new TileLayer({
@@ -204,6 +205,8 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
     canvas: HTMLCanvasElement;
     pickingShader: ElementsBundle;
     pickingFb: FramebufferObject;
+    cachedBbox: [number, number, number, number];
+    cachedPickingTextureData: Uint8Array;
 
     constructor(layer: VectorLayer, colorFunc: (f: Feature<Polygon>) => number[], data?: PolygonRendererData) {
         super(layer);
@@ -324,6 +327,8 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
     }
 
     renderFrame(frameState: FrameState, target: HTMLElement): HTMLElement {
+        const layerState = frameState.layerStatesArray[frameState.layerIndex];
+        this.canvas.style.opacity = `${layerState.opacity}`;
         const bbox = frameState.extent;
         this.polyShader.bind(this.context);
         this.polyShader.updateUniformData(this.context, 'u_bbox', bbox);
@@ -360,24 +365,33 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
      */
     forEachFeatureAtCoordinate(coordinate: Coordinate, frameState: FrameState, hitTolerance: number, callback: (f: Feature, l: Layer) => any, declutteredFeatures: Feature[]) {
         const bbox = frameState.extent;
-        this.pickingShader.bind(this.context);
-        this.pickingShader.updateUniformData(this.context, 'u_bbox', bbox);
-        this.pickingShader.draw(this.context, [0, 0, 0, 0], this.pickingFb);
-        const textureData = new Uint8Array(getCurrentFramebuffersPixels(this.canvas));
+        if (bbox !== this.cachedBbox) {
+            this.cachedBbox = bbox;
+            this.pickingShader.bind(this.context);
+            this.pickingShader.updateUniformData(this.context, 'u_bbox', bbox);
+            this.pickingShader.draw(this.context, [0, 0, 0, 0], this.pickingFb);
+            const textureData = new Uint8Array(getCurrentFramebuffersPixels(this.canvas));
+            this.cachedPickingTextureData = textureData;
+        }
 
         const percW = (coordinate[0] - bbox[0]) / (bbox[2] - bbox[0]);
-        const percH = 1 - (coordinate[1] - bbox[1]) / (bbox[3] - bbox[1]);
+        const percH = (coordinate[1] - bbox[1]) / (bbox[3] - bbox[1]);
         const row = Math.round(this.canvas.height * percH);
         const col = Math.round(this.canvas.width * percW);
         const index = 4 * row * this.canvas.width + 4 * col;
-        const featureNrEncoded = [textureData[index], textureData[index + 1], textureData[index + 2], textureData[index + 3]];
+        const featureNrEncoded = [
+            this.cachedPickingTextureData[index],
+            this.cachedPickingTextureData[index + 1],
+            this.cachedPickingTextureData[index + 2],
+            this.cachedPickingTextureData[index + 3]
+        ];
         const featureNr = decodeNFromBase(featureNrEncoded, 256) - 1;
 
         if (featureNr >= 0) {
             const layer = this.getLayer();
             const features = layer.getSource().getFeatures();
             const feature = features[featureNr];
-    
+
             return callback(feature, layer);
         }
     }
