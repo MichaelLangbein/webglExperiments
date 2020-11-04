@@ -1,6 +1,5 @@
 import { ElementsBundle, Program, Index, AttributeData, Context, UniformData } from '../../engine/engine.core';
-import { bindFramebuffer, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, FramebufferObject, getCurrentFramebuffersPixels, setup3dScene } from '../../engine/webgl';
-import { arrayToCanvasDims } from '../../engine/engine.helpers';
+import {setup3dScene } from '../../engine/webgl';
 
 import earcut from 'earcut';
 import { bboxPolygon } from 'turf';
@@ -25,7 +24,6 @@ const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const mapDiv = document.getElementById('map') as HTMLDivElement;
 const button = document.getElementById('button') as HTMLButtonElement;
 const slider = document.getElementById('xrange') as HTMLInputElement;
-const empty = document.getElementById('empty') as HTMLDivElement;
 canvas.style.setProperty('height', '0px');
 
 
@@ -293,9 +291,8 @@ export class WebGlPolygonLayer extends VectorLayer {
 const features = [];
 const start = [0, 0];
 const w = 0.25;
-const delta = 0.1;
-const nrRows = 30;
-const nrCols = 30;
+const nrRows = 1000;
+const nrCols = 1000;
 for (let i = 0; i < nrRows; i++) {
     for (let j = 0; j < nrCols; j++) {
         const bbox = [

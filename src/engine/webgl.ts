@@ -141,6 +141,24 @@ export const createShaderProgram = (gl: WebGL2RenderingContext, vertexShaderSour
 };
 
 
+/**
+ * Important: the blend-equation has an effect on data-textures.
+ * If you have a pixel with values [125, 42, 255, 0], this pixel might get blended in the background,
+ * causing you to lose that data in the rgb channels of the pixel.
+ *
+ * Auszug aus Chat mit Kollegen:
+ * [16:21, 4.11.2020] Michael: Ich hab das Problem gefunden
+ * [16:22, 4.11.2020] Michael: Sagen wir ich habe ein Objekt mit id 781
+ * [16:22, 4.11.2020] Michael: In base 256 ist das
+ * [16:22, 4.11.2020] Michael: (16, 3, 0, 0)
+ * [16:23, 4.11.2020] Michael: Diese Daten habe ich als Pixelwert in meiner Textur gespeichert, als rgba
+ * [16:23, 4.11.2020] Michael: Mit anderen Worten: a = 0
+ * [16:24, 4.11.2020] Michael: Außerdem aber war die gl_blendEquation(gl_FuncAdd) gesetzt
+ * [16:24, 4.11.2020] Michael: Das bedeutet, Pixel mit Transparenz werden mit dem Hintergrund verblendet
+ * [16:24, 4.11.2020] Michael: Dadurch wurden meine Daten mit dem Hintergrund verwaschen, und dadurch haben sich meine ids geändert
+ * [16:25, 4.11.2020] Michael: Das Problem war stärker bei niedrigen ids, weil da die opazität besonders gering war
+ * [16:25, 4.11.2020] Michael: Hah!
+ */
 export const setup3dScene = (gl: WebGL2RenderingContext): void => {
     // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
