@@ -24,6 +24,7 @@
     "@types/ol": "^6.4.1",
     "@types/stats.js": "^0.17.0",
     "@types/string-hash": "^1.1.1",
+    "@types/turf": "^3.5.32",
     "@types/webgl2": "0.0.5",
     "awesome-typescript-loader": "5.2.0",
     "css-loader": "^5.0.0",
@@ -43,6 +44,7 @@
     "@types/delaunator": "^3.0.0",
     "@types/earcut": "^2.1.1",
     "delaunator": "^4.0.1",
-    "earcut": "^2.2.2"
+    "earcut": "^2.2.2",
+    "turf": "^3.0.14"
   }
 }

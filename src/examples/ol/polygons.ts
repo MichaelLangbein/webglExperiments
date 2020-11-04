@@ -1,6 +1,9 @@
 import { ElementsBundle, Program, Index, AttributeData, Context, UniformData } from '../../engine/engine.core';
 import { bindFramebuffer, bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, FramebufferObject, getCurrentFramebuffersPixels, setup3dScene } from '../../engine/webgl';
+import { arrayToCanvasDims } from '../../engine/engine.helpers';
+
 import earcut from 'earcut';
+import { bboxPolygon } from 'turf';
 
 import { Map, Feature, View } from 'ol';
 import { Layer, Vector as VectorLayer } from 'ol/layer';
@@ -15,104 +18,36 @@ import { Coordinate } from 'ol/coordinate';
 import 'ol/ol.css';
 import TileLayer from 'ol/layer/Tile';
 import { FeatureLike } from 'ol/Feature';
+import MultiPolygon from 'ol/geom/MultiPolygon';
 
 const body = document.getElementById('body') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const mapDiv = document.getElementById('map') as HTMLDivElement;
 const button = document.getElementById('button') as HTMLButtonElement;
 const slider = document.getElementById('xrange') as HTMLInputElement;
+const empty = document.getElementById('empty') as HTMLDivElement;
 canvas.style.setProperty('height', '0px');
 
-const bg = new TileLayer({
-    source: new OSM()
-});
-
-const view = new View({
-    center: [-78.70441449457037, -0.961133719198561],
-    zoom: 10,
-    projection: 'EPSG:4326'
-});
 
 
-button.addEventListener('click', () => {
-    fetch('./assets/data_ashfallDamage.json').then(response => {
-        response.json().then(data => {
-            const subset = {
-                type: 'FeatureCollection',
-                features: data.features.filter((f: any) => {
-                    const l = f.geometry.coordinates.length;
-                    return (f.geometry.coordinates[0] === f.geometry.coordinates[l-1]);
-                })
-            };
-            const dataLayer = new WebGlPolygonLayer({
-                source: new VectorSource({
-                    features: new GeoJSON().readFeatures(subset)
-                }),
-                colorFunc: (f: Feature<Polygon>) => {
-                    return [Math.random(), Math.random(), Math.random()];
-                }
-            });
-            map.addLayer(dataLayer);
-        });
-    });
-});
 
 
-const map = new Map({
-    target: mapDiv,
-    layers: [bg],
-    view: view
-});
 
-map.on('singleclick', function (evt) {
-    var coordinate = evt.coordinate;
-    map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike, l: Layer) => {
-        console.log(f);
-    });
-  });
 
+/***************************************************************************************
+ *                                                                                     *
+ ***************************************************************************************/
 
 export interface PolygonRendererData {
     coords: AttributeData;
     colors: AttributeData;
-    nrs: AttributeData;
     polyIndex: Index;
     lineIndex: Index;
 }
 
 
-
-
-function encodeNInBase(n: number, base: number, slots: number): number[] {
-    const bases = Array(slots-1);
-    for (let i = 0; i < slots; i++) {
-        bases[i] = Math.pow(base, i);
-    }
-    const encoded = Array(slots-1);
-    for (let i = slots-1; i >= 0; i--) {
-        const b = bases[i];
-        const divsr = Math.floor(n / b);
-        const rest = n % b;
-        encoded[i] = divsr;
-        n = rest;
-    }
-    return encoded.reverse();
-}
-
-function decodeNFromBase(encoded: number[], base: number): number {
-    const encodedR = encoded.reverse();
-    const slots = encodedR.length;
-    let n = 0;
-    for (let i = 0; i < slots; i++) {
-        const b = Math.pow(base, i);
-        n += b * encodedR[i];
-    }
-    return n;
-}
-
-
 export function parseFeaturesToRendererData(
-    features: Feature<Polygon>[], colorFunction: (f: Feature<Polygon>) => number[]): PolygonRendererData {
+    features: Feature<Polygon | MultiPolygon>[], colorFunction: (f: Feature<Polygon>) => number[]): PolygonRendererData {
 
     /**
      * Path: Coords[]
@@ -122,18 +57,16 @@ export function parseFeaturesToRendererData(
 
     const polygonIndices: number[][] = [];
     const lineIndices: number[][] = [];
-    let coords: number[][] = [];
-    let colors: number[][] = [];
-    let nrs: number[][] = [];
+    const coords: number[][] = [];
+    const colors: number[][] = [];
 
-    let nr = 1;
     let prevIndx = 0;
     for (const feature of features) {
         const type = feature.getGeometry().getType();
         const coordinates = feature.getGeometry().getCoordinates();
         if (type === 'Polygon') {
 
-            coords = coords.concat(coordinates[0]);
+            coords.push(...(coordinates  as number[][][])[0]);
             const pIndices = earcut(coordinates[0].flat()).map(i => i + prevIndx);
             polygonIndices.push(pIndices);
             const lIndices = [];
@@ -145,18 +78,14 @@ export function parseFeaturesToRendererData(
             lIndices.push(prevIndx + nrPoints - 1);
             lIndices.push(prevIndx);
             lineIndices.push(lIndices);
-            const color = colorFunction(feature);
-            colors = colors.concat(Array(nrPoints).fill(color));
-            const nrEncoded = encodeNInBase(nr, 256, 4).map(n => n / 255);
-            nrs = nrs.concat(Array(nrPoints).fill(nrEncoded));
+            const color = colorFunction(feature as Feature<Polygon>);
+            colors.push(... Array(nrPoints).fill(color));
 
             prevIndx += nrPoints;
-            nr += 1;
-
         } else if (type === 'MultiPolygon') {
             for (const polygonCoords of coordinates) {
 
-                coords = coords.concat(polygonCoords[0]);
+                coords.push(... (polygonCoords as number[][][])[0]);
                 const pIndices = earcut(polygonCoords[0].flat()).map(i => i + prevIndx);
                 polygonIndices.push(pIndices);
                 const lIndices = [];
@@ -168,45 +97,32 @@ export function parseFeaturesToRendererData(
                 lIndices.push(prevIndx + nrPoints - 1);
                 lIndices.push(prevIndx);
                 lineIndices.push(lIndices);
-                const color = colorFunction(feature);
-                colors = colors.concat(Array(nrPoints).fill(color));
-                const nrEncoded = encodeNInBase(nr, 256, 4).map(n => n / 255);
-                nrs = nrs.concat(Array(nrPoints).fill(nrEncoded));
+                const color = colorFunction(feature as any);
+                colors.push(... Array(nrPoints).fill(color));
 
                 prevIndx += nrPoints;
             }
-            nr += 1;
         }
     }
 
     const coordAttr = new AttributeData(coords.flat(), 'vec2', false);
     const colorsAttr = new AttributeData(colors.flat(), 'vec3', false);
-    const nrsAttr = new AttributeData(nrs.flat(), 'vec4', false);
     const polyIndex = new Index(polygonIndices.flat());
     const lineIndex = new Index(lineIndices.flat());
 
     return {
         colors: colorsAttr,
         coords: coordAttr,
-        nrs: nrsAttr,
         polyIndex: polyIndex,
         lineIndex: lineIndex,
     };
 }
-
-
-
-
 
 export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
     polyShader: ElementsBundle;
     lineShader: ElementsBundle;
     context: Context;
     canvas: HTMLCanvasElement;
-    pickingShader: ElementsBundle;
-    pickingFb: FramebufferObject;
-    cachedBbox: [number, number, number, number];
-    cachedPickingTextureData: Uint8Array;
 
     constructor(layer: VectorLayer, colorFunc: (f: Feature<Polygon>) => number[], data?: PolygonRendererData) {
         super(layer);
@@ -276,48 +192,20 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
             u_bbox: new UniformData('vec4', [0, 0, 360, 180])
         }, {}, 'lines', data.lineIndex);
 
-
-        const pickingShader = new ElementsBundle(new Program(`#version 300 es
-        precision lowp float;
-        in vec2 a_coord;
-        in vec4 a_id;
-        flat out vec4 v_id;
-        uniform vec4 u_bbox;
-
-        void main() {
-            gl_Position = vec4( -1.0 + 2.0 * (a_coord.x - u_bbox.x) / (u_bbox.z - u_bbox.x),  -1.0 + 2.0 * (a_coord.y - u_bbox.y) / (u_bbox.w - u_bbox.y), 0, 1);
-            v_id = a_id;
-        }`, `#version 300 es
-        precision lowp float;
-        flat in vec4 v_id;
-        out vec4 vertexColor;
-
-        void main() {
-            vertexColor = v_id;
-        }`), {
-            a_coord: data.coords,
-            a_id: data.nrs
-        }, {
-            u_bbox: new UniformData('vec4', [0, 0, 360, 180])
-        }, {}, 'triangles', data.polyIndex);
-
-
         setup3dScene(context.gl);
         polyShader.upload(context);
         polyShader.initVertexArray(context);
         lineShader.upload(context);
         lineShader.initVertexArray(context);
-        pickingShader.upload(context);
-        pickingShader.initVertexArray(context);
 
-        const fb = createFramebuffer(context.gl);
-        const fbTexture = createEmptyTexture(context.gl, canvas.width, canvas.height, 'ubyte4');
-        const fbo = bindTextureToFramebuffer(context.gl, fbTexture, fb);
+        // for saving memory: deleting local copies of GPU data.
+        delete(polyShader.attributes);
+        delete(polyShader.index.data);
+        delete(lineShader.attributes);
+        delete(lineShader.index.data);
 
         this.polyShader = polyShader;
         this.lineShader = lineShader;
-        this.pickingShader = pickingShader;
-        this.pickingFb = fbo;
         this.context = context;
         this.canvas = canvas;
     }
@@ -332,7 +220,7 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
         const bbox = frameState.extent;
         this.polyShader.bind(this.context);
         this.polyShader.updateUniformData(this.context, 'u_bbox', bbox);
-        this.polyShader.draw(this.context);
+        this.polyShader.draw(this.context, [0, 0, 0, 0]);
         this.lineShader.bind(this.context);
         this.lineShader.updateUniformData(this.context, 'u_bbox', bbox);
         this.lineShader.draw(this.context);
@@ -347,8 +235,6 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
      * @return {Uint8ClampedArray|Uint8Array} The result.  If there is no data at the pixel
      *    location, null will be returned.  If there is data, but pixel values cannot be
      *    returned, and empty array will be returned.
-     *
-     * @TODO: We're not storing color-values anywhere. Atm. we're only keeping feature-ids in the picking-framebuffer.
      */
     getDataAtPixel(pixel: Pixel, frameState: FrameState, hitTolerance: number) {
         return new Uint8Array([Math.random(), Math.random(), Math.random(), Math.random()]);
@@ -364,34 +250,9 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
      * @template T
      */
     forEachFeatureAtCoordinate(coordinate: Coordinate, frameState: FrameState, hitTolerance: number, callback: (f: Feature, l: Layer) => any, declutteredFeatures: Feature[]) {
-        const bbox = frameState.extent;
-        if (bbox !== this.cachedBbox) {
-            this.cachedBbox = bbox;
-            this.pickingShader.bind(this.context);
-            this.pickingShader.updateUniformData(this.context, 'u_bbox', bbox);
-            this.pickingShader.draw(this.context, [0, 0, 0, 0], this.pickingFb);
-            const textureData = new Uint8Array(getCurrentFramebuffersPixels(this.canvas));
-            this.cachedPickingTextureData = textureData;
-        }
-
-        const percW = (coordinate[0] - bbox[0]) / (bbox[2] - bbox[0]);
-        const percH = (coordinate[1] - bbox[1]) / (bbox[3] - bbox[1]);
-        const row = Math.round(this.canvas.height * percH);
-        const col = Math.round(this.canvas.width * percW);
-        const index = 4 * row * this.canvas.width + 4 * col;
-        const featureNrEncoded = [
-            this.cachedPickingTextureData[index],
-            this.cachedPickingTextureData[index + 1],
-            this.cachedPickingTextureData[index + 2],
-            this.cachedPickingTextureData[index + 3]
-        ];
-        const featureNr = decodeNFromBase(featureNrEncoded, 256) - 1;
-
-        if (featureNr >= 0) {
-            const layer = this.getLayer();
-            const features = layer.getSource().getFeatures();
-            const feature = features[featureNr];
-
+        const layer = this.getLayer();
+        const features = layer.getSource().getFeaturesAtCoordinate(coordinate);
+        for (const feature of features) {
             return callback(feature, layer);
         }
     }
@@ -416,6 +277,73 @@ export class WebGlPolygonLayer extends VectorLayer {
     }
 
     createRenderer(): LayerRenderer<VectorLayer> {
-        return new WebGlPolygonRenderer(this, this.colorFunc, this.webGlData);
+        const renderer = new WebGlPolygonRenderer(this, this.colorFunc, this.webGlData);
+        delete(this.webGlData);
+        return renderer;
     }
 }
+
+
+/***************************************************************************************
+ *                                                                                     *
+ ***************************************************************************************/
+
+
+
+const features = [];
+const start = [0, 0];
+const w = 0.25;
+const delta = 0.1;
+const nrRows = 30;
+const nrCols = 30;
+for (let i = 0; i < nrRows; i++) {
+    for (let j = 0; j < nrCols; j++) {
+        const bbox = [
+            start[0] + (i - 1) * w,
+            start[1] + (j - 1) * w,
+            start[0] + i * w,
+            start[1] + j * w
+        ];
+        const polygon = bboxPolygon(bbox);
+        polygon.properties['id'] = i * nrCols + j;
+        features.push(polygon);
+    }
+}
+const featureCollection = {
+    type: 'FeatureCollection',
+    features: features
+};
+
+const bg = new TileLayer({
+    source: new OSM()
+});
+
+const view = new View({
+    center: [start[0] + w * nrCols / 2, start[1] + w * nrRows / 2],
+    zoom: 4,
+    projection: 'EPSG:4326'
+});
+
+const dataLayer = new WebGlPolygonLayer({
+    source: new VectorSource({
+        features: new GeoJSON().readFeatures(featureCollection)
+    }),
+    colorFunc: (f: Feature<Polygon>) => {
+        return [Math.random(), Math.random(), Math.random()];
+    }
+});
+
+
+
+const map = new Map({
+    target: mapDiv,
+    layers: [bg, dataLayer],
+    view: view
+});
+
+map.on('singleclick', function (evt) {
+    var coordinate = evt.coordinate;
+    map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike, l: Layer) => {
+        console.log(f.getProperties());
+    });
+});

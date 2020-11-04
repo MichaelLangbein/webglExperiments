@@ -81,7 +81,7 @@ export const arrayToCanvas = (data: number[][][]) => {
     const rows = data.length;
     const cols = data[0].length;
 
-    const buffer = new Uint8ClampedArray(cols * rows * 4);
+    const buffer = new Uint8Array(cols * rows * 4);
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const pos = (r * cols + c) * 4;
@@ -92,6 +92,10 @@ export const arrayToCanvas = (data: number[][][]) => {
         }
     }
 
+    return arrayToCanvasDims(buffer, rows, cols);
+};
+
+export const arrayToCanvasDims = (buffer: Uint8Array, rows: number, cols: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = cols;
