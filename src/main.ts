@@ -1,1 +1,1 @@
-import './examples/ol/polygons';
+import './examples/ol/interpolation';

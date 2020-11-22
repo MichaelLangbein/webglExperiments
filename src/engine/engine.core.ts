@@ -2,7 +2,7 @@ import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform,
     createIndexBuffer, createShaderProgram, createTexture, drawArray, drawElements, getAttributeLocation,
     getUniformLocation, IndexBufferObject, TextureObject, WebGLUniformType, drawElementsInstanced, drawArrayInstanced,
     GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray,
-    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground, WebGLAttributeType, createFramebuffer, bindTextureToFramebuffer, createEmptyTexture} from './webgl';
+    bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground, WebGLAttributeType, createFramebuffer, bindTextureToFramebuffer, createEmptyTexture, createDataTexture, TextureType} from './webgl';
 
 
 
@@ -240,16 +240,20 @@ export class UniformData {
 export class TextureData {
 
     hash: string;
-    data: TextureObject | HTMLImageElement | HTMLCanvasElement;  // raw data, user-provided
-    texture: TextureObject;                                      // buffer on gpu
-    constructor(im: HTMLImageElement | HTMLCanvasElement | TextureObject) {
+    data: TextureObject | HTMLImageElement | HTMLCanvasElement | number[][][];  // raw data, user-provided
+    texture: TextureObject;                                                     // buffer on gpu
+    textureDataType: TextureType;
+    constructor(im: HTMLImageElement | HTMLCanvasElement | TextureObject | number[][][], textureDataType?: TextureType) {
         this.data = im;
         this.hash = hash(Math.random() * 1000 + ''); // @TODO: how do you hash textures?
+        this.textureDataType = textureDataType;
     }
 
     upload(gl: WebGL2RenderingContext) {
         if (this.data instanceof HTMLImageElement || this.data instanceof  HTMLCanvasElement) {
             this.texture = createTexture(gl, this.data);
+        } else if (this.data instanceof Array) {
+            this.texture = createDataTexture(gl, this.data, this.textureDataType);
         } else {
             this.texture = this.data;
         }

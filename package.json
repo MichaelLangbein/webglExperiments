@@ -20,6 +20,7 @@
     "url": "https://github.com/michaellangbein/webglExperiments"
   },
   "devDependencies": {
+    "@types/fpsmeter": "^0.3.30",
     "@types/node": "7.0.0",
     "@types/ol": "^6.4.1",
     "@types/stats.js": "^0.17.0",
@@ -45,6 +46,7 @@
     "@types/earcut": "^2.1.1",
     "delaunator": "^4.0.1",
     "earcut": "^2.2.2",
+    "fpsmeter": "^0.3.1",
     "turf": "^3.0.14"
   }
 }

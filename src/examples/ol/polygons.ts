@@ -5,7 +5,7 @@ import earcut from 'earcut';
 import { bboxPolygon } from 'turf';
 
 import { Map, Feature, View } from 'ol';
-import { Layer, Vector as VectorLayer } from 'ol/layer';
+import { Layer, Vector as VectorLayer, Tile as TileLayer } from 'ol/layer';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { GeoJSON } from 'ol/format';
 import LayerRenderer from 'ol/renderer/Layer';
@@ -15,15 +15,17 @@ import { Options } from 'ol/layer/BaseVector';
 import { Pixel } from 'ol/pixel';
 import { Coordinate } from 'ol/coordinate';
 import 'ol/ol.css';
-import TileLayer from 'ol/layer/Tile';
 import { FeatureLike } from 'ol/Feature';
 import MultiPolygon from 'ol/geom/MultiPolygon';
+import { Style, Fill, Stroke } from 'ol/style';
+const Stats = require('stats.js');
 
 const body = document.getElementById('body') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const mapDiv = document.getElementById('map') as HTMLDivElement;
 const button = document.getElementById('button') as HTMLButtonElement;
 const slider = document.getElementById('xrange') as HTMLInputElement;
+const fpser = document.getElementById('fpser') as HTMLDivElement;
 canvas.style.setProperty('height', '0px');
 
 
@@ -287,12 +289,12 @@ export class WebGlPolygonLayer extends VectorLayer {
  ***************************************************************************************/
 
 
-
 const features = [];
 const start = [0, 0];
-const w = 0.25;
-const nrRows = 1000;
-const nrCols = 1000;
+const w = 0.0125;
+const nrRows = 100;
+const nrCols = 100;
+console.log(`creating ${nrRows} * ${nrCols} features ...`);
 for (let i = 0; i < nrRows; i++) {
     for (let j = 0; j < nrCols; j++) {
         const bbox = [
@@ -321,14 +323,83 @@ const view = new View({
     projection: 'EPSG:4326'
 });
 
-const dataLayer = new WebGlPolygonLayer({
+console.log(`adding features to vector-layer ...`)
+const dataLayer = new VectorLayer({
     source: new VectorSource({
         features: new GeoJSON().readFeatures(featureCollection)
     }),
-    colorFunc: (f: Feature<Polygon>) => {
-        return [Math.random(), Math.random(), Math.random()];
+    style: (f) => {
+        return new Style({
+            fill: new Fill({
+                color: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`,
+            }),
+        });
     }
 });
+
+// console.log(`adding features to webgl-layer ...`)
+// const dataLayer = new WebGlPolygonLayer({
+//     source: new VectorSource({
+//         features: new GeoJSON().readFeatures(featureCollection)
+//     }),
+//     colorFunc: (f: Feature<Polygon>) => {
+//         return [Math.random(), Math.random(), Math.random()];
+//     }
+// });
+
+
+
+
+
+
+
+
+
+
+// const view = new View({
+//     center: [-77, -12],
+//     zoom: 9,
+//     projection: 'EPSG:4326'
+// });
+
+
+// button.addEventListener('click', () => {
+//     for (const asset of ['assets/Query_Lima_SARA_PD30_TI70_50000.json', 'assets/Query_Lima_SARA_Blocks_INE.json', 'assets/Query_Lima_SARA_PD40_TI60_50000.json']) {
+//         fetch(asset).then((valueRaw: Response) => {
+//             valueRaw.json().then((featureCollection) => {
+//                 console.log('nr features: ', featureCollection.features.length);
+//                 // const dataLayer = new WebGlPolygonLayer({
+//                 //     source: new VectorSource({
+//                 //         features: new GeoJSON().readFeatures(featureCollection)
+//                 //     }),
+//                 //     colorFunc: (f: Feature<Polygon>) => {
+//                 //         return [Math.random(), Math.random(), Math.random()];
+//                 //     }
+//                 // });
+//                 const dataLayer = new VectorLayer({
+//                     source: new VectorSource({
+//                         features: new GeoJSON().readFeatures(featureCollection)
+//                     }),
+//                     style: (f) => {
+//                         return new Style({
+//                             stroke: new Stroke({
+//                               color: 'blue',
+//                               width: 3,
+//                             }),
+//                             fill: new Fill({
+//                               color: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`,
+//                             }),
+//                         });
+//                     }
+//                     // colorFunc: (f: Feature<Polygon>) => {
+//                     //     return [Math.random(), Math.random(), Math.random()];
+//                     // }
+//                 });
+//                 map.addLayer(dataLayer);
+//             });
+//         });
+//     }
+// });
 
 
 
@@ -344,3 +415,15 @@ map.on('singleclick', function (evt) {
         console.log(f.getProperties());
     });
 });
+
+
+var stats = new Stats();
+stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+fpser.appendChild( stats.dom );
+const renderer = map.getRenderer();
+const oldRenderFunction = renderer.renderFrame.bind(renderer);
+map.getRenderer().renderFrame = function(frameState: any) {
+   stats.begin();
+    oldRenderFunction(frameState);
+    stats.end();
+};

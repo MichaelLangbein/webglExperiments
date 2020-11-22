@@ -730,9 +730,6 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
     const height = data.length;
     const width = data[0].length;
     const channels = data[0][0].length;
-    if ( !isPowerOf(width, 2) || !isPowerOf(height, 2) ) {
-        throw new Error(`Texture-data-dimensions must be a power of two, but are ${width} x ${height}`);
-    }
     // if ( channels !== 4) {
     //     // @todo: remove this when we implement non-rgba data-textures.
     //     throw new Error(`Expecting 4 channels, but ${channels} provided`);
