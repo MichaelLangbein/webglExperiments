@@ -549,7 +549,7 @@ export type TextureType = 'ubyte4' | 'float1' | 'float4';
  * | LUMINANCE_ALPHA    | LUMINANCE_ALPHA | UNSIGNED_BYTE	               | 2                      | t                  | f                   |
  * | LUMINANCE          | LUMINANCE       | UNSIGNED_BYTE                  | 1                      | t                  | f                   |
  * | ALPHA              | ALPHA           | UNSIGNED_BYTE                  | 1                      | t                  | f                   |
- * |--------------------|-----------------|--------------------------------|------------------------|--------------------|---------------------| 
+ * |--------------------|-----------------|--------------------------------|------------------------|--------------------|---------------------|
  * | RGBA8              | RGBA            | UNSIGNED_BYTE                  | 4                      |                    |                     |
  * | RGB5_A1            |                 |                                |                        |                    |                     |
  * | RGBA4              |                 |                                |                        |                    |                     |
@@ -658,7 +658,7 @@ export const inferTextureType = (gl: WebGL2RenderingContext, to: TextureObject):
         return 'ubyte4';
     } else if (to.internalformat === gl.R32F && to.type === gl.FLOAT) {
         return 'float1';
-    } else if (to.internalformat === gl.RGBA32F && to.type === gl.FLOAT){
+    } else if (to.internalformat === gl.RGBA32F && to.type === gl.FLOAT) {
         return 'float4';
     } else {
         throw new Error(`Unknkown texture-object-paras: internalformat ${to.internalformat}, type: ${to.type}`);

@@ -96,7 +96,7 @@ export class WebGLInterpolationRenderer extends LayerRenderer<Layer<VectorSource
 
         const interpolationShader = new ArrayBundle(new Program(
             `#version 300 es
-            precision lowp float;
+            precision mediump float;
             in vec2 a_dataBounds;
             uniform vec4 u_screenBbox;
             out vec2 v_position;
@@ -106,7 +106,7 @@ export class WebGLInterpolationRenderer extends LayerRenderer<Layer<VectorSource
                 gl_Position = vec4( -1.0 + 2.0 * (a_dataBounds.x - u_screenBbox.x) / (u_screenBbox.z - u_screenBbox.x),  -1.0 + 2.0 * (a_dataBounds.y - u_screenBbox.y) / (u_screenBbox.w - u_screenBbox.y), 0, 1);
             }
         `, `#version 300 es
-            precision lowp float;
+            precision mediump float;
             uniform sampler2D u_dataTexture;
             uniform int u_nrDataPoints;
             in vec2 v_position;

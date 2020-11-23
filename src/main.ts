@@ -1,1 +1,1 @@
-import './examples/ol/interpolation';
+import './examples/newEngine/stressTest';
