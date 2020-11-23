@@ -34,7 +34,7 @@ const shader = new ArrayBundle(new Program(
         for (int i = 0; i < u_vertexOperations; i++) {
             val += asin(float(i) / float(u_vertexOperations));
         }
-        gl_Position = a_pos + 0.0 * val;
+        gl_Position = a_pos + 0.00001 * val;
     }
     `,
     `#version 300 es
@@ -48,7 +48,7 @@ const shader = new ArrayBundle(new Program(
         for (int i = 0; i < u_fragmentOperations; i++) {
             val += asin(float(i) / float(u_fragmentOperations));
         }
-        float r = 0.5 * sin(u_time) + 0.5 + 0.0 * val;
+        float r = 0.5 * sin(u_time) + 0.5 + 0.00001 * val;
         float g = 0.5 * cos(u_time) + 0.5;
         color = vec4(r, 0.0, g, 1.0);
     }
@@ -56,7 +56,7 @@ const shader = new ArrayBundle(new Program(
         'a_pos': new AttributeData(rect.vertices.flat(), 'vec4', false)
     }, {
         'u_time': new UniformData('float', [0]),
-        'u_vertexOperations': new UniformData('int', [1]),
+        'u_vertexOperations': new UniformData('int', [1000000]),
         'u_fragmentOperations': new UniformData('int', [1])
     }, {}, 'triangles', rect.vertices.length);
 
