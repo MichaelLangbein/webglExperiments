@@ -1,10 +1,14 @@
+// Engine
 import { Program, AttributeData, Context, UniformData, ArrayBundle, TextureData } from '../../engine/engine.core';
+
+// Algorithms
 import { Delaunay } from 'd3-delaunay';
 import earcut from 'earcut';
-
 import { PCA } from 'ml-pca';
 import { Matrix, inverse, MatrixColumnSelectionView } from 'ml-matrix';
+import { getMatrixData } from './matrixTree';
 
+// Ol
 import { Map, Feature, View } from 'ol';
 import { Layer, Tile as TileLayer } from 'ol/layer';
 import { OSM, Vector as VectorSource } from 'ol/source';
@@ -19,6 +23,8 @@ import Point from 'ol/geom/Point';
 import { scalarProduct, vectorAddition } from '../../engine/math';
 import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Stroke, Circle } from 'ol/style';
+
+// Others
 const Stats = require('stats.js');
 
 const body = document.getElementById('body') as HTMLDivElement;
@@ -148,16 +154,16 @@ export class WebGlPolygonLayer extends Layer<VectorSource<Point>> {
 const features = [];
 const start = [0, 0];
 const wX = 0.125;
-const wY = 0.225;
+const wY = 0.25;
 const nrRows = 20;
-const nrCols = 20;
+const nrCols = 23;
 const xDir = [1, 0.5];
 const yDir = [-0.5, 1];
 console.log(`creating ${nrRows} * ${nrCols} features ...`);
 for (let i = 0; i < nrRows; i++) {
     for (let j = 0; j < nrCols; j++) {
-        if (Math.random() < 0.8) {
-            const pos = vectorAddition(vectorAddition(start, scalarProduct(wX * i, xDir)), scalarProduct(wY * j, yDir));
+        if (Math.random() < 0.999) {
+            const pos = vectorAddition(vectorAddition(vectorAddition(start, scalarProduct(wX * i, xDir)), scalarProduct(wY * j, yDir)), [Math.random() * 0.01, Math.random() * 0.01]);
 
             features.push({
                 type: 'Feature',
@@ -204,13 +210,10 @@ const dataLayer = new VectorLayer({
 
 
 function reprojectData(data: number[][]) {
-    // const xMean = data.map(d => d[0]).reduce((carry, val) => carry + val, 0) / data.length;
-    // const yMean = data.map(d => d[1]).reduce((carry, val) => carry + val, 0) / data.length;
     const pca = new PCA(data);
     const eigenVectors = pca.getEigenvectors();
     const T = inverse(eigenVectors);
     const reprojectedData = data
-        // .map(d => [d[0] - xMean, d[1] - yMean])
         .map(d => Matrix.columnVector(d))
         .map(d => T.mmul(d))
         .map(m => m.getColumn(0));
@@ -221,49 +224,33 @@ function reprojectData(data: number[][]) {
 const coords = dataLayer.getSource().getFeatures().map(f => (f.getGeometry() as Point).getCoordinates());
 const vals = dataLayer.getSource().getFeatures().map(f => f.getProperties()['value']);
 const reprojectedCoords = reprojectData(coords);
-const data: {coords: number[], val: number[]}[] = [];
+const reprojectedData: {x: number, y: number, data: number[]}[] = [];
 for (let i = 0; i < vals.length; i++) {
-    data.push({
-        coords: reprojectedCoords[i],
-        val: vals[i]
+    reprojectedData.push({
+        x: reprojectedCoords[i][0],
+        y: reprojectedCoords[i][1],
+        data: vals[i]
     });
 }
 
-const deltaY = 0.1;
-const sortedReprojectedData = data.sort((a, b) => {
-    if (Math.abs(a.coords[1] - b.coords[1]) > deltaY) { // a and b are in different rows
-        return b.coords[1] - a.coords[1]; // sort by x
-    } else {
-        return b.coords[0] - a.coords[0]; // sort by y
-    }
-});
 
-const matrixData = [[data[0]]];
-let row = 0;
-for (let i = 1; i < data.length; i++) {
-    const dataPoint = data[i];
-    // if same row
-    if (Math.abs(dataPoint.coords[1] - data[i - 1].coords[1]) < deltaY) {
-        matrixData[row].push(dataPoint);
-    } else {
-        row += 1;
-        matrixData.push([dataPoint]);
-    }
-}
+
+const matrixData = getMatrixData(reprojectedData);
+
+console.log(matrixData)
 
 
 
 
 
-
-const reprojectedFeatures = sortedReprojectedData.map(o => ({
+const reprojectedFeatures = reprojectedData.map(o => ({
     type: 'Feature',
     properties: {
-        value: o.val
+        value: o.data
     },
     geometry: {
         type: 'Point',
-        coordinates: o.coords
+        coordinates: [o.x, o.y]
     }
 }));
 

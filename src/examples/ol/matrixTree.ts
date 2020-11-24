@@ -71,6 +71,11 @@ function splitBbox(splitLine: SplitLine, bbox: Bbox): [Bbox, Bbox] {
     return [bbox1, bbox2];
 }
 
+interface NodeData {
+    bbox: Bbox;
+    data: DataPoint[];
+};
+
 class MatrixTreeNode {
 
     public data: DataPoint[];
@@ -86,19 +91,21 @@ class MatrixTreeNode {
         this.data = data;
     }
 
-    public splitRecursive(): void {
+    public splitLowest(): void {
         if (!this.leftChild) {
-            const splitLine = getSplitLine(this.bbox);
-            const [bbox1, bbox2] = splitBbox(splitLine, this.bbox);
-            const [data1, data2] = splitData(splitLine, this.data);
-            this.leftChild = new MatrixTreeNode(data1, bbox1);
-            this.rightChild = new MatrixTreeNode(data2, bbox2);
-            this.leftChild.splitRecursive();
-            this.rightChild.splitRecursive();
+            this.split();
         } else {
-            this.leftChild.splitRecursive();
-            this.rightChild.splitRecursive();
+            this.leftChild.splitLowest();
+            this.rightChild.splitLowest();
         }
+    }
+
+    public split(): void {
+        const splitLine = getSplitLine(this.bbox);
+        const [bbox1, bbox2] = splitBbox(splitLine, this.bbox);
+        const [data1, data2] = splitData(splitLine, this.data);
+        this.leftChild = new MatrixTreeNode(data1, bbox1);
+        this.rightChild = new MatrixTreeNode(data2, bbox2);
     }
 
     public getDataLengthRecursive(): number[] {
@@ -111,7 +118,7 @@ class MatrixTreeNode {
         }
     }
 
-    public getDataRecursive(): {bbox: Bbox, data: DataPoint[]}[] {
+    public getDataRecursive(): NodeData[] {
         if (this.leftChild) {
             const dataLeft = this.leftChild.getDataRecursive();
             const dataRight = this.rightChild.getDataRecursive();
@@ -145,9 +152,76 @@ export function getMatrixData(data: DataPoint[]) {
     const tree = new MatrixTreeNode(data, bbox);
 
     while (Math.max(...tree.getDataLengthRecursive()) > 1) {
-        this.tree.splitRecursive();
+        tree.splitLowest();
     }
 
-    const matrixData = this.tree.getDataRecursive();
-    return matrixData;
+    const treeData = tree.getDataRecursive();
+
+    const matrix = sortTreeDataIntoMatrix(treeData);
+
+    const rowFilteredMatrix = filterMatrixRows(matrix);
+    const colFilteredMatrix = filterMatrixCols(rowFilteredMatrix);
+
+    return colFilteredMatrix;
+}
+
+function filterMatrixCols(matrix: any[][]): any[][] {
+    if (matrix.length === 0) {
+        return matrix;
+    }
+
+    const nrCols = matrix[0].length;
+    const colFilteredMatrix = Array(matrix.length).fill(0).map(el => []);
+    for (let colIndx = 0; colIndx < nrCols; colIndx++) {
+        const col = matrix.map(row => row[colIndx]);
+        if (col.find((el: any) => el !== null)) {
+            for (let rowIndx = 0; rowIndx < matrix.length; rowIndx++) {
+                colFilteredMatrix[rowIndx].push(col[rowIndx]);
+            }
+        }
+    }
+    return colFilteredMatrix;
+}
+
+function filterMatrixRows(matrix: any[][]): any[][] {
+    const rowFilteredMatrix = [];
+    for (const row of matrix) {
+        if (row.find((el: any) => el !== null)) {
+            rowFilteredMatrix.push(row);
+        }
+    }
+    return rowFilteredMatrix;
+}
+
+function sortTreeDataIntoMatrix(treeData: NodeData[]): any[][] {
+    const colXs: number[] = [];
+    const rowYs: number[] = [];
+    for (const dp of treeData) {
+        if (!colXs.includes(dp.bbox.xMin)) {
+            colXs.push(dp.bbox.xMin);
+        }
+        if (!rowYs.includes(dp.bbox.yMin)) {
+            rowYs.push(dp.bbox.yMin);
+        }
+    }
+    colXs.sort((a, b) => b - a);
+    rowYs.sort((a, b) => b - a);
+    const nrRows = rowYs.length;
+    const nrCols = colXs.length;
+    const matrix = Array(nrRows).fill(0).map(el => Array(nrCols).fill(0).map(el => null));
+    let r = -1;
+    let c = -1;
+    for (let rowY of rowYs) {
+        r += 1;
+        c = -1;
+        const rowData = treeData.filter(td => td.bbox.yMin === rowY);
+        for (let colX of colXs) {
+            c += 1;
+            const colData = rowData.find(td => td.bbox.xMin === colX);
+            if (colData && colData.data.length > 0) {
+                matrix[r][c] = colData.data[0].data;
+            }
+        }
+    }
+    return matrix;
 }

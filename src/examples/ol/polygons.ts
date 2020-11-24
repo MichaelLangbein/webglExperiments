@@ -292,8 +292,8 @@ export class WebGlPolygonLayer extends VectorLayer {
 const features = [];
 const start = [0, 0];
 const w = 0.0125;
-const nrRows = 100;
-const nrCols = 100;
+const nrRows = 1000;
+const nrCols = 1000;
 console.log(`creating ${nrRows} * ${nrCols} features ...`);
 for (let i = 0; i < nrRows; i++) {
     for (let j = 0; j < nrCols; j++) {
@@ -323,29 +323,29 @@ const view = new View({
     projection: 'EPSG:4326'
 });
 
-console.log(`adding features to vector-layer ...`)
-const dataLayer = new VectorLayer({
-    source: new VectorSource({
-        features: new GeoJSON().readFeatures(featureCollection)
-    }),
-    style: (f) => {
-        return new Style({
-            fill: new Fill({
-                color: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`,
-            }),
-        });
-    }
-});
-
-// console.log(`adding features to webgl-layer ...`)
-// const dataLayer = new WebGlPolygonLayer({
+// console.log(`adding features to vector-layer ...`)
+// const dataLayer = new VectorLayer({
 //     source: new VectorSource({
 //         features: new GeoJSON().readFeatures(featureCollection)
 //     }),
-//     colorFunc: (f: Feature<Polygon>) => {
-//         return [Math.random(), Math.random(), Math.random()];
+//     style: (f) => {
+//         return new Style({
+//             fill: new Fill({
+//                 color: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`,
+//             }),
+//         });
 //     }
 // });
+
+console.log(`adding features to webgl-layer ...`)
+const dataLayer = new WebGlPolygonLayer({
+    source: new VectorSource({
+        features: new GeoJSON().readFeatures(featureCollection)
+    }),
+    colorFunc: (f: Feature<Polygon>) => {
+        return [Math.random(), Math.random(), Math.random()];
+    }
+});
 
 
 
