@@ -1,1 +1,1 @@
-import './examples/newEngine/varyingVector';
+import './examples/ol/interpolation';
