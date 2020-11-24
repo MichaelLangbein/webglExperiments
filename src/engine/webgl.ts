@@ -69,7 +69,7 @@
  *        - WebGL 2.0: allows you to create your own vertex-arrays, whereas 1.0 always only used one global vertex-array.
  */
 
-import { isPowerOf, flatten3 } from './math';
+import { isPowerOf, flatten3 } from '../assets/helpers/math';
 
 
 

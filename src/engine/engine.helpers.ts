@@ -1,6 +1,6 @@
 import { TextureObject, createShaderProgram, createBuffer, getAttributeLocation, bindBufferToAttribute, clearBackground, getUniformLocation, bindTextureToUniform, bindProgram, bindValueToUniform, createTexture } from './webgl';
 import { rectangleA } from './engine.shapes';
-import { flatten2 } from './math';
+import { flatten2 } from '../assets/helpers/math';
 
 
 
