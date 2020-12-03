@@ -27,6 +27,7 @@
     "@types/ol": "^6.4.1",
     "@types/stats.js": "^0.17.0",
     "@types/string-hash": "^1.1.1",
+    "@types/three": "^0.103.2",
     "@types/turf": "^3.5.32",
     "@types/webgl2": "0.0.5",
     "awesome-typescript-loader": "5.2.0",
@@ -51,6 +52,7 @@
     "fpsmeter": "^0.3.1",
     "ml-matrix": "^6.5.3",
     "ml-pca": "^4.0.1",
+    "three": "^0.123.0",
     "turf": "^3.0.14"
   }
 }
