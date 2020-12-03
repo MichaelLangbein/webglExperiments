@@ -3,12 +3,16 @@
     "outDir": "./dist/",
     "sourceMap": true,
     "noImplicitAny": true,
-    "module": "commonjs",
-    "target": "es5",
-    "lib": ["es6", "dom", "es2017", "es2019"],
+
+    "target": "es5",  // the version of js to compile to 
+    "lib": ["es6", "dom", "es2017", "es2019"], // the functions we need to use
+    "module": "commonjs", // require() <-- must be commonjs when target is ES3 or ES5.
+    "esModuleInterop": true, 
+    "allowSyntheticDefaultImports": true, // allow default imports from modules w/o default exports
+    
     "declaration": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+    "skipLibCheck": true, // makes sure syntax-errors in libraries are not thrown as errors
+
     "typeRoots": ["./typings", "./node_modules/@types"]
   },
   "include": [

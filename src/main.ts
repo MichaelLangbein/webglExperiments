@@ -1,1 +1,1 @@
-import './examples/ol/dataToMatrix';
+import './examples/three/voxel';

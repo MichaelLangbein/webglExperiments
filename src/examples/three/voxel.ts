@@ -1,13 +1,18 @@
 import {
-    AmbientLight, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial, 
+    AmbientLight, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial,
     PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createBlockMeshes, getSubBlock } from '../../utils/voxel';
+const Stats = require('stats.js');
 
-
+const map = document.getElementById('map') as HTMLDivElement;
 const container = document.getElementById('canvas') as HTMLCanvasElement;
 const slider = document.getElementById('xrange') as HTMLInputElement;
+const fpser = document.getElementById('fpser') as HTMLDivElement;
+map.style.setProperty('display', 'none');
+container.style.setProperty('width', '800px');
+container.style.setProperty('height', '600px');
 
 const scene = new Scene();
 const renderer = new WebGLRenderer({
@@ -41,23 +46,25 @@ scene.add(cutPlane);
 const colorFunc = (val: number): [number, number, number] => {
     switch (val) {
         case 0:
-            return [0, 0, 0];
+            return [0.1, 0.1, 0.1];
         case 1:
-            return [1, 0, 0];
+            return [0.8, 0.0, 0.4];
         case 2:
-            return [0, 1, 0];
+            return [0.9, 0.1, 0];
         case 3:
-            return [0, 0, 1];
+            return [0.6, 0.2, 0.0];
         case 4:
-            return [1, 1, 0];
+            return [0.2, 0.8, 0.0];
         case 5:
-            return [1, 0, 1];
+            return [0.5, 1.0, 0.0];
         case 6:
-            return [0, 1, 1];
+            return [0.4, 0.4, 0.8];
         case 7:
+            return [0.8, 0.8, 0.8];
+        case 8:
             return [1, 1, 1];
         default:
-            return [0, 0, 0];
+            return [1, 1, 1];
     }
 };
 
@@ -71,11 +78,11 @@ for (let x = 0; x < X; x++) {
     for (let y = 0; y < Y; y++) {
         allData[x].push([]);
         for (let z = 0; z < Z; z++) {
-            if (x === 0 || y === 0 || z === 0 || x === X-1 || y === Y-1 || z === Z-1) {
+            if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
                 allData[x][y].push(0);
             }
             else if (y < 10 * Math.sin(x * 0.1) * Math.cos(z * 0.1) + 5) {
-                allData[x][y].push(Math.floor(10 * y/Y));
+                allData[x][y].push(Math.floor((10 * y / Y) + (z/20)));
             } else {
                 allData[x][y].push(0);
             }
@@ -92,7 +99,7 @@ voxelBlocks.map(vb => vb.translate(translation));
 voxelBlocks.map(vb => scene.add(vb.mesh));
 
 slider.addEventListener('input', (ev: Event) => {
-    const val = -50 + 100* +(slider.value) / 100;
+    const val = -50 + 100 * (+slider.value) / 100;
 
     cutPlane.position.setX(val);
 
@@ -119,7 +126,7 @@ slider.addEventListener('input', (ev: Event) => {
                     }
                 }
             }
-               
+
             vb.updateData(newData);
         }
     }
@@ -127,9 +134,32 @@ slider.addEventListener('input', (ev: Event) => {
 
 });
 
+document.onkeydown = (event: KeyboardEvent) => {
+    console.log(event.keyCode);
+    switch (event.keyCode) {
+        case 37:
+            camera.translateX(-1);
+            break;
+        case 38:
+            camera.translateZ(-1);
+            break;
+        case 39:
+            camera.translateX(1);
+            break;
+        case 40:
+            camera.translateZ(1);
+            break;
+    }
+};
 
+
+var stats = new Stats();
+stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+fpser.appendChild( stats.dom );
 function animate() {
+    stats.begin();
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
+    stats.end();
 }
 animate();
