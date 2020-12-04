@@ -3,8 +3,7 @@ import {
     PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { createBlockMeshes, getSubBlock } from '../../utils/voxel';
-import { createMCBlockMeshes } from '../../utils/marchingCubes';
+import { createMarchingCubeBlockMeshes, getSubBlock } from '../../utils/marchingCubes';
 const Stats = require('stats.js');
 
 
@@ -19,7 +18,8 @@ container.style.setProperty('height', '600px');
 
 const scene = new Scene();
 const renderer = new WebGLRenderer({
-    canvas: container
+    canvas: container,
+    antialias: true,
 });
 
 const camera = new PerspectiveCamera(75, container.width / container.height, 0.1, 1000);
@@ -97,7 +97,7 @@ const cubeSize = 1;
 const blockSize: [number, number, number] = [10, 10, 10];
 const translation: [number, number, number] = [-40, 0, -40];
 
-const voxelBlocks = createMCBlockMeshes(allData, 0.5, cubeSize, blockSize, colorFunc);  // createBlockMeshes(allData, cubeSize, blockSize, colorFunc);
+const voxelBlocks = createMarchingCubeBlockMeshes(allData, 0.5, cubeSize, blockSize, colorFunc);  // createBlockMeshes(allData, cubeSize, blockSize, colorFunc);
 voxelBlocks.map(vb => vb.translate(translation));
 voxelBlocks.map(vb => scene.add(vb.mesh));
 
@@ -130,7 +130,7 @@ slider.addEventListener('input', (ev: Event) => {
                 }
             }
 
-            vb.updateData(newData, 0.5);
+            vb.updateData(newData);
         }
     }
 

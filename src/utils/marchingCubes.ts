@@ -14,7 +14,7 @@ export interface Bbox {
 
 
 
-export function createMCBlockMeshes(
+export function createMarchingCubeBlockMeshes(
         data: number[][][], threshold: number,
         cubeSize: number, blockSize: [number, number, number],
         colorFunc: (val: number) => [number, number, number]): BlockContainer[] {
@@ -58,8 +58,8 @@ export class BlockContainer {
     constructor(
         public startPoint: [number, number, number],
         public blockSize: [number, number, number],
-        data: number[][][],
-        threshold: number,
+        public data: number[][][],
+        public threshold: number,
         public cubeSize: number,
         public colorFunc: (val: number) => [number, number, number]) {
 
@@ -99,8 +99,17 @@ export class BlockContainer {
         this.mesh.translateZ(newPos[2]);
     }
 
-    public updateData(data: number[][][], threshold: number): void {
-        const attrs = createSubBlockMarchingCubeAttributes(data, threshold, this.cubeSize, this.colorFunc);
+    public updateData(data: number[][][]): void {
+        this.data = data;
+        const attrs = createSubBlockMarchingCubeAttributes(data, this.threshold, this.cubeSize, this.colorFunc);
+        (this.mesh.geometry as BufferGeometry).setAttribute('position', attrs.position);
+        (this.mesh.geometry as BufferGeometry).setAttribute('normal', attrs.normal);
+        (this.mesh.geometry as BufferGeometry).setAttribute('color', attrs.color);
+    }
+
+    public updateThreshold(threshold: number): void {
+        this.threshold = threshold;
+        const attrs = createSubBlockMarchingCubeAttributes(this.data, threshold, this.cubeSize, this.colorFunc);
         (this.mesh.geometry as BufferGeometry).setAttribute('position', attrs.position);
         (this.mesh.geometry as BufferGeometry).setAttribute('normal', attrs.normal);
         (this.mesh.geometry as BufferGeometry).setAttribute('color', attrs.color);

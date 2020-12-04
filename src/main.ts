@@ -1,1 +1,1 @@
-import './examples/three/volumetricData';
+import './examples/three/fishtank';
