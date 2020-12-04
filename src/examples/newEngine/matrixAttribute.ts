@@ -1,5 +1,5 @@
 import { Context, Program, AttributeData, renderLoop, ArrayBundle } from '../../engine/engine.core';
-import { flatten3, transposeMatrix } from '../../assets/helpers/math';
+import { flatten3, transposeMatrix } from '../../utils/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

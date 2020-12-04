@@ -1,1 +1,1 @@
-import './examples/three/voxel';
+import './examples/three/volumetricData';

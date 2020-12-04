@@ -126,8 +126,8 @@ export class BlockContainer {
      * @param startPoint : the index in the overall data-set where this block's hull begins
      * @param blockSize : the size of the block's data-set including the hull
      * @param data : the data [x+2*y+2*z+2], consisting of a core [x*y*z] and a 1-block thick hull.
-     * @param cubeSize 
-     * @param colorFunc 
+     * @param cubeSize
+     * @param colorFunc
      */
     constructor(
         public startPoint: [number, number, number],
@@ -136,7 +136,7 @@ export class BlockContainer {
         public cubeSize: number,
         public colorFunc: (n: number) => [number, number, number]) {
 
-        const attrs = createSubBlockAttributes(data, cubeSize, colorFunc);
+        const attrs = createSubBlockCubeAttributes(data, cubeSize, colorFunc);
         const geometry = new BufferGeometry();
         geometry.setAttribute('position', attrs.position);
         geometry.setAttribute('normal', attrs.normal);
@@ -169,7 +169,7 @@ export class BlockContainer {
     }
 
     public updateData(data: number[][][]): void {
-        const attrs = createSubBlockAttributes(data, this.cubeSize, this.colorFunc);
+        const attrs = createSubBlockCubeAttributes(data, this.cubeSize, this.colorFunc);
         (this.mesh.geometry as BufferGeometry).setAttribute('position', attrs.position);
         (this.mesh.geometry as BufferGeometry).setAttribute('normal', attrs.normal);
         (this.mesh.geometry as BufferGeometry).setAttribute('color', attrs.color);
@@ -177,7 +177,7 @@ export class BlockContainer {
 }
 
 
-function createSubBlockAttributes(
+function createSubBlockCubeAttributes(
     data: number[][][], cubeSize: number,
     colorFunc: (n: number) => [number, number, number]) {
 
@@ -188,9 +188,9 @@ function createSubBlockAttributes(
     const vertices: number[][] = [];
     const normals: number[][] = [];
     const colors: number[][] = [];
-    for (let x = 1; x < X-1; x++) {
-        for (let y = 1; y < Y-1; y++) {
-            for (let z = 1; z < Z-1; z++) {
+    for (let x = 1; x < X - 1; x++) {
+        for (let y = 1; y < Y - 1; y++) {
+            for (let z = 1; z < Z - 1; z++) {
                 if (data[x][y][z] !== 0) {
 
                     // left neighbor
@@ -282,6 +282,7 @@ function createSubBlockAttributes(
         'color': new BufferAttribute(new Float32Array(colors.flat()), 3)
     };
 }
+
 
 
 export function getSubBlock(data: number[][][], start: [number, number, number], size: [number, number, number]): number[][][] {

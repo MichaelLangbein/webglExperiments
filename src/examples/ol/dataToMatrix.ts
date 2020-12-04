@@ -1,37 +1,25 @@
-// Engine
-import { Program, AttributeData, Context, UniformData, ArrayBundle, TextureData } from '../../engine/engine.core';
-
 // Algorithms
-import { Delaunay } from 'd3-delaunay';
-import earcut from 'earcut';
 import { PCA } from 'ml-pca';
-import { Matrix, inverse, MatrixColumnSelectionView } from 'ml-matrix';
-import { getMatrixData } from '../../assets/helpers/matrixTree';
+import { Matrix, inverse } from 'ml-matrix';
+import { getMatrixData } from '../../utils/matrixTree';
 
 // Ol
-import { Map, Feature, View } from 'ol';
+import { Map, View } from 'ol';
 import { Layer, Tile as TileLayer } from 'ol/layer';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { GeoJSON } from 'ol/format';
-import LayerRenderer from 'ol/renderer/Layer';
-import { FrameState } from 'ol/PluggableMap';
-import { Pixel } from 'ol/pixel';
-import { Coordinate } from 'ol/coordinate';
 import 'ol/ol.css';
 import { FeatureLike } from 'ol/Feature';
 import Point from 'ol/geom/Point';
-import { scalarProduct, vectorAddition } from '../../assets/helpers/math';
+import { scalarProduct, vectorAddition } from '../../utils/math';
 import VectorLayer from 'ol/layer/Vector';
-import { Style, Fill, Stroke, Circle } from 'ol/style';
+import { Style, Fill, Circle } from 'ol/style';
 
 // Others
 const Stats = require('stats.js');
 
-const body = document.getElementById('body') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const mapDiv = document.getElementById('map') as HTMLDivElement;
-const button = document.getElementById('button') as HTMLButtonElement;
-const slider = document.getElementById('xrange') as HTMLInputElement;
 const fpser = document.getElementById('fpser') as HTMLDivElement;
 canvas.style.setProperty('height', '0px');
 

@@ -1,6 +1,6 @@
 import { Context, InstancedElementsBundle, Index, Program, AttributeData, renderLoop, ElementsBundle, InstancedAttributeData } from '../../engine/engine.core';
 import { boxE } from '../../engine/engine.shapes';
-import { flatten2 } from '../../assets/helpers/math';
+import { flatten2 } from '../../utils/math';
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;

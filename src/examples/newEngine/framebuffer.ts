@@ -3,7 +3,7 @@ import { Context, InstancedElementsBundle, Index, Program, AttributeData,
     renderLoop, ElementsBundle, InstancedAttributeData, UniformData, ArrayBundle, TextureData } from '../../engine/engine.core';
 import { boxE, gaussianKernel, rectangleA } from '../../engine/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
-    rotateYMatrix, rotateZMatrix, translateMatrix, transposeMatrix, flatten2, flatten3 } from '../../assets/helpers/math';
+    rotateYMatrix, rotateZMatrix, translateMatrix, transposeMatrix, flatten2, flatten3 } from '../../utils/math';
 
 
 const body = document.getElementById('container') as HTMLDivElement;

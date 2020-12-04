@@ -4,7 +4,9 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createBlockMeshes, getSubBlock } from '../../utils/voxel';
+import { createMCBlockMeshes } from '../../utils/marchingCubes';
 const Stats = require('stats.js');
+
 
 const map = document.getElementById('map') as HTMLDivElement;
 const container = document.getElementById('canvas') as HTMLCanvasElement;
@@ -13,6 +15,7 @@ const fpser = document.getElementById('fpser') as HTMLDivElement;
 map.style.setProperty('display', 'none');
 container.style.setProperty('width', '800px');
 container.style.setProperty('height', '600px');
+
 
 const scene = new Scene();
 const renderer = new WebGLRenderer({
@@ -68,9 +71,9 @@ const colorFunc = (val: number): [number, number, number] => {
     }
 };
 
-const X = 100;
-const Y = 20;
-const Z = 100;
+const X = 80;
+const Y = 30;
+const Z = 80;
 
 const allData: number[][][] = [];
 for (let x = 0; x < X; x++) {
@@ -82,7 +85,7 @@ for (let x = 0; x < X; x++) {
                 allData[x][y].push(0);
             }
             else if (y < 10 * Math.sin(x * 0.1) * Math.cos(z * 0.1) + 5) {
-                allData[x][y].push(Math.floor((10 * y / Y) + (z/20)));
+                allData[x][y].push(Math.floor((10 * y / Y) + (z / 20)));
             } else {
                 allData[x][y].push(0);
             }
@@ -92,9 +95,9 @@ for (let x = 0; x < X; x++) {
 
 const cubeSize = 1;
 const blockSize: [number, number, number] = [10, 10, 10];
-const translation: [number, number, number] = [-15, 0, -25];
+const translation: [number, number, number] = [-40, 0, -40];
 
-const voxelBlocks = createBlockMeshes(allData, cubeSize, blockSize, colorFunc);
+const voxelBlocks = createMCBlockMeshes(allData, 0.5, cubeSize, blockSize, colorFunc);  // createBlockMeshes(allData, cubeSize, blockSize, colorFunc);
 voxelBlocks.map(vb => vb.translate(translation));
 voxelBlocks.map(vb => scene.add(vb.mesh));
 
@@ -127,7 +130,7 @@ slider.addEventListener('input', (ev: Event) => {
                 }
             }
 
-            vb.updateData(newData);
+            vb.updateData(newData, 0.5);
         }
     }
 
