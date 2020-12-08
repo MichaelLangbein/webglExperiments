@@ -1,5 +1,6 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial } from 'three';
 import { vectorSubtraction, vectorCrossProduct, binaryVectorOp } from './math';
+import { ArrayCube } from './arrayMatrix';
 
 
 
@@ -15,14 +16,14 @@ export interface Bbox {
 
 
 export function createMarchingCubeBlockMeshes(
-        data: number[][][], threshold: number,
+        data: ArrayCube, threshold: number,
         cubeSize: number, blockSize: [number, number, number],
         colorFunc: (val: number) => [number, number, number]): BlockContainer[] {
     const blocks: BlockContainer[] = [];
 
-    const X = data.length;
-    const Y = data[0].length;
-    const Z = data[0][0].length;
+    const X = data.X;
+    const Y = data.Y;
+    const Z = data.Z;
     let x0 = 0;
     let y0 = 0;
     let z0 = 0;
@@ -35,7 +36,7 @@ export function createMarchingCubeBlockMeshes(
 
                 const startPoint: [number, number, number] = [x0, y0, z0];
                 const blockSizeAdjusted: [number, number, number] = [Math.min(blockSize[0], (X - x0)), Math.min(blockSize[1], (Y - y0)), Math.min(blockSize[2], (Z - z0))];
-                const subBlockData = getSubBlock(data, startPoint, blockSizeAdjusted);
+                const subBlockData = data.getSubBlock(startPoint, blockSizeAdjusted);
                 const container = new BlockContainer(startPoint, blockSizeAdjusted, subBlockData, threshold, cubeSize, colorFunc);
                 container.translate([x0 * cubeSize, y0 * cubeSize, z0 * cubeSize]);
                 blocks.push(container);
@@ -58,7 +59,7 @@ export class BlockContainer {
     constructor(
         public startPoint: [number, number, number],
         public blockSize: [number, number, number],
-        public data: number[][][],
+        public data: ArrayCube,
         public threshold: number,
         public cubeSize: number,
         public colorFunc: (val: number) => [number, number, number]) {
@@ -99,7 +100,7 @@ export class BlockContainer {
         this.mesh.translateZ(newPos[2]);
     }
 
-    public updateData(data: number[][][]): void {
+    public updateData(data: ArrayCube): void {
         this.data = data;
         const attrs = createSubBlockMarchingCubeAttributes(data, this.threshold, this.cubeSize, this.colorFunc);
         (this.mesh.geometry as BufferGeometry).setAttribute('position', attrs.position);
@@ -118,13 +119,13 @@ export class BlockContainer {
 
 
 function createSubBlockMarchingCubeAttributes(
-    data: number[][][], threshold: number,
+    data: ArrayCube, threshold: number,
     cubeSize: number,
     colorFunc: (val: number) => [number, number, number]) {
 
-    const X = data.length;
-    const Y = data[0].length;
-    const Z = data[0][0].length;
+    const X = data.X;
+    const Y = data.Y;
+    const Z = data.Z;
 
     const vertices: number[][] = [];
     const normals: number[][] = [];
@@ -133,14 +134,14 @@ function createSubBlockMarchingCubeAttributes(
         for (let y = 0; y < Y - 1; y++) {
             for (let z = 0; z < Z - 1; z++) {
 
-                const  lbl = data[x    ][y    ][z    ];
-                const  lbr = data[x + 1][y    ][z    ];
-                const  lfr = data[x + 1][y    ][z + 1];
-                const  lfl = data[x    ][y    ][z + 1];
-                const  hbl = data[x    ][y + 1][z    ];
-                const  hbr = data[x + 1][y + 1][z    ];
-                const  hfr = data[x + 1][y + 1][z + 1];
-                const  hfl = data[x    ][y + 1][z + 1];
+                const  lbl = data.get(x    , y    , z    );
+                const  lbr = data.get(x + 1, y    , z    );
+                const  lfr = data.get(x + 1, y    , z + 1);
+                const  lfl = data.get(x    , y    , z + 1);
+                const  hbl = data.get(x    , y + 1, z    );
+                const  hbr = data.get(x + 1, y + 1, z    );
+                const  hfr = data.get(x + 1, y + 1, z + 1);
+                const  hfl = data.get(x    , y + 1, z + 1);
 
                 let index = 0;
                 if ( lbl < threshold ) { index += 1; }
@@ -228,21 +229,6 @@ function createSubBlockMarchingCubeAttributes(
     };
 }
 
-
-
-export function getSubBlock(data: number[][][], start: [number, number, number], size: [number, number, number]): number[][][] {
-    const subset: number[][][] = [];
-    for (let x = 0; x < size[0]; x++) {
-        subset.push([]);
-        for (let y = 0; y < size[1]; y++) {
-            subset[x].push([]);
-            for (let z = 0; z < size[2]; z++) {
-                subset[x][y].push(data[x + start[0]][y + start[1]][z + start[2]]);
-            }
-        }
-    }
-    return subset;
-}
 
 
 const indx2Coords = [

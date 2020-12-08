@@ -3,7 +3,8 @@ import {
     PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { createMarchingCubeBlockMeshes, getSubBlock } from '../../utils/marchingCubes';
+import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes';
+import { ArrayCube } from '../../utils/arrayMatrix';
 const Stats = require('stats.js');
 
 
@@ -92,12 +93,13 @@ for (let x = 0; x < X; x++) {
         }
     }
 }
+const allDataCube = new ArrayCube(X, Y, Z, allData);
 
 const cubeSize = 1;
 const blockSize: [number, number, number] = [10, 10, 10];
 const translation: [number, number, number] = [-40, 0, -40];
 
-const voxelBlocks = createMarchingCubeBlockMeshes(allData, 0.5, cubeSize, blockSize, colorFunc);  // createBlockMeshes(allData, cubeSize, blockSize, colorFunc);
+const voxelBlocks = createMarchingCubeBlockMeshes(allDataCube, 0.5, cubeSize, blockSize, colorFunc);  // createBlockMeshes(allData, cubeSize, blockSize, colorFunc);
 voxelBlocks.map(vb => vb.translate(translation));
 voxelBlocks.map(vb => scene.add(vb.mesh));
 
@@ -113,7 +115,7 @@ slider.addEventListener('input', (ev: Event) => {
             const startPointWC = vb.mesh.position.toArray();
             const startPoint = vb.startPoint;
             const blockSize = vb.blockSize;
-            const oldData = getSubBlock(allData, startPoint, blockSize);
+            const oldData = allDataCube.getSubBlock(startPoint, blockSize);
             const newData: number[][][] = [];
             for (let x = 0; x < blockSize[0]; x++) {
                 newData.push([]);
@@ -124,13 +126,13 @@ slider.addEventListener('input', (ev: Event) => {
                         if (xVal < val) {
                             newData[x][y][z] = 0;
                         } else {
-                            newData[x][y][z] = oldData[x][y][z];
+                            newData[x][y][z] = oldData.get(x, y, z);
                         }
                     }
                 }
             }
-
-            vb.updateData(newData);
+            const newDataCube = new ArrayCube(blockSize[0], blockSize[1], blockSize[2], newData);
+            vb.updateData(newDataCube);
         }
     }
 

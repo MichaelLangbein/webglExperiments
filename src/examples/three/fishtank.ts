@@ -1,10 +1,11 @@
 import {
     AmbientLight, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial,
-    PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, CylinderGeometry, MeshPhongMaterial, AxesHelper, BoxGeometry
+    PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, CylinderGeometry, MeshPhongMaterial, AxesHelper, BoxGeometry, ArrayCamera
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { createMarchingCubeBlockMeshes, getSubBlock } from '../../utils/marchingCubes';
+import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes';
 import { perlin3D } from '../../utils/noise';
+import { ArrayCube } from '../../utils/arrayMatrix';
 const Stats = require('stats.js');
 
 
@@ -123,13 +124,14 @@ for (let x = 0; x < X; x++) {
         }
     }
 }
+const allDataArray = new ArrayCube(X, Y, Z, allData);
 
 const threshold = 20;
 const cubeSize = 0.5;
 const blockSize: [number, number, number] = [8, Y, Z];
 
 
-const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, colorFunc);
+const meshes = createMarchingCubeBlockMeshes(allDataArray, threshold, cubeSize, blockSize, colorFunc);
 meshes.map(m => m.mesh.translateX(- cubeSize * X / 2));
 meshes.map(m => m.mesh.translateY(- cubeSize * Y / 2));
 meshes.map(m => m.mesh.translateZ(- cubeSize * Z / 2));
@@ -157,7 +159,7 @@ sliderA.addEventListener('input', (ev: Event) => {
         const bbox = mesh.getBbox();
         if (bbox.xMin <= newX && newX <= bbox.xMax) {
             const startPointWC = mesh.mesh.position.toArray();
-            const originalData = getSubBlock(allData, mesh.startPoint, mesh.blockSize);
+            const originalData = allDataArray.getSubBlock(mesh.startPoint, mesh.blockSize);
             const newData: number[][][] = [];
             for (let x = 0; x < mesh.blockSize[0]; x++) {
                 newData.push([]);
@@ -168,12 +170,13 @@ sliderA.addEventListener('input', (ev: Event) => {
                         if (xVal < newX) {
                             newData[x][y][z] = 0;
                         } else {
-                            newData[x][y][z] = originalData[x][y][z];
+                            newData[x][y][z] = originalData.get(x, y, z);
                         }
                     }
                 }
             }
-            mesh.updateData(newData);
+            const newDataCube = new ArrayCube(mesh.blockSize[0], mesh.blockSize[1], mesh.blockSize[2], newData);
+            mesh.updateData(newDataCube);
         }
     }
 });
