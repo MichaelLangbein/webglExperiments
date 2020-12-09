@@ -1,6 +1,6 @@
 import {
     AmbientLight, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial,
-    PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, CylinderGeometry, MeshPhongMaterial, AxesHelper, BoxGeometry, ArrayCamera
+    PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, CylinderGeometry, MeshPhongMaterial, AxesHelper, BoxGeometry, ArrayCamera, SphereGeometry
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes';
@@ -43,9 +43,9 @@ const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
 
 const skyBox = new Mesh(
-    new BoxGeometry(1000, 1000, 1000, 1, 1, 1),
+    new SphereGeometry(500, 10, 10),
     new MeshPhongMaterial({
-        color: '#4400f2',
+        color: '#daf8e3',
         side: DoubleSide
     })
 );
