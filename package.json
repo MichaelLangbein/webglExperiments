@@ -9,9 +9,6 @@
   "scripts": {
     "start": "npx webpack-dev-server --config webpack-dev.config.js --port 9000 --inline --progress --profile --colors --watch --content-base src/ --mode development",
     "build.lib": "npx webpack --config webpack-package.config.js --mode production",
-
-    "setupEmsdk": "source C:/Users/lang_m13/Desktop/c/emsdk/emsdk_env.sh",
-    "buildWasm": ""
   },
   "keywords": [
     "webgl",
