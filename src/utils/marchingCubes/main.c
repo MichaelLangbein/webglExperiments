@@ -1,192 +1,19 @@
 
-void *createSubBlockMarchingCubeAttributes(
-    void *data, int X, int Y, int Z, int cubeSize)
-{
+typedef struct Vertex {
+    float x;
+    float y;
+    float z;
+} Vertex;
 
-    void *vertices;
-    void *normals;
-    void *colors;
-    for (int x = 0; x < X - 1; x++)
-    {
-        for (int y = 0; y < Y - 1; y++)
-        {
-            for (int z = 0; z < Z - 1; z++)
-            {
 
-                float lbl = data[x][y][z];
-                float lbr = data[x + 1][y][z];
-                float lfr = data[x + 1][y][z + 1];
-                float lfl = data[x][y][z + 1];
-                float hbl = data[x][y + 1][z];
-                float hbr = data[x + 1][y + 1][z];
-                float hfr = data[x + 1][y + 1][z + 1];
-                float hfl = data[x][y + 1][z + 1];
+typedef struct Triangle {
+    Vertex a;
+    Vertex b;
+    Vertex c;
+} Triangle;
 
-                let index = 0;
-                if (lbl < threshold)
-                {
-                    index += 1;
-                }
-                if (lbr < threshold)
-                {
-                    index += 2;
-                }
-                if (lfr < threshold)
-                {
-                    index += 4;
-                }
-                if (lfl < threshold)
-                {
-                    index += 8;
-                }
-                if (hbl < threshold)
-                {
-                    index += 16;
-                }
-                if (hbr < threshold)
-                {
-                    index += 32;
-                }
-                if (hfr < threshold)
-                {
-                    index += 64;
-                }
-                if (hfl < threshold)
-                {
-                    index += 128;
-                }
 
-                const cubeVertices = triTable[index]
-                                         .filter(vIndx = > vIndx != = -1)
-                                         .map((vIndx
-                                               : number) = > indx2Coords[vIndx])
-                                         .map((coords
-                                               : number[]) = > [
-                                             coords[0] * cubeSize + cubeSize * x,
-                                             coords[1] * cubeSize + cubeSize * y,
-                                             coords[2] * cubeSize + cubeSize * z,
-                                         ]);
-
-                const cubeNormals = [];
-                for (let tr = 0; tr < cubeVertices.length; tr += 3)
-                {
-                    const vtx1 = cubeVertices[tr];
-                    const vtx2 = cubeVertices[tr + 1];
-                    const vtx3 = cubeVertices[tr + 2];
-                    const v1 = vectorSubtraction(vtx2, vtx1) as[number, number, number];
-                    const v2 = vectorSubtraction(vtx3, vtx2) as[number, number, number];
-                    const n = vectorCrossProduct(v1, v2);
-
-                    cubeNormals.push(n);
-                    cubeNormals.push(n);
-                    cubeNormals.push(n);
-                }
-
-                const lblColor = colorFunc(lbl);
-                const lbrColor = colorFunc(lbr);
-                const lfrColor = colorFunc(lfr);
-                const lflColor = colorFunc(lfl);
-                const hblColor = colorFunc(hbl);
-                const hbrColor = colorFunc(hbr);
-                const hfrColor = colorFunc(hfr);
-                const hflColor = colorFunc(hfl);
-                const cubeColors = triTable[index]
-                                       .filter(vIndx = > vIndx != = -1)
-                                       .map(indx = > {
-                                           switch (indx)
-                                           {
-                                           case 0:
-                                               return binaryVectorOp(lblColor, lbrColor, (a, b) = > (a + b) / 2);
-                                           case 1:
-                                               return binaryVectorOp(lbrColor, lfrColor, (a, b) = > (a + b) / 2);
-                                           case 2:
-                                               return binaryVectorOp(lfrColor, lflColor, (a, b) = > (a + b) / 2);
-                                           case 3:
-                                               return binaryVectorOp(lflColor, lblColor, (a, b) = > (a + b) / 2);
-                                           case 4:
-                                               return binaryVectorOp(hblColor, hbrColor, (a, b) = > (a + b) / 2);
-                                           case 5:
-                                               return binaryVectorOp(hbrColor, hfrColor, (a, b) = > (a + b) / 2);
-                                           case 6:
-                                               return binaryVectorOp(hfrColor, hflColor, (a, b) = > (a + b) / 2);
-                                           case 7:
-                                               return binaryVectorOp(hflColor, hblColor, (a, b) = > (a + b) / 2);
-                                           case 8:
-                                               return binaryVectorOp(lblColor, hblColor, (a, b) = > (a + b) / 2);
-                                           case 9:
-                                               return binaryVectorOp(lbrColor, hbrColor, (a, b) = > (a + b) / 2);
-                                           case 10:
-                                               return binaryVectorOp(lflColor, hfrColor, (a, b) = > (a + b) / 2);
-                                           case 11:
-                                               return binaryVectorOp(lflColor, hflColor, (a, b) = > (a + b) / 2);
-                                           }
-                                       });
-
-                vertices.push(cubeVertices.flat());
-                normals.push(cubeNormals.flat());
-                colors.push(cubeColors.flat());
-            }
-        }
-    }
-
-    return {
-        'position' : new BufferAttribute(new Float32Array(vertices.flat()), 3),
-        'normal' : new BufferAttribute(new Float32Array(normals.flat()), 3),
-        'color' : new BufferAttribute(new Float32Array(colors.flat()), 3)
-    };
-}
-
-int indx2Coords[12][3] = {
-    {0.5, 0.0, 0.0},
-    {1.0, 0.0, 0.5},
-    {0.5, 0.0, 1.0},
-    {0.0, 0.0, 0.5},
-    {0.5, 1.0, 0.0},
-    {1.0, 1.0, 0.5},
-    {0.5, 1.0, 1.0},
-    {0.0, 1.0, 0.5},
-    {0.0, 0.5, 0.0},
-    {1.0, 0.5, 0.0},
-    {1.0, 0.5, 1.0},
-    {0.0, 0.5, 1.0},
-};
-
-int edgeTable[256] = {
-    0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
-    0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
-    0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
-    0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
-    0x230, 0x339, 0x33, 0x13a, 0x636, 0x73f, 0x435, 0x53c,
-    0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
-    0x3a0, 0x2a9, 0x1a3, 0xaa, 0x7a6, 0x6af, 0x5a5, 0x4ac,
-    0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
-    0x460, 0x569, 0x663, 0x76a, 0x66, 0x16f, 0x265, 0x36c,
-    0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
-    0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff, 0x3f5, 0x2fc,
-    0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
-    0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55, 0x15c,
-    0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
-    0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc,
-    0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
-    0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
-    0xcc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
-    0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
-    0x15c, 0x55, 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
-    0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
-    0x2fc, 0x3f5, 0xff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
-    0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
-    0x36c, 0x265, 0x16f, 0x66, 0x76a, 0x663, 0x569, 0x460,
-    0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
-    0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa, 0x1a3, 0x2a9, 0x3a0,
-    0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
-    0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33, 0x339, 0x230,
-    0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
-    0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190,
-    0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
-    0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
-};
-
-int triTable[256][16] = {
+int edgeNumberTable[256][16] = {
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -445,136 +272,278 @@ int triTable[256][16] = {
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-typedef struct {
-    float x;
-    float y;
-    float z;
-} XYZ;
 
-typedef struct {
-    XYZ p[3];
-} TRIANGLE;
+Vertex edgeCoords[12] = {
+    {0.5, 0.0, 0.0},
+    {1.0, 0.0, 0.5},
+    {0.5, 0.0, 1.0},
+    {0.0, 0.0, 0.5},
+    {0.5, 1.0, 0.0},
+    {1.0, 1.0, 0.5},
+    {0.5, 1.0, 1.0},
+    {0.0, 1.0, 0.5},
+    {0.0, 0.5, 0.0},
+    {1.0, 0.5, 0.0},
+    {1.0, 0.5, 1.0},
+    {0.0, 0.5, 1.0}
+};
 
-typedef struct {
-    XYZ p[8];
-    float val[8];
-} GRIDCELL;
+
+int getEdgeTableIndex(float* data, float threshold) {
+    int index = 0;
+    if (data[0] < threshold) index += 1;
+    if (data[1] < threshold) index += 2;
+    if (data[2] < threshold) index += 4;
+    if (data[3] < threshold) index += 8;
+    if (data[4] < threshold) index += 16;
+    if (data[5] < threshold) index += 32;
+    if (data[6] < threshold) index += 64;
+    if (data[7] < threshold) index += 128;
+    return index;
+}
 
 
-void PolygonizeData(void* data, int X, int Y, int Z, double isolevel, TRIANGLE* triangles) {
-    int triangleIndex = 0;
-    for (int x = 0; x < X; x++) {
-        for (int y = 0; y < Y; y++) {
-            for (int z = 0; z < Z; z++) {
-                GRIDCELL gridCell;
-                TRIANGLE tris[5];
-                int nTrianglesCell = Polygonise(gridCell, isolevel, tris);
-                for (int t = 0; t < nTrianglesCell; t++) {
-                    triangles[triangleIndex] = tris[t];
-                    triangleIndex += 1;
+int* getEdgeList(int index) {
+    return edgeNumberTable[index];
+}
+
+
+Vertex* getVertex(int index) {
+    return &(edgeCoords[index]);
+}
+
+
+int getVertices(int* edgeList, Vertex* vertices) {
+    int vertexListLength = 0;
+    for (int e = 0; e < 16; e++) {
+        int index = edgeList[e];
+        if (index > -1) {
+            Vertex* v = getVertex(index);
+            // Assigning structs is the same as memcopy - so no need to worry about mutating these vertices vs. the edgeCoords.
+            vertices[vertexListLength] = *v;
+            vertexListLength += 1;
+        }
+    }
+    return vertexListLength;
+}
+
+
+void moveVertices(Vertex* vertices, int nrVertices, float deltaX, float deltaY, float deltaZ) {
+    for (int i = 0; i < nrVertices; i++) {
+        vertices[i].x += deltaX;
+        vertices[i].y += deltaY;
+        vertices[i].z += deltaZ;
+    }
+}
+
+
+void scaleVertices(Vertex* vertices, int nrVertices, float scaleX, float scaleY, float scaleZ) {
+    for (int i = 0; i < nrVertices; i++) {
+        vertices[i].x *= scaleX;
+        vertices[i].y *= scaleY;
+        vertices[i].z *= scaleZ;
+    }
+}
+
+
+int cubeIndex(int Y, int Z, int x, int y, int z) {
+    return         z 
+             + y * Z 
+         + x * Y * Z;
+}
+
+
+void fillSubCube(float* data, float* cubeData, int Y, int Z, int x, int y, int z) {
+    cubeData[0] = data[cubeIndex(Y, Z, x    , y    , z    )];
+    cubeData[1] = data[cubeIndex(Y, Z, x + 1, y    , z    )];
+    cubeData[2] = data[cubeIndex(Y, Z, x + 1, y    , z + 1)];
+    cubeData[3] = data[cubeIndex(Y, Z, x    , y    , z + 1)];
+    cubeData[4] = data[cubeIndex(Y, Z, x    , y + 1, z    )];
+    cubeData[5] = data[cubeIndex(Y, Z, x + 1, y + 1, z    )];
+    cubeData[6] = data[cubeIndex(Y, Z, x + 1, y + 1, z + 1)];
+    cubeData[7] = data[cubeIndex(Y, Z, x    , y + 1, z + 1)];
+}
+
+
+int getMaxNrVertices(int X, int Y, int Z) {
+    return (X - 1) * (Y - 1) * (Z - 1) * 16;
+}
+
+int marchCubes(Vertex* vertices, float* data, int X, int Y, int Z, float threshold, float cubeWidth, float cubeHeight, float cubeDepth) {
+    int nrVertices = 0; // We'll only make use of `nrVertices` slots.
+    
+    for (int x = 0; x < X-1; x++) {
+        for (int y = 0; y < Y-1; y++) {
+            for (int z = 0; z < Z-1; z++) {
+                float cubeData[8];
+                fillSubCube(data, cubeData, Y, Z, x, y, z);
+
+                int edgeTableIndex = getEdgeTableIndex(cubeData, threshold);
+                int* edgeList = getEdgeList(edgeTableIndex);
+
+                Vertex cubeVertices[16];
+                int cubeNrVertices = getVertices(edgeList, cubeVertices);
+                scaleVertices(cubeVertices, cubeNrVertices, cubeWidth, cubeHeight, cubeDepth);
+                moveVertices(cubeVertices, cubeNrVertices, (float)x*cubeWidth, (float)y*cubeHeight, (float)z*cubeDepth);
+
+                for (int i = 0; i < cubeNrVertices; i++) {
+                    vertices[nrVertices + i] = cubeVertices[i];
                 }
+                
+                nrVertices += cubeNrVertices;
             }
         }
     }
+
+    return nrVertices;
 }
 
 
-/*
-   Given a grid cell and an isolevel, calculate the triangular
-   facets required to represent the isosurface through the cell.
-   Return the number of triangular facets, the array "triangles"
-   will be loaded up with the vertices at most 5 triangular facets.
-   0 will be returned if the grid cell is either totally above
-   or totally below the isolevel.
-*/
-int Polygonise(GRIDCELL grid, double isolevel, TRIANGLE* triangles) {
+Vertex vertexMin(Vertex v1, Vertex v2) {
+    Vertex v = {v2.x - v1.x, v2.y - v1.y, v2.z - v1.z};
+    return v;
+}
 
-    int i, ntriang;
-    int cubeindex;
-    XYZ vertlist[12];
 
-    /*
-      Determine the index into the edge table which
-      tells us which vertices are inside of the surface
-   */
-    cubeindex = 0;
-    if (grid.val[0] < isolevel)
-        cubeindex |= 1;
-    if (grid.val[1] < isolevel)
-        cubeindex |= 2;
-    if (grid.val[2] < isolevel)
-        cubeindex |= 4;
-    if (grid.val[3] < isolevel)
-        cubeindex |= 8;
-    if (grid.val[4] < isolevel)
-        cubeindex |= 16;
-    if (grid.val[5] < isolevel)
-        cubeindex |= 32;
-    if (grid.val[6] < isolevel)
-        cubeindex |= 64;
-    if (grid.val[7] < isolevel)
-        cubeindex |= 128;
+Vertex crossProd(Vertex v1, Vertex v2) {
+    Vertex v = {
+        v1.y * v2.z - v1.z * v2.y,
+        v1.z * v2.x - v1.x * v2.z,
+        v1.x * v2.y - v1.y * v2.x
+    };
+    return v;
+}
 
-    /* Cube is entirely in/out of the surface */
-    if (edgeTable[cubeindex] == 0)
-        return (0);
 
-    /* Find the vertices where the surface intersects the cube */
-    if (edgeTable[cubeindex] & 1)
-        vertlist[0] = VertexInterp(isolevel, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
-    if (edgeTable[cubeindex] & 2)
-        vertlist[1] = VertexInterp(isolevel, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
-    if (edgeTable[cubeindex] & 4)
-        vertlist[2] = VertexInterp(isolevel, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
-    if (edgeTable[cubeindex] & 8)
-        vertlist[3] = VertexInterp(isolevel, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
-    if (edgeTable[cubeindex] & 16)
-        vertlist[4] = VertexInterp(isolevel, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
-    if (edgeTable[cubeindex] & 32)
-        vertlist[5] = VertexInterp(isolevel, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
-    if (edgeTable[cubeindex] & 64)
-        vertlist[6] = VertexInterp(isolevel, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
-    if (edgeTable[cubeindex] & 128)
-        vertlist[7] = VertexInterp(isolevel, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
-    if (edgeTable[cubeindex] & 256)
-        vertlist[8] = VertexInterp(isolevel, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
-    if (edgeTable[cubeindex] & 512)
-        vertlist[9] = VertexInterp(isolevel, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
-    if (edgeTable[cubeindex] & 1024)
-        vertlist[10] = VertexInterp(isolevel, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
-    if (edgeTable[cubeindex] & 2048)
-        vertlist[11] = VertexInterp(isolevel, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
+int getNormals(Vertex* vertices, int nrVertices, Vertex* normals) {
+    int normalIndex = 0;
+    for (int i = 0; i < nrVertices; i+= 3) {
+        Vertex v0 = vertices[i];
+        Vertex v1 = vertices[i + 1];
+        Vertex v2 = vertices[i + 2];
 
-    /* Create the triangle */
-    ntriang = 0;
-    for (i = 0; triTable[cubeindex][i] != -1; i += 3) {
-        triangles[ntriang].p[0] = vertlist[triTable[cubeindex][i]];
-        triangles[ntriang].p[1] = vertlist[triTable[cubeindex][i + 1]];
-        triangles[ntriang].p[2] = vertlist[triTable[cubeindex][i + 2]];
-        ntriang++;
+        Vertex vec1 = vertexMin(v1, v0);
+        Vertex vec2 = vertexMin(v2, v0);
+        Vertex normal = crossProd(vec1, vec2);
+        
+        normals[normalIndex] = normal;
+        normalIndex += 1;
     }
-
-    return (ntriang);
+    return normalIndex;
 }
 
-/*
-   Linearly interpolate the position where an isosurface cuts
-   an edge between two vertices, each with their own scalar value
-*/
-XYZ VertexInterp(double isolevel, XYZ p1, XYZ p2, double valp1, double valp2) {
-    double mu;
-    XYZ p;
 
-    if (ABS(isolevel - valp1) < 0.00001)
-        return (p1);
-    if (ABS(isolevel - valp2) < 0.00001)
-        return (p2);
-    if (ABS(valp1 - valp2) < 0.00001)
-        return (p1);
-    mu = (isolevel - valp1) / (valp2 - valp1);
-    p.x = p1.x + mu * (p2.x - p1.x);
-    p.y = p1.y + mu * (p2.y - p1.y);
-    p.z = p1.z + mu * (p2.z - p1.z);
+// The following code is only compiled and executed when the target is not wasm.
+#ifdef __unix__
+#include <stdio.h>
 
-    return (p);
+
+void testEdgeTableIndex(float* data, float threshold) {
+    int edgeTableIndex = getEdgeTableIndex(data, threshold);
+    printf("EdgeTableIndex: %i\n", edgeTableIndex);
 }
+
+
+void testEdgeList(int edgeTableIndex) {
+    int* edgeList = getEdgeList(edgeTableIndex);
+    printf("Edge numbers: [%i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i]\n",
+    edgeList[0], edgeList[1], edgeList[2], edgeList[3], edgeList[4], edgeList[5], edgeList[6], edgeList[7],
+    edgeList[8], edgeList[9], edgeList[10], edgeList[11], edgeList[12], edgeList[13], edgeList[14], edgeList[15]);
+}
+
+
+void testGetVertices() {
+    int edgeList[16] = {11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1};
+    Vertex vertices[16];  // allocates space on stack for 16 vertices - but we'll only fill up `nrVertices` of them.
+    int nrVertices = getVertices(edgeList, vertices);
+    for (int i = 0; i < nrVertices; i++) {
+        Vertex v = vertices[i];
+        printf("Vertex %i [%f, %f, %f]\n", i, v.x, v.y, v.z);
+    }
+}
+
+
+void testMoveVertices() {
+    Vertex vertices[3] = {
+        {1, 1, 1},
+        {1, 1, 1},
+        {1, 1, 1},
+    };
+    moveVertices(vertices, 3, 2, 1, 4);
+    for (int i = 0; i < 3; i++) {
+        printf("[%f, %f, %f]\n", vertices[i].x, vertices[i].y, vertices[i].z);
+    }
+}
+
+
+void testScaleVertices() {
+    Vertex vertices[3] = {
+        {1, 1, 1},
+        {1, 1, 1},
+        {1, 1, 1},
+    };
+    scaleVertices(vertices, 3, 0.5, 1, 4);
+    for (int i = 0; i < 3; i++) {
+        printf("[%f, %f, %f]\n", vertices[i].x, vertices[i].y, vertices[i].z);
+    }
+}
+
+
+void testMarchCubes() {
+    int X = 3;
+    int Y = 3;
+    int Z = 3;
+
+    float cubeWidth = 1.5;  // x
+    float cubeHeight = 1.5;  // y
+    float cubeDepth = 1.5;  // z
+    
+    float data[3 * 3 * 3] = {
+        0, 0, 0,
+        1, 0, 0,
+        1, 1, 0,
+        0, 0, 0,
+        1, 0, 0,
+        1, 1, 0,
+        1, 0, 0,
+        1, 1, 0,
+        1, 1, 1
+    };
+    
+    float threshold = 0.5;
+    int maxNrVertices = getMaxNrVertices(X, Y, Z);
+
+    Vertex vertices[maxNrVertices]; // Allocates `maxNrVertices` slots on the stack - but we won't be using all of them.
+    int nrVertices = marchCubes(vertices, data, X, Y, Z, threshold, cubeWidth, cubeHeight, cubeDepth);
+    printf("Max nr vertices: %i, nr vertices: %i\n", maxNrVertices, nrVertices);
+
+    for (int i = 0; i < nrVertices; i++) {
+        Vertex v = vertices[i];
+        printf("Vertex %i: [%.2f, %.2f, %.2f]\n", i, v.x, v.y, v.z);
+    }
+}
+
+
+void testGetNormals() {
+    Vertex vertices[6] = {
+        {0, 0, 0},
+        {0, 0, 1},
+        {1, 0, 0},
+        {0, 0, 0},
+        {1, 1, 1},
+        {-1, 1, 1},
+    };
+    Vertex normals[2];
+    int nrNromals = getNormals(vertices, 6, normals);
+    printf("NrNormals: %i\n", nrNromals);
+    for (int n = 0; n < nrNromals; n++) {
+        printf("normal [%f, %f, %f]\n", normals[n].x, normals[n].y, normals[n].z);
+    }
+}
+
+
+int main() {
+    testGetNormals();
+    return 0;
+}
+#endif
