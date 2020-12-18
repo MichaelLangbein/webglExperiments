@@ -1,1 +1,1 @@
-import './examples/wasm/wasm';
+import './examples/three/fishtank';

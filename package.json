@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "start": "npx webpack-dev-server --config webpack-dev.config.js --port 9000 --inline --progress --profile --colors --watch --content-base src/ --mode development",
-    "build.lib": "npx webpack --config webpack-package.config.js --mode production",
+    "build.lib": "npx webpack --config webpack-package.config.js --mode production"
   },
   "keywords": [
     "webgl",
@@ -52,6 +52,7 @@
     "fpsmeter": "^0.3.1",
     "ml-matrix": "^6.5.3",
     "ml-pca": "^4.0.1",
+    "rxjs": "^6.6.3",
     "three": "^0.123.0",
     "turf": "^3.0.14"
   }
