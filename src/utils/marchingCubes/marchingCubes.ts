@@ -1,15 +1,14 @@
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ArrayCube } from '../arrayMatrix';
 
 
 export function fetchWasm(): Observable<MarchingCubeService> {
     const memory = new WebAssembly.Memory({
-        initial: 100, // in pages (64KiB / Page)
+        initial: 1000, // in pages (64KiB / Page)
         maximum: 1000
     });
 
-    const sourcePromise = WebAssembly.instantiateStreaming(fetch('assets/marchingCubes.wasm'), {
+    const sourcePromise = (WebAssembly as any).instantiateStreaming(fetch('assets/marchingCubes.wasm'), {
         env: {
             memory: memory
         }
@@ -23,16 +22,10 @@ export function fetchWasm(): Observable<MarchingCubeService> {
 }
 
 
-interface Pointer {
-    name: string;
-    location: number;
-    size: number;
-}
-
 
 export class MarchingCubeService {
 
-    exports: Record<string, WebAssembly.ExportValue>;
+    exports: Record<string, any>;
 
     constructor(
         private source: WebAssembly.WebAssemblyInstantiatedSource,
@@ -40,16 +33,24 @@ export class MarchingCubeService {
         this.exports = this.source.instance.exports;
     }
 
-    marchCubes(data: ArrayCube): Float32Array {
-        const maxNrVertices = (this.exports['getMaxNrVertices'] as Function)(data.X, data.Y, data.Z);
-        const resultMemory = this.malloc();
+    marchCubes(X: number, Y: number, Z: number, data: Float32Array,
+        threshold: number, cubeWidth: number, cubeHeight: number, cubeDepth: number): Float32Array {
+
+        // writing entry data into memory
+        const entryDataAddress = 0;
+        const entryData = new Float32Array(this.memory.buffer, entryDataAddress, data.length);
+        entryData.set(data);
+
+        // result data properties
+        const resultDataAddress = entryDataAddress + entryData.length * entryData.BYTES_PER_ELEMENT;
+        const maxNrVertices = (this.exports['getMaxNrVertices'] as Function)(X, Y, Z);
+        const resultData = new Float32Array(this.memory.buffer, resultDataAddress, maxNrVertices*3);
+
+        const resultNrVertices = (this.exports['marchCubes'] as Function)
+            (resultDataAddress, entryDataAddress, X, Y, Z, threshold, cubeWidth, cubeHeight, cubeDepth);
+        const shortenedData = resultData.slice(0, resultNrVertices*3);
+
+        return shortenedData;
     }
 
-    malloc(data: ArrayLike): Pointer {
-
-    }
-
-    free(ptr: Pointer): void {
-        
-    }
 }

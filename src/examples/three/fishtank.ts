@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes';
 import { perlin3D } from '../../utils/noise';
 import { ArrayCube } from '../../utils/arrayMatrix';
+import { fetchWasm, MarchingCubeService } from '../../utils/marchingCubes/marchingCubes';
 const Stats = require('stats.js');
 
 
@@ -107,9 +108,9 @@ function colorFunc(val: number): [number, number, number] {
     ];
 }
 
-const X = 100;
-const Y = 60;
-const Z = 100;
+const X = 40;
+const Y = 30;
+const Z = 40;
 const allData: number[][][] = [];
 for (let x = 0; x < X; x++) {
     allData.push([]);
@@ -125,6 +126,11 @@ for (let x = 0; x < X; x++) {
     }
 }
 const allDataArray = new ArrayCube(X, Y, Z, allData);
+
+fetchWasm().subscribe((svc: MarchingCubeService) => {
+    const marchedData = svc.marchCubes(X, Y, Z, allDataArray.data as Float32Array, 20, 0.5, 0.5, 0.5);
+    console.log('marched data', marchedData);
+});
 
 const threshold = 20;
 const cubeSize = 0.5;

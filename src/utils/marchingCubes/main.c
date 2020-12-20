@@ -369,7 +369,9 @@ int getMaxNrVertices(int X, int Y, int Z) {
     return (X - 1) * (Y - 1) * (Z - 1) * 16;
 }
 
-int marchCubes(Vertex* vertices, float* data, int X, int Y, int Z, float threshold, float cubeWidth, float cubeHeight, float cubeDepth) {
+
+int marchCubes(Vertex* vertices, float* data, int X, int Y, int Z, 
+                float threshold, float cubeWidth, float cubeHeight, float cubeDepth) {
     int nrVertices = 0; // We'll only make use of `nrVertices` slots.
     
     for (int x = 0; x < X-1; x++) {
