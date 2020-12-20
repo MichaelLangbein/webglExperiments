@@ -4,7 +4,7 @@
  * The 3D-Noise is a port of Ken Perlin's Java code. The
  * original Java code is at http://cs.nyu.edu/%7Eperlin/noise/.
  *
- * 1D, 2D and 4D versions are simple variations of Perlins concept 
+ * 1D, 2D and 4D versions are simple variations of Perlins concept
 **/
 
 
@@ -44,7 +44,7 @@ function lerp(t: number, a: number, b: number) {
 
 function grad1D(hash: any, x: number) {
     // only two cases in one dimension
-    return (hash & 1) == 0 ? x : -x;
+    return (hash & 1) === 0 ? x : -x;
 }
 
 function grad2D(hash: any, x: number, y: number) {
@@ -148,9 +148,8 @@ export var perlin1D = function (x: number) {
         b = p[X + 1];
 
     // return blended result
-    return lerp(u, grad1D(a, x),
-        grad1D(b, x - 1));
-}
+    return lerp(u, grad1D(a, x), grad1D(b, x - 1));
+};
 
 export var perlin2D = function (x: number, y: number) {
 
@@ -178,7 +177,7 @@ export var perlin2D = function (x: number, y: number) {
         lerp(u, grad2D(ab, x, y - 1),
             grad2D(bb, x - 1, y - 1)));
 
-}
+};
 
 export var perlin3D = function (x: number, y: number, z: number) {
 

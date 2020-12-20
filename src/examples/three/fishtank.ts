@@ -108,9 +108,9 @@ function colorFunc(val: number): [number, number, number] {
     ];
 }
 
-const X = 40;
-const Y = 30;
-const Z = 40;
+const X = 10;
+const Y = 10;
+const Z = 10;
 const allData: number[][][] = [];
 for (let x = 0; x < X; x++) {
     allData.push([]);
