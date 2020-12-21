@@ -3,7 +3,7 @@ WARNING_FLAGS = -Wall -Wextra
 COMPILE_FLAGS = -O3
 
 # LLVM / Wasm
-WASM_COMPILE_FLAGS = --target=wasm32 -O3 -flto -nostdlib -Wl,--no-entry -Wl,--export-all -Wl,--allow-undefined -Wl,--lto-O3
+WASM_COMPILE_FLAGS = --target=wasm32 -O3 -flto -nostdlib -Wl,--no-entry -Wl,--export-all -Wl,--allow-undefined -Wl,--lto-O3 -Wl,--import-memory
 
 
 main: main.c
