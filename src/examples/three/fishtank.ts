@@ -1,12 +1,12 @@
 import {
-    AmbientLight, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial,
-    PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, CylinderGeometry, MeshPhongMaterial, AxesHelper, BoxGeometry, ArrayCamera, SphereGeometry
+    AmbientLight, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial,
+    PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, MeshPhongMaterial,
+    AxesHelper, SphereGeometry
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes';
 import { perlin3D } from '../../utils/noise';
 import { ArrayCube } from '../../utils/arrayMatrix';
-import { fetchWasm, MarchingCubeService } from '../../utils/marchingCubes/marchingCubes';
+import { createMarchingCubeBlockMeshes, fetchWasm, MarchingCubeService } from '../../utils/marchingCubes/marchingCubes';
 const Stats = require('stats.js');
 
 
@@ -29,18 +29,22 @@ const renderer = new WebGLRenderer({
 const camera = new PerspectiveCamera(75, container.width / container.height, 0.1, 1000);
 camera.position.z = 10;
 camera.position.y = 4;
+camera.name = "camera";
 
 
 const light = new DirectionalLight('white');
 light.position.x = -3;
 light.position.y = 1;
 light.position.z = 5;
+light.name = 'light1';
 scene.add(light);
 
 const light2 = new AmbientLight('#c5f8f3', 0.5);
+light2.name = 'light2';
 scene.add(light2);
 
 const axesHelper = new AxesHelper(5);
+axesHelper.name = 'axesHelper';
 scene.add(axesHelper);
 
 const skyBox = new Mesh(
@@ -50,6 +54,7 @@ const skyBox = new Mesh(
         side: DoubleSide
     })
 );
+skyBox.name = 'skybox';
 scene.add(skyBox);
 
 
@@ -74,121 +79,138 @@ document.addEventListener('keydown', (event: KeyboardEvent) => {
 
 
 var stats = new Stats();
-stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-fpser.appendChild( stats.dom );
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+fpser.appendChild(stats.dom);
 function animate() {
     stats.begin();
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     stats.end();
 }
-animate();
+
+fetchWasm().subscribe((svc: MarchingCubeService) => {
+
+
+    function spaceFunction(x: number, y: number, z: number): number {
+        return 100 * perlin3D(1 * x / X, 1 * y / Y, 1 * z / Z)
+            + 50 * perlin3D(5 * x / X, 5 * y / Y, 5 * z / Z)
+            + 10 * perlin3D(10 * x / X, 10 * y / Y, 10 * z / Z);
+    }
+
+    function colorFunc(val: number): [number, number, number] {
+        const degree = val / 10;
+        const r0 = 0 / 255;
+        const r1 = 68 / 255;
+        const g0 = 233 / 255;
+        const g1 = 0 / 255;
+        const b0 = 255 / 255;
+        const b1 = 242 / 255;
+
+        return [
+            degree * r0 + (1 - degree) * r1,
+            degree * g0 + (1 - degree) * g1,
+            degree * b0 + (1 - degree) * b1,
+        ];
+    }
 
 
 
-function spaceFunction(x: number, y: number, z: number): number {
-    return 100 * perlin3D(1 * x / X,  1 * y / Y,  1 * z / Z)
-          + 50 * perlin3D(5 * x / X,  5 * y / Y,  5 * z / Z)
-          + 10 * perlin3D(10 * x / X, 10 * y / Y, 10 * z / Z);
-}
-
-function colorFunc(val: number): [number, number, number] {
-    const degree = val / 10;
-    const r0 = 0 / 255;
-    const r1 = 68 / 255;
-    const g0 = 233 / 255;
-    const g1 = 0 / 255;
-    const b0 = 255 / 255;
-    const b1 = 242 / 255;
-
-    return [
-        degree * r0 + (1 - degree) * r1,
-        degree * g0 + (1 - degree) * g1,
-        degree * b0 + (1 - degree) * b1,
-    ];
-}
-
-const X = 10;
-const Y = 10;
-const Z = 10;
-const allData: number[][][] = [];
-for (let x = 0; x < X; x++) {
-    allData.push([]);
-    for (let y = 0; y < Y; y++) {
-        allData[x].push([]);
-        for (let z = 0; z < Z; z++) {
-            if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
-                allData[x][y].push(0);
-            } else {
-                allData[x][y][z] = spaceFunction(x, y, z);
+    const X = 30;
+    const Y = 30;
+    const Z = 30;
+    const allData = new ArrayCube(X, Y, Z);
+    for (let x = 0; x < X; x++) {
+        for (let y = 0; y < Y; y++) {
+            for (let z = 0; z < Z; z++) {
+                if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
+                    allData.set(x, y, z, 0);
+                } else {
+                    allData.set(x, y, z, spaceFunction(x, y, z));
+                }
             }
         }
     }
-}
-const allDataArray = new ArrayCube(X, Y, Z, allData);
 
-fetchWasm().subscribe((svc: MarchingCubeService) => {
-    const marchedData = svc.marchCubes(X, Y, Z, allDataArray.data as Float32Array, 20, 0.5, 0.5, 0.5);
-    console.log('marched data', marchedData);
-});
+    const threshold = 20;
 
-const threshold = 20;
-const cubeSize = 0.5;
-const blockSize: [number, number, number] = [8, Y, Z];
+    // const X = 5;
+    // const Y = 5;
+    // const Z = 5;
+    // const allData = new ArrayCube(X, Y, Z);
+    // for (let x = 0; x < X; x++) {
+    //     for (let y = 0; y < Y; y++) {
+    //         for (let z = 0; z < Z; z++) {
+    //             if (x !== 0 && y !== 0 && z !== 0 && x !== X-1 && y !== Y-1 && z !== Z-1) {
+    //                 allData.set(x, y, z, 1);
+    //             } else {
+    //                 allData.set(x, y, z, 0);
+    //             }
+    //         }
+    //     }
+    // }
+    // const threshold = 0.5;
 
-
-const meshes = createMarchingCubeBlockMeshes(allDataArray, threshold, cubeSize, blockSize, colorFunc);
-meshes.map(m => m.mesh.translateX(- cubeSize * X / 2));
-meshes.map(m => m.mesh.translateY(- cubeSize * Y / 2));
-meshes.map(m => m.mesh.translateZ(- cubeSize * Z / 2));
-meshes.map(m => scene.add(m.mesh));
-
-
-
-const planeGeom = new PlaneGeometry(Z, Y);
-const planeMaterial = new MeshBasicMaterial({
-    color: '#4400f2',
-    side: DoubleSide, transparent: true,
-    opacity: 0.5
-});
-const cutPlane = new Mesh(planeGeom, planeMaterial);
-cutPlane.position.setX(- cubeSize * X / 2);
-cutPlane.lookAt(-1, 0, 0);
-scene.add(cutPlane);
+    const cubeSize: [number, number, number] = [1, 1, 1];
+    const blockSize: [number, number, number] = [4, 4, 4];
 
 
-sliderA.addEventListener('input', (ev: Event) => {
-    const newX = X * (+(sliderA.value) + 100) / 200  - X / 2;
-    cutPlane.position.setX(newX);
+    const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, colorFunc, svc);
+    // meshes.map(m => m.mesh.translateX(- cubeSize * X / 2));
+    // meshes.map(m => m.mesh.translateY(- cubeSize * Y / 2));
+    // meshes.map(m => m.mesh.translateZ(- cubeSize * Z / 2));
+    meshes.map((m, i) => m.mesh.name = `mesh${i}`);
+    meshes.map(m => scene.add(m.mesh));
 
-    for (const mesh of meshes) {
-        const bbox = mesh.getBbox();
-        if (bbox.xMin <= newX && newX <= bbox.xMax) {
-            const startPointWC = mesh.mesh.position.toArray();
-            const originalData = allDataArray.getSubBlock(mesh.startPoint, mesh.blockSize);
-            const newData: number[][][] = [];
-            for (let x = 0; x < mesh.blockSize[0]; x++) {
-                newData.push([]);
-                for (let y = 0; y < mesh.blockSize[1]; y++) {
-                    newData[x].push([]);
-                    for (let z = 0; z < mesh.blockSize[2]; z++) {
-                        const xVal = startPointWC[0] + x * cubeSize;
-                        if (xVal < newX) {
-                            newData[x][y][z] = 0;
-                        } else {
-                            newData[x][y][z] = originalData.get(x, y, z);
+
+
+    const planeGeom = new PlaneGeometry(Z, Y);
+    const planeMaterial = new MeshBasicMaterial({
+        color: '#4400f2',
+        side: DoubleSide,
+        transparent: true,
+        opacity: 0.5
+    });
+    const cutPlane = new Mesh(planeGeom, planeMaterial);
+    cutPlane.position.setX(- cubeSize * X / 2);
+    cutPlane.lookAt(-1, 0, 0);
+    cutPlane.name = 'cutPlane';
+    scene.add(cutPlane);
+
+
+    sliderA.addEventListener('input', (ev: Event) => {
+        const newX = X * (+(sliderA.value) + 100) / 200 - X / 2;
+        cutPlane.position.setX(newX);
+
+        for (const mesh of meshes) {
+            const bbox = mesh.getBbox();
+            if (bbox.xMin <= newX && newX <= bbox.xMax) {
+                const startPointWC = mesh.mesh.position.toArray();
+                const originalData = allData.getSubBlock(mesh.startPoint, mesh.blockSize);
+                const newData = new ArrayCube(mesh.blockSize[0], mesh.blockSize[1], mesh.blockSize[2]);
+                for (let x = 0; x < mesh.blockSize[0]; x++) {
+                    for (let y = 0; y < mesh.blockSize[1]; y++) {
+                        for (let z = 0; z < mesh.blockSize[2]; z++) {
+                            const xVal = startPointWC[0] + x * cubeSize[0];
+                            if (xVal < newX) {
+                                newData.set(x, y, z, 0);
+                            } else {
+                                newData.set(x, y, z,
+                                    originalData.get(x, y, z));
+                            }
                         }
                     }
                 }
+                mesh.updateData(newData.data);
             }
-            const newDataCube = new ArrayCube(mesh.blockSize[0], mesh.blockSize[1], mesh.blockSize[2], newData);
-            mesh.updateData(newDataCube);
         }
-    }
+    });
+
+
+    sliderB.addEventListener('input', (ev: Event) => {
+        const newThreshold = 50 * (+(sliderB.value) + 100) / 200;
+        meshes.map(m => m.updateThreshold(newThreshold));
+    });
 });
 
 
-sliderB.addEventListener('input', (ev: Event) => {
-    const newThreshold = 50 * (+(sliderB.value) + 100) / 200;
-    meshes.map(m => m.updateThreshold(newThreshold));
-});
+animate();

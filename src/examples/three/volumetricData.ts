@@ -3,7 +3,7 @@ import {
     PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes';
+import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes/marchingCubes.old';
 import { ArrayCube } from '../../utils/arrayMatrix';
 const Stats = require('stats.js');
 
@@ -76,24 +76,21 @@ const X = 80;
 const Y = 30;
 const Z = 80;
 
-const allData: number[][][] = [];
+const allDataCube = new ArrayCube(X, Y, Z);
 for (let x = 0; x < X; x++) {
-    allData.push([]);
     for (let y = 0; y < Y; y++) {
-        allData[x].push([]);
         for (let z = 0; z < Z; z++) {
             if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
-                allData[x][y].push(0);
+                allDataCube.set(x, y, z, 0);
             }
             else if (y < 10 * Math.sin(x * 0.1) * Math.cos(z * 0.1) + 5) {
-                allData[x][y].push(Math.floor((10 * y / Y) + (z / 20)));
+                allDataCube.set(x, y, z, Math.floor((10 * y / Y) + (z / 20)));
             } else {
-                allData[x][y].push(0);
+                allDataCube.set(x, y, z, 0);
             }
         }
     }
 }
-const allDataCube = new ArrayCube(X, Y, Z, allData);
 
 const cubeSize = 1;
 const blockSize: [number, number, number] = [10, 10, 10];
@@ -116,22 +113,21 @@ slider.addEventListener('input', (ev: Event) => {
             const startPoint = vb.startPoint;
             const blockSize = vb.blockSize;
             const oldData = allDataCube.getSubBlock(startPoint, blockSize);
-            const newData: number[][][] = [];
+            
+            const newDataCube = new ArrayCube(blockSize[0], blockSize[1], blockSize[2]);
             for (let x = 0; x < blockSize[0]; x++) {
-                newData.push([]);
                 for (let y = 0; y < blockSize[1]; y++) {
-                    newData[x].push([]);
                     for (let z = 0; z < blockSize[2]; z++) {
                         const xVal = startPointWC[0] + x * cubeSize;
                         if (xVal < val) {
-                            newData[x][y][z] = 0;
+                            newDataCube.set(x, y, z, 0);
                         } else {
-                            newData[x][y][z] = oldData.get(x, y, z);
+                            newDataCube.set(x, y, z, 
+                                oldData.get(x, y, z));
                         }
                     }
                 }
             }
-            const newDataCube = new ArrayCube(blockSize[0], blockSize[1], blockSize[2], newData);
             vb.updateData(newDataCube);
         }
     }

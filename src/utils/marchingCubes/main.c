@@ -371,7 +371,9 @@ int getMaxNrVertices(int X, int Y, int Z) {
 
 
 int marchCubes(Vertex* vertices, float* data, int X, int Y, int Z, 
-                float threshold, float cubeWidth, float cubeHeight, float cubeDepth) {
+                float threshold, 
+                float cubeWidth, float cubeHeight, float cubeDepth,
+                float x0, float y0, float z0) {
     int nrVertices = 0; // We'll only make use of `nrVertices` slots.
     
     for (int x = 0; x < X-1; x++) {
@@ -386,7 +388,10 @@ int marchCubes(Vertex* vertices, float* data, int X, int Y, int Z,
                 Vertex cubeVertices[16];
                 int cubeNrVertices = getVertices(edgeList, cubeVertices);
                 scaleVertices(cubeVertices, cubeNrVertices, cubeWidth, cubeHeight, cubeDepth);
-                moveVertices(cubeVertices, cubeNrVertices, (float)x*cubeWidth, (float)y*cubeHeight, (float)z*cubeDepth);
+                moveVertices(cubeVertices, cubeNrVertices, 
+                        x0 + (float)x * cubeWidth,
+                        y0 + (float)y * cubeHeight,
+                        z0 + (float)z * cubeDepth);
 
                 for (int i = 0; i < cubeNrVertices; i++) {
                     vertices[nrVertices + i] = cubeVertices[i];

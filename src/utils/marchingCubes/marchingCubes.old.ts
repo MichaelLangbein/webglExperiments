@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial } from 'three';
-import { vectorSubtraction, vectorCrossProduct, binaryVectorOp } from './math';
-import { ArrayCube } from './arrayMatrix';
+import { vectorSubtraction, vectorCrossProduct, binaryVectorOp } from '../math';
+import { ArrayCube } from '../arrayMatrix';
 
 
 
