@@ -1,6 +1,6 @@
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial } from 'three';
+import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshPhongMaterial } from 'three';
 import { ArrayCube } from '../arrayMatrix';
 
 
@@ -78,8 +78,43 @@ export class MarchingCubeService {
         resultData.set(new Array(vertices.length).fill(0).map(i => 0));
 
         // calculating normals
-        const resultNrNormals = (this.exports['getNormals'] as Function)
+        const success = (this.exports['getNormals'] as Function)
             (entryDataAddress, vertices.length, resultDataAddress);
+
+        // returning result memory copy
+        const copy = new Float32Array(vertices.length);
+        copy.set(resultData);
+        return copy;
+    }
+
+
+    mapColors(
+        vertices: Float32Array,
+        data: Float32Array, X: number, Y: number, Z: number,
+        threshold: number, minVal: number, maxVal: number,
+        sizeX: number, sizeY: number, sizeZ: number, x0: number, y0: number, z0: number) {
+
+        // writing entry data into memory
+        const entryDataAddress1 = this.exports.__heap_base;
+        const entryData1 = new Float32Array(this.memory.buffer, entryDataAddress1, vertices.length);
+        entryData1.set(vertices);
+        const entryDataAddress2 = entryDataAddress1 + entryData1.length * entryData1.BYTES_PER_ELEMENT;
+        const entryData2 = new Float32Array(this.memory.buffer, entryDataAddress2, data.length);
+        entryData2.set(data);
+
+        // writing result data placeholder into memory
+        const resultDataAddress = entryDataAddress2 + data.length * entryData2.BYTES_PER_ELEMENT;
+        const resultData = new Float32Array(this.memory.buffer, resultDataAddress, vertices.length);
+        resultData.set(new Array(vertices.length).fill(0).map(i => 0));
+
+        // calculating colors
+        const success = (this.exports['mapColors'] as Function)
+        // (float* data, int X, int Y, int Z,
+        //     Vertex* vertices, int nrVertices, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0,
+        //     float threshold, Vertex* colors, float minVal, float maxVal)
+            (entryDataAddress2, X, Y, Z,
+            entryDataAddress1, vertices.length, sizeX, sizeY, sizeZ, x0, y0, z0,
+            threshold, resultDataAddress, minVal, maxVal);
 
         // returning result memory copy
         const copy = new Float32Array(vertices.length);
@@ -123,7 +158,7 @@ export class BlockContainer {
         geometry.setAttribute('position', attrs.position);
         geometry.setAttribute('normal', attrs.normal);
         geometry.setAttribute('color', attrs.color);
-        const material = new MeshLambertMaterial({
+        const material = new MeshPhongMaterial({
             vertexColors: true,
             side: DoubleSide,
             wireframe: false
@@ -178,7 +213,10 @@ export class BlockContainer {
             this.startPoint[0], this.startPoint[1], this.startPoint[2]);
         const normals = this.mcSvc.getNormals(vertices,
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2]);
-        const colors = new Float32Array(new Array(normals.length).fill(0).map(v => [255, 0, 0]).flat());
+        const colors = this.mcSvc.mapColors(
+            vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2],
+            this.threshold, 0, 100, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2]
+        );
 
         const attrs = {
             position: new BufferAttribute(vertices, 3, false),
@@ -219,11 +257,11 @@ export function createMarchingCubeBlockMeshes(
                 ];
                 const subBlockData = data.getSubBlock(startPoint, blockSizeAdjusted);
                 const container = new BlockContainer(
-                    mcSvc, startPoint, blockSizeAdjusted, subBlockData.data,
+                    mcSvc, [0, 0, 0], blockSizeAdjusted, subBlockData.data,
                     [subBlockData.X, subBlockData.Y, subBlockData.Z],
                     threshold, cubeSize, colorFunc
                 );
-                // container.translate([x0 * cubeSize[0], y0 * cubeSize[1], z0 * cubeSize[2]]);
+                container.translate([x0 * cubeSize[0], y0 * cubeSize[1], z0 * cubeSize[2]]);
                 blocks.push(container);
 
                 z0 += blockSize[2] - 1;

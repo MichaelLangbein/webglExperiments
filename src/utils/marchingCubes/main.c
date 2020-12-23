@@ -423,7 +423,6 @@ Vertex crossProd(Vertex v1, Vertex v2) {
 
 
 int getNormals(Vertex* vertices, int nrVertices, Vertex* normals) {
-    int normalIndex = 0;
     for (int i = 0; i < nrVertices; i+= 3) {
         Vertex v0 = vertices[i];
         Vertex v1 = vertices[i + 1];
@@ -433,10 +432,39 @@ int getNormals(Vertex* vertices, int nrVertices, Vertex* normals) {
         Vertex vec2 = vertexMin(v2, v0);
         Vertex normal = crossProd(vec1, vec2);
         
-        normals[normalIndex] = normal;
-        normalIndex += 1;
+        normals[i] = normal;
+        normals[i + 1] = normal;
+        normals[i + 2] = normal;
     }
-    return normalIndex;
+    return 0;
+}
+
+
+float getNearestDataPoint(
+        Vertex v, float* data, int X, int Y, int Z,
+        float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0) {
+    int x = 1; // (v.x - x0) / sizeX;
+    int y = 1; // (v.y - y0) / sizeY;
+    int z = 1; // (v.z - z0) / sizeZ;
+    int i = z + y * Z + x * Y * Z;
+    return data[i];
+}
+
+
+int mapColors(float* data, int X, int Y, int Z,
+            Vertex* vertices, int nrVertices, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0,
+            float threshold, Vertex* colors, float minVal, float maxVal) {
+    for (int i = 0; i < nrVertices; i++) {
+        Vertex v = vertices[i];
+        float val = getNearestDataPoint(v, data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0);
+        float percentage = (val - minVal) / (maxVal - minVal);
+        float r = percentage * 255.0;
+        float g = (1.0 - percentage) * 255.0;
+        float b = 0.0;
+        Vertex color = {r, g, b};
+        colors[i] = color;
+    }
+    return 0;
 }
 
 

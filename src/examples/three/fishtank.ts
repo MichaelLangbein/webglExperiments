@@ -29,7 +29,7 @@ const renderer = new WebGLRenderer({
 const camera = new PerspectiveCamera(75, container.width / container.height, 0.1, 1000);
 camera.position.z = 10;
 camera.position.y = 4;
-camera.name = "camera";
+camera.name = 'camera';
 
 
 const light = new DirectionalLight('white');
@@ -115,9 +115,9 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
 
 
 
-    const X = 30;
+    const X = 100;
     const Y = 30;
-    const Z = 30;
+    const Z = 100;
     const allData = new ArrayCube(X, Y, Z);
     for (let x = 0; x < X; x++) {
         for (let y = 0; y < Y; y++) {
@@ -151,11 +151,11 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
     // const threshold = 0.5;
 
     const cubeSize: [number, number, number] = [1, 1, 1];
-    const blockSize: [number, number, number] = [4, 4, 4];
+    const blockSize: [number, number, number] = [10, Y, Z];
 
 
     const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, colorFunc, svc);
-    // meshes.map(m => m.mesh.translateX(- cubeSize * X / 2));
+    // meshes.map(m => m.mesh.translateX(- cubeSize * X / 2)); // @TODO: doing this can set position to NaN
     // meshes.map(m => m.mesh.translateY(- cubeSize * Y / 2));
     // meshes.map(m => m.mesh.translateZ(- cubeSize * Z / 2));
     meshes.map((m, i) => m.mesh.name = `mesh${i}`);
