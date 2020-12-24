@@ -1,6 +1,6 @@
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshPhongMaterial } from 'three';
+import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial, MeshPhongMaterial } from 'three';
 import { ArrayCube } from '../arrayMatrix';
 
 
@@ -91,7 +91,7 @@ export class MarchingCubeService {
     mapColors(
         vertices: Float32Array,
         data: Float32Array, X: number, Y: number, Z: number,
-        threshold: number, minVal: number, maxVal: number,
+        minVal: number, maxVal: number,
         sizeX: number, sizeY: number, sizeZ: number, x0: number, y0: number, z0: number) {
 
         // writing entry data into memory
@@ -111,10 +111,10 @@ export class MarchingCubeService {
         const success = (this.exports['mapColors'] as Function)
         // (float* data, int X, int Y, int Z,
         //     Vertex* vertices, int nrVertices, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0,
-        //     float threshold, Vertex* colors, float minVal, float maxVal)
+        //     Vertex* colors, float minVal, float maxVal)
             (entryDataAddress2, X, Y, Z,
             entryDataAddress1, vertices.length, sizeX, sizeY, sizeZ, x0, y0, z0,
-            threshold, resultDataAddress, minVal, maxVal);
+            resultDataAddress, minVal, maxVal);
 
         // returning result memory copy
         const copy = new Float32Array(vertices.length);
@@ -153,6 +153,7 @@ export class BlockContainer {
         public colorFunc: (val: number) => [number, number, number]) {
 
 
+            console.log(startPoint, blockSize, data, dataDimensions)
         const attrs = this.calculateAttributes();
         const geometry = new BufferGeometry();
         geometry.setAttribute('position', attrs.position);
@@ -215,8 +216,8 @@ export class BlockContainer {
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2]);
         const colors = this.mcSvc.mapColors(
             vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2],
-            this.threshold, 0, 100, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2]
-        );
+            0, 30, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2]);
+        // const colors = new Float32Array(new Array(vertices.length).fill(0).map(v => [255, 0, 0]).flat());
 
         const attrs = {
             position: new BufferAttribute(vertices, 3, false),

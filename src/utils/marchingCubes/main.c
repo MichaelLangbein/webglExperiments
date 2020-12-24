@@ -440,23 +440,96 @@ int getNormals(Vertex* vertices, int nrVertices, Vertex* normals) {
 }
 
 
-float getNearestDataPoint(
+typedef struct Neighbors {
+    float top;
+    float bottom;
+    float left;
+    float right;
+    float front;
+    float back;
+} Neighbors;
+
+
+
+float max(float v1, float v2) {
+    if (v1 > v2) {
+        return v1;
+    } else {
+        return v2;
+    }
+}
+
+float min(float v1, float v2) {
+    if (v1 > v2) {
+        return v2;
+    } else {
+        return v1;
+    }
+}
+
+
+Neighbors getNearestDataPoints(
         Vertex v, float* data, int X, int Y, int Z,
         float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0) {
-    int x = 1; // (v.x - x0) / sizeX;
-    int y = 1; // (v.y - y0) / sizeY;
-    int z = 1; // (v.z - z0) / sizeZ;
-    int i = z + y * Z + x * Y * Z;
-    return data[i];
+
+    int xTop = min(max((v.x       - x0) / sizeX, 0), X - 1);
+    int yTop = min(max((v.y + 1.0 - y0) / sizeY, 0), Y - 1);
+    int zTop = min(max((v.z       - z0) / sizeZ, 0), Z - 1);
+    int iTop = cubeIndex(Y, Z, xTop, yTop, zTop);
+
+    int xBot = min(max((v.x       - x0) / sizeX, 0), X - 1);
+    int yBot = min(max((v.y - 1.0 - y0) / sizeY, 0), Y - 1);
+    int zBot = min(max((v.z       - z0) / sizeZ, 0), Z - 1);
+    int iBot = cubeIndex(Y, Z, xBot, yBot, zBot);
+
+    int xLft = min(max((v.x - 1.0 - x0) / sizeX, 0), X - 1);
+    int yLft = min(max((v.y       - y0) / sizeY, 0), Y - 1);
+    int zLft = min(max((v.z       - z0) / sizeZ, 0), Z - 1);
+    int iLft = cubeIndex(Y, Z, xLft, yLft, zLft);
+
+
+    int xRgt = min(max((v.x + 1.0 - x0) / sizeX, 0), X - 1);
+    int yRgt = min(max((v.y       - y0) / sizeY, 0), Y - 1);
+    int zRgt = min(max((v.z       - z0) / sizeZ, 0), Z - 1);
+    int iRgt = cubeIndex(Y, Z, xRgt, yRgt, zRgt);
+
+    int xFrt = min(max((v.x       - x0) / sizeX, 0), X - 1);
+    int yFrt = min(max((v.y       - y0) / sizeY, 0), Y - 1);
+    int zFrt = min(max((v.z + 1.0 - z0) / sizeZ, 0), Z - 1);
+    int iFrt = cubeIndex(Y, Z, xFrt, yFrt, zFrt);
+
+    int xBck = min(max((v.x       - x0) / sizeX, 0), X - 1);
+    int yBck = min(max((v.y       - y0) / sizeY, 0), Y - 1);
+    int zBck = min(max((v.z - 1.0 - z0) / sizeZ, 0), Z - 1);
+    int iBck = cubeIndex(Y, Z, xBck, yBck, zBck);
+
+    // Neighbors n = {
+    //     data[iTop],
+    //     data[iBot],
+    //     data[iLft],
+    //     data[iRgt],
+    //     data[iFrt],
+    //     data[iBck]
+    // };
+    Neighbors n = {
+        data[1],
+        data[1],
+        data[1],
+        data[1],
+        data[1],
+        data[1]
+    };
+    return n;
 }
 
 
 int mapColors(float* data, int X, int Y, int Z,
             Vertex* vertices, int nrVertices, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0,
-            float threshold, Vertex* colors, float minVal, float maxVal) {
+            Vertex* colors, float minVal, float maxVal) {
     for (int i = 0; i < nrVertices; i++) {
         Vertex v = vertices[i];
-        float val = getNearestDataPoint(v, data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0);
+        Neighbors ns = getNearestDataPoints(v, data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0);
+        float val = (ns.top + ns.bottom + ns.left + ns.right + ns.front + ns.back) / 6;
         float percentage = (val - minVal) / (maxVal - minVal);
         float r = percentage * 255.0;
         float g = (1.0 - percentage) * 255.0;
@@ -549,7 +622,7 @@ void testMarchCubes() {
     int maxNrVertices = getMaxNrVertices(X, Y, Z);
 
     Vertex vertices[maxNrVertices]; // Allocates `maxNrVertices` slots on the stack - but we won't be using all of them.
-    int nrVertices = marchCubes(vertices, data, X, Y, Z, threshold, cubeWidth, cubeHeight, cubeDepth);
+    int nrVertices = marchCubes(vertices, data, X, Y, Z, threshold, cubeWidth, cubeHeight, cubeDepth, 0, 0, 0);
     printf("Max nr vertices: %i, nr vertices: %i\n", maxNrVertices, nrVertices);
 
     for (int i = 0; i < nrVertices; i++) {
@@ -568,17 +641,76 @@ void testGetNormals() {
         {1, 1, 1},
         {-1, 1, 1},
     };
-    Vertex normals[2];
-    int nrNromals = getNormals(vertices, 6, normals);
-    printf("NrNormals: %i\n", nrNromals);
-    for (int n = 0; n < nrNromals; n++) {
+    Vertex normals[6];
+    int success = getNormals(vertices, 6, normals);
+    printf("Error code: %i\n", success);
+    for (int n = 0; n < 6; n++) {
         printf("normal [%f, %f, %f]\n", normals[n].x, normals[n].y, normals[n].z);
     }
 }
 
 
+void testGetNearestDataPoint() {
+
+    float data[27] = {
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 1, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+    };
+    int X = 3;
+    int Y = 3;
+    int Z = 3;
+    float sizeX = 1;
+    float sizeY = 1;
+    float sizeZ = 1;
+    float x0 = 0;
+    float y0 = 0;
+    float z0 = 0;
+
+    Vertex v = {1, 1, 0.5};
+
+    Neighbors ns = getNearestDataPoints(v, data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0);
+    printf("neighbors: [top %.2f, bot %.2f, lft %.2f, rgt %.2f, frt %.2f, bck %.2f] \n", ns.top, ns.bottom, ns.left, ns.right, ns.front, ns.back);
+}
+
+void testMapColors() {
+    float data[27] = {
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 1, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+    };
+    int X = 3;
+    int Y = 3;
+    int Z = 3;
+    float threshold = 0.5;
+    int maxNrVertices = getMaxNrVertices(X, Y, Z);
+
+    Vertex vertices[maxNrVertices]; // Allocates `maxNrVertices` slots on the stack - but we won't be using all of them.
+    int nrVertices = marchCubes(vertices, data, X, Y, Z, threshold, 1, 1, 1, 0, 0, 0);
+
+    Vertex colors[nrVertices];
+    mapColors(data, X, Y, Z, vertices, nrVertices, 1, 1, 1, 0, 0, 0, colors, 0, 1);
+
+    for (int i = 0; i < nrVertices; i++) {
+        printf("color %i: [%.2f, %.2f, %.2f]\n", i, colors[i].x, colors[i].y, colors[i].z);
+    }
+}
+
+
 int main() {
-    testGetNormals();
+    testMapColors();
     return 0;
 }
 #endif

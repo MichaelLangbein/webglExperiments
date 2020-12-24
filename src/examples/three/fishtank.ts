@@ -1,7 +1,7 @@
 import {
     AmbientLight, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial,
     PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, MeshPhongMaterial,
-    AxesHelper, SphereGeometry
+    AxesHelper, SphereGeometry, BoxGeometry
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { perlin3D } from '../../utils/noise';
@@ -32,23 +32,23 @@ camera.position.y = 4;
 camera.name = 'camera';
 
 
-const light = new DirectionalLight('white');
+const light = new DirectionalLight('white', 0.6);
 light.position.x = -3;
 light.position.y = 1;
 light.position.z = 5;
 light.name = 'light1';
 scene.add(light);
 
-const light2 = new AmbientLight('#c5f8f3', 0.5);
-light2.name = 'light2';
-scene.add(light2);
+// const light2 = new AmbientLight('#c5f8f3', 0.5);
+// light2.name = 'light2';
+// scene.add(light2);
 
 const axesHelper = new AxesHelper(5);
 axesHelper.name = 'axesHelper';
 scene.add(axesHelper);
 
 const skyBox = new Mesh(
-    new SphereGeometry(500, 10, 10),
+    new BoxGeometry(500, 500, 500, 3, 3, 3), // SphereGeometry(500, 10, 10),
     new MeshPhongMaterial({
         color: '#daf8e3',
         side: DoubleSide
@@ -115,49 +115,49 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
 
 
 
-    const X = 100;
-    const Y = 30;
-    const Z = 100;
-    const allData = new ArrayCube(X, Y, Z);
-    for (let x = 0; x < X; x++) {
-        for (let y = 0; y < Y; y++) {
-            for (let z = 0; z < Z; z++) {
-                if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
-                    allData.set(x, y, z, 0);
-                } else {
-                    allData.set(x, y, z, spaceFunction(x, y, z));
-                }
-            }
-        }
-    }
-
-    const threshold = 20;
-
-    // const X = 5;
-    // const Y = 5;
-    // const Z = 5;
+    // const X = 100;
+    // const Y = 30;
+    // const Z = 100;
     // const allData = new ArrayCube(X, Y, Z);
     // for (let x = 0; x < X; x++) {
     //     for (let y = 0; y < Y; y++) {
     //         for (let z = 0; z < Z; z++) {
-    //             if (x !== 0 && y !== 0 && z !== 0 && x !== X-1 && y !== Y-1 && z !== Z-1) {
-    //                 allData.set(x, y, z, 1);
-    //             } else {
+    //             if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
     //                 allData.set(x, y, z, 0);
+    //             } else {
+    //                 allData.set(x, y, z, spaceFunction(x, y, z));
     //             }
     //         }
     //     }
     // }
-    // const threshold = 0.5;
+
+    // const threshold = 20;
+
+    const X = 100;
+    const Y = 70;
+    const Z = 15;
+    const allData = new ArrayCube(X, Y, Z);
+    for (let x = 0; x < X; x++) {
+        for (let y = 0; y < Y; y++) {
+            for (let z = 0; z < Z; z++) {
+                if (x !== 0 && y !== 0 && z !== 0 && x !== X - 1 && y !== Y - 1 && z !== Z - 1) {
+                    allData.set(x, y, z, Math.random() * 30);
+                } else {
+                    allData.set(x, y, z, 0);
+                }
+            }
+        }
+    }
+    const threshold = 0.5;
 
     const cubeSize: [number, number, number] = [1, 1, 1];
-    const blockSize: [number, number, number] = [10, Y, Z];
+    const blockSize: [number, number, number] = [100, 100, 100];
 
 
     const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, colorFunc, svc);
-    // meshes.map(m => m.mesh.translateX(- cubeSize * X / 2)); // @TODO: doing this can set position to NaN
-    // meshes.map(m => m.mesh.translateY(- cubeSize * Y / 2));
-    // meshes.map(m => m.mesh.translateZ(- cubeSize * Z / 2));
+    meshes.map(m => m.mesh.translateX(- cubeSize[0] * X / 2)); // @TODO: doing this can set position to NaN
+    meshes.map(m => m.mesh.translateY(- cubeSize[1] * Y / 2));
+    meshes.map(m => m.mesh.translateZ(- cubeSize[2] * Z / 2));
     meshes.map((m, i) => m.mesh.name = `mesh${i}`);
     meshes.map(m => scene.add(m.mesh));
 
