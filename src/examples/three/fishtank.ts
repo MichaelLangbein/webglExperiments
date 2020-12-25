@@ -39,9 +39,9 @@ light.position.z = 5;
 light.name = 'light1';
 scene.add(light);
 
-// const light2 = new AmbientLight('#c5f8f3', 0.5);
-// light2.name = 'light2';
-// scene.add(light2);
+const light2 = new AmbientLight('#c5f8f3', 0.2);
+light2.name = 'light2';
+scene.add(light2);
 
 const axesHelper = new AxesHelper(5);
 axesHelper.name = 'axesHelper';
@@ -97,23 +97,6 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
             + 10 * perlin3D(10 * x / X, 10 * y / Y, 10 * z / Z);
     }
 
-    function colorFunc(val: number): [number, number, number] {
-        const degree = val / 10;
-        const r0 = 0 / 255;
-        const r1 = 68 / 255;
-        const g0 = 233 / 255;
-        const g1 = 0 / 255;
-        const b0 = 255 / 255;
-        const b1 = 242 / 255;
-
-        return [
-            degree * r0 + (1 - degree) * r1,
-            degree * g0 + (1 - degree) * g1,
-            degree * b0 + (1 - degree) * b1,
-        ];
-    }
-
-
     const X = 90;
     const Y = 60;
     const Z = 60;
@@ -135,8 +118,8 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
     const blockSize: [number, number, number] = [40, 40, 40];
 
 
-    const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, colorFunc, svc);
-    meshes.map(m => m.mesh.translateX(- cubeSize[0] * X / 2)); // @TODO: doing this can set position to NaN
+    const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, 0, 30, svc);
+    meshes.map(m => m.mesh.translateX(- cubeSize[0] * X / 2));
     meshes.map(m => m.mesh.translateY(- cubeSize[1] * Y / 2));
     meshes.map(m => m.mesh.translateZ(- cubeSize[2] * Z / 2));
     meshes.map((m, i) => m.mesh.name = `mesh${i}`);

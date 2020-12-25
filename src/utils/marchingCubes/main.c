@@ -547,13 +547,46 @@ Neighbors getNearestDataPoints(
 }
 
 
+float getMeanValInDirection(float* data, int X, int Y, int Z, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0, Vertex vertex, Vertex normal) {
+    Neighbors ns = getNearestDataPoints(vertex, data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0);
+    float sum = 0;
+    float i = 0;
+    if (normal.x < 0) {
+        sum += ns.left;
+        i += 1;
+    } 
+    if (normal.x > 0) {
+        sum += ns.right;
+        i += 1;
+    }
+    if (normal.y < 0) {
+        sum += ns.top;
+        i += 1;
+    } 
+    if (normal.y > 0) {
+        sum += ns.bottom;
+        i += 1;
+    }
+    if (normal.z < 0) {
+        sum += ns.front;
+        i += 1;
+    } 
+    if (normal.z > 0) {
+        sum += ns.back;
+        i += 1;
+    }
+    return sum / i;
+}
+
+
 int mapColors(float* data, int X, int Y, int Z,
             Vertex* vertices, int nrVertices, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0,
+            Vertex* normals, 
             Vertex* colors, float minVal, float maxVal) {
     for (int i = 0; i < nrVertices; i++) {
         Vertex v = vertices[i];
-        Neighbors ns = getNearestDataPoints(v, data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0);
-        float val = (ns.top + ns.bottom + ns.left + ns.right + ns.front + ns.back) / 6;
+        Vertex n = normals[i];
+        float val = getMeanValInDirection(data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0, v, n);
         float percentage = (val - minVal) / (maxVal - minVal);
         float r = percentage * 255.0;
         float g = (1.0 - percentage) * 255.0;

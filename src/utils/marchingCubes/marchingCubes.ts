@@ -91,6 +91,7 @@ export class MarchingCubeService {
     mapColors(
         vertices: Float32Array,
         data: Float32Array, X: number, Y: number, Z: number,
+        normals: Float32Array,
         minVal: number, maxVal: number,
         sizeX: number, sizeY: number, sizeZ: number, x0: number, y0: number, z0: number) {
 
@@ -101,9 +102,12 @@ export class MarchingCubeService {
         const entryDataAddress2 = entryDataAddress1 + entryData1.length * entryData1.BYTES_PER_ELEMENT;
         const entryData2 = new Float32Array(this.memory.buffer, entryDataAddress2, data.length);
         entryData2.set(data);
+        const entryDataAddress3 = entryDataAddress2 + entryData2.length * entryData2.BYTES_PER_ELEMENT;
+        const entryData3 = new Float32Array(this.memory.buffer, entryDataAddress3, normals.length);
+        entryData3.set(normals);
 
         // writing result data placeholder into memory
-        const resultDataAddress = entryDataAddress2 + data.length * entryData2.BYTES_PER_ELEMENT;
+        const resultDataAddress = entryDataAddress3 + normals.length * entryData3.BYTES_PER_ELEMENT;
         const resultData = new Float32Array(this.memory.buffer, resultDataAddress, vertices.length);
         resultData.set(new Array(vertices.length).fill(0).map(i => 0));
 
@@ -111,9 +115,11 @@ export class MarchingCubeService {
         const success = (this.exports['mapColors'] as Function)
         // (float* data, int X, int Y, int Z,
         //     Vertex* vertices, int nrVertices, float sizeX, float sizeY, float sizeZ, float x0, float y0, float z0,
-        //     Vertex* colors, float minVal, float maxVal)
+        //     Vertex* normals, 
+        //     Vertex* colors, float minVal, float maxVal) 
             (entryDataAddress2, X, Y, Z,
             entryDataAddress1, vertices.length, sizeX, sizeY, sizeZ, x0, y0, z0,
+            entryDataAddress3,
             resultDataAddress, minVal, maxVal);
 
         // returning result memory copy
@@ -150,11 +156,9 @@ export class BlockContainer {
         public dataDimensions: [number, number, number],
         public threshold: number,
         public cubeSize: [number, number, number],
-        public colorFunc: (val: number) => [number, number, number]) {
+        public minVal: number,
+        public maxVal: number) {
 
-
-            console.log(startPoint, blockSize, data, dataDimensions)
-            // https://threejsfundamentals.org/threejs/lessons/threejs-custom-geometry.html
         const attrs = this.calculateAttributes();
         const geometry = new BufferGeometry();
         geometry.setAttribute('position', attrs.position);
@@ -162,7 +166,6 @@ export class BlockContainer {
         geometry.setAttribute('color', attrs.color);
         const material = new MeshStandardMaterial({
             vertexColors: true,
-            // color: 'red',
             side: DoubleSide,
             wireframe: false
         });
@@ -217,10 +220,9 @@ export class BlockContainer {
         const normals = this.mcSvc.getNormals(vertices,
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2]);
         const colors = this.mcSvc.mapColors(
-            vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2],
-            0, 30, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2])
+            vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2], normals,
+            this.minVal, this.maxVal, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2])
             .map(v => v/255);
-        // const colors = new Float32Array(new Array(vertices.length).fill(0).map(v => [Math.random(), Math.random(), Math.random()]).flat());
 
         const attrs = {
             position: new BufferAttribute(vertices, 3, false),
@@ -236,7 +238,7 @@ export class BlockContainer {
 export function createMarchingCubeBlockMeshes(
     data: ArrayCube, threshold: number,
     cubeSize: [number, number, number], blockSize: [number, number, number],
-    colorFunc: (val: number) => [number, number, number],
+    minVal: number, maxVal: number,
     mcSvc: MarchingCubeService): BlockContainer[] {
     const blocks: BlockContainer[] = [];
 
@@ -263,7 +265,7 @@ export function createMarchingCubeBlockMeshes(
                 const container = new BlockContainer(
                     mcSvc, [0, 0, 0], blockSizeAdjusted, subBlockData.data,
                     [subBlockData.X, subBlockData.Y, subBlockData.Z],
-                    threshold, cubeSize, colorFunc
+                    threshold, cubeSize, minVal, maxVal
                 );
                 container.translate([x0 * cubeSize[0], y0 * cubeSize[1], z0 * cubeSize[2]]);
                 blocks.push(container);
