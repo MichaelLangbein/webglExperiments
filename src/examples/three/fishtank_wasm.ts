@@ -48,7 +48,7 @@ axesHelper.name = 'axesHelper';
 scene.add(axesHelper);
 
 const skyBox = new Mesh(
-    new BoxGeometry(500, 500, 500, 3, 3, 3), // SphereGeometry(500, 10, 10),
+    new BoxGeometry(500, 500, 500, 3, 3, 3),
     new MeshPhongMaterial({
         color: '#daf8e3',
         side: DoubleSide
@@ -115,7 +115,7 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
     const threshold = 20;
 
     const cubeSize: [number, number, number] = [1, 1, 1];
-    const blockSize: [number, number, number] = [40, 40, 40];
+    const blockSize: [number, number, number] = [100, 100, 100];
 
 
     const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, 0, 30, svc);
@@ -147,6 +147,7 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
 
         for (const mesh of meshes) {
             const bbox = mesh.getBbox();
+
             if (bbox.xMin <= newX && newX <= bbox.xMax) {
                 const startPointWC = mesh.mesh.position.toArray();
                 const originalData = allData.getSubBlock(mesh.startPoint, mesh.blockSize);

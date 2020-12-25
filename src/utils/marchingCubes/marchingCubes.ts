@@ -150,7 +150,7 @@ export class BlockContainer {
 
     constructor(
         private mcSvc: MarchingCubeService,
-        public startPoint: [number, number, number],
+        public startPoint: [number, number, number], // dataSet-offset; !== worldCoords-offset
         public blockSize: [number, number, number],
         public data: Float32Array,
         public dataDimensions: [number, number, number],
@@ -175,17 +175,17 @@ export class BlockContainer {
     }
 
     public getBbox(): Bbox {
-        const startPoint = this.mesh.position.toArray();
+        const startPointWorldCoords = this.mesh.position.toArray();
         const xLength = this.blockSize[0] * this.cubeSize[0];
         const yLength = this.blockSize[1] * this.cubeSize[1];
         const zLength = this.blockSize[2] * this.cubeSize[2];
         return {
-            xMin: startPoint[0],
-            yMin: startPoint[1],
-            zMin: startPoint[2],
-            xMax: startPoint[0] + 2 * xLength,
-            yMax: startPoint[1] + 2 * yLength,
-            zMax: startPoint[2] + 2 * zLength,
+            xMin: startPointWorldCoords[0],
+            yMin: startPointWorldCoords[1],
+            zMin: startPointWorldCoords[2],
+            xMax: startPointWorldCoords[0] + 2 * xLength,
+            yMax: startPointWorldCoords[1] + 2 * yLength,
+            zMax: startPointWorldCoords[2] + 2 * zLength,
         };
     }
 
@@ -216,12 +216,12 @@ export class BlockContainer {
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2],
             this.data, this.threshold,
             this.cubeSize[0], this.cubeSize[1], this.cubeSize[2],
-            this.startPoint[0], this.startPoint[1], this.startPoint[2]);
+            0, 0, 0);
         const normals = this.mcSvc.getNormals(vertices,
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2]);
         const colors = this.mcSvc.mapColors(
             vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2], normals,
-            this.minVal, this.maxVal, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2]);
+            this.minVal, this.maxVal, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], 0, 0, 0);
 
         const attrs = {
             position: new BufferAttribute(vertices, 3, false),
@@ -262,7 +262,7 @@ export function createMarchingCubeBlockMeshes(
                 ];
                 const subBlockData = data.getSubBlock(startPoint, blockSizeAdjusted);
                 const container = new BlockContainer(
-                    mcSvc, [0, 0, 0], blockSizeAdjusted, subBlockData.data,
+                    mcSvc, startPoint, blockSizeAdjusted, subBlockData.data,
                     [subBlockData.X, subBlockData.Y, subBlockData.Z],
                     threshold, cubeSize, minVal, maxVal
                 );

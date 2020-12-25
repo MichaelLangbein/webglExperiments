@@ -535,14 +535,6 @@ Neighbors getNearestDataPoints(
         data[iFrt],
         data[iBck]
     };
-    // Neighbors n = {
-    //     data[1],
-    //     data[1],
-    //     data[1],
-    //     data[1],
-    //     data[1],
-    //     data[1]
-    // };
     return n;
 }
 
