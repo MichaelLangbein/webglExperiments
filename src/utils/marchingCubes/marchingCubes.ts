@@ -221,8 +221,7 @@ export class BlockContainer {
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2]);
         const colors = this.mcSvc.mapColors(
             vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2], normals,
-            this.minVal, this.maxVal, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2])
-            .map(v => v/255);
+            this.minVal, this.maxVal, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2]);
 
         const attrs = {
             position: new BufferAttribute(vertices, 3, false),

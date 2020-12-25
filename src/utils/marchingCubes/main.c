@@ -527,22 +527,22 @@ Neighbors getNearestDataPoints(
     int zBck = min(max((v.z - 1.0 - z0) / sizeZ, 0), Z - 1);
     int iBck = cubeIndex(Y, Z, xBck, yBck, zBck);
 
-    // Neighbors n = {
-    //     data[iTop],
-    //     data[iBot],
-    //     data[iLft],
-    //     data[iRgt],
-    //     data[iFrt],
-    //     data[iBck]
-    // };
     Neighbors n = {
-        data[1],
-        data[1],
-        data[1],
-        data[1],
-        data[1],
-        data[1]
+        data[iTop],
+        data[iBot],
+        data[iLft],
+        data[iRgt],
+        data[iFrt],
+        data[iBck]
     };
+    // Neighbors n = {
+    //     data[1],
+    //     data[1],
+    //     data[1],
+    //     data[1],
+    //     data[1],
+    //     data[1]
+    // };
     return n;
 }
 
@@ -588,8 +588,8 @@ int mapColors(float* data, int X, int Y, int Z,
         Vertex n = normals[i];
         float val = getMeanValInDirection(data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0, v, n);
         float percentage = (val - minVal) / (maxVal - minVal);
-        float r = percentage * 255.0;
-        float g = (1.0 - percentage) * 255.0;
+        float r = percentage;
+        float g = (1.0 - percentage);
         float b = 0.0;
         Vertex color = {r, g, b};
         colors[i] = color;
