@@ -114,44 +114,25 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
     }
 
 
-
-    // const X = 100;
-    // const Y = 30;
-    // const Z = 100;
-    // const allData = new ArrayCube(X, Y, Z);
-    // for (let x = 0; x < X; x++) {
-    //     for (let y = 0; y < Y; y++) {
-    //         for (let z = 0; z < Z; z++) {
-    //             if (x === 0 || y === 0 || z === 0 || x === X - 1 || y === Y - 1 || z === Z - 1) {
-    //                 allData.set(x, y, z, 0);
-    //             } else {
-    //                 allData.set(x, y, z, spaceFunction(x, y, z));
-    //             }
-    //         }
-    //     }
-    // }
-
-    // const threshold = 20;
-
-    const X = 100;
-    const Y = 70;
-    const Z = 15;
+    const X = 90;
+    const Y = 60;
+    const Z = 60;
     const allData = new ArrayCube(X, Y, Z);
     for (let x = 0; x < X; x++) {
         for (let y = 0; y < Y; y++) {
             for (let z = 0; z < Z; z++) {
                 if (x !== 0 && y !== 0 && z !== 0 && x !== X - 1 && y !== Y - 1 && z !== Z - 1) {
-                    allData.set(x, y, z, Math.random() * 30);
+                    allData.set(x, y, z, spaceFunction(x, y, z));
                 } else {
                     allData.set(x, y, z, 0);
                 }
             }
         }
     }
-    const threshold = 0.5;
+    const threshold = 20;
 
     const cubeSize: [number, number, number] = [1, 1, 1];
-    const blockSize: [number, number, number] = [100, 100, 100];
+    const blockSize: [number, number, number] = [40, 40, 40];
 
 
     const meshes = createMarchingCubeBlockMeshes(allData, threshold, cubeSize, blockSize, colorFunc, svc);

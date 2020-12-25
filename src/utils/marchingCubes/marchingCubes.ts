@@ -1,6 +1,6 @@
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial, MeshPhongMaterial } from 'three';
+import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial } from 'three';
 import { ArrayCube } from '../arrayMatrix';
 
 
@@ -154,13 +154,15 @@ export class BlockContainer {
 
 
             console.log(startPoint, blockSize, data, dataDimensions)
+            // https://threejsfundamentals.org/threejs/lessons/threejs-custom-geometry.html
         const attrs = this.calculateAttributes();
         const geometry = new BufferGeometry();
         geometry.setAttribute('position', attrs.position);
         geometry.setAttribute('normal', attrs.normal);
         geometry.setAttribute('color', attrs.color);
-        const material = new MeshPhongMaterial({
+        const material = new MeshStandardMaterial({
             vertexColors: true,
+            // color: 'red',
             side: DoubleSide,
             wireframe: false
         });
@@ -216,8 +218,9 @@ export class BlockContainer {
             this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2]);
         const colors = this.mcSvc.mapColors(
             vertices, this.data, this.dataDimensions[0], this.dataDimensions[1], this.dataDimensions[2],
-            0, 30, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2]);
-        // const colors = new Float32Array(new Array(vertices.length).fill(0).map(v => [255, 0, 0]).flat());
+            0, 30, this.cubeSize[0], this.cubeSize[1], this.cubeSize[2], this.startPoint[0], this.startPoint[1], this.startPoint[2])
+            .map(v => v/255);
+        // const colors = new Float32Array(new Array(vertices.length).fill(0).map(v => [Math.random(), Math.random(), Math.random()]).flat());
 
         const attrs = {
             position: new BufferAttribute(vertices, 3, false),
