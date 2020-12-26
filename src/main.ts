@@ -1,1 +1,1 @@
-import './examples/three/fishtank_regular';
+import './examples/three/fishtank_wasm';

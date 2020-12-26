@@ -54,7 +54,7 @@ export class MarchingCubeService {
         const resultDataAddress = entryDataAddress + entryData.length * entryData.BYTES_PER_ELEMENT;
         const maxNrVertices = (this.exports['getMaxNrVertices'] as Function)(X, Y, Z);
         const resultData = new Float32Array(this.memory.buffer, resultDataAddress, maxNrVertices * 3);
-        resultData.set(new Array(maxNrVertices * 3).fill(0).map(i => 0));
+        // resultData.set(new Array(maxNrVertices * 3).fill(0).map(i => 0)); <-- Avoid setting data as much as possible - array copying takes a *lot* of time!
 
         // marching cubes
         const resultNrVertices = (this.exports['marchCubes'] as Function)
@@ -75,7 +75,7 @@ export class MarchingCubeService {
         // writing result data placeholder into memory
         const resultDataAddress = entryDataAddress + entryData.length * entryData.BYTES_PER_ELEMENT;
         const resultData = new Float32Array(this.memory.buffer, resultDataAddress, vertices.length);
-        resultData.set(new Array(vertices.length).fill(0).map(i => 0));
+        // resultData.set(new Array(vertices.length).fill(0).map(i => 0)); <-- Avoid setting data as much as possible - array copying takes a *lot* of time!
 
         // calculating normals
         const success = (this.exports['getNormals'] as Function)
@@ -109,7 +109,7 @@ export class MarchingCubeService {
         // writing result data placeholder into memory
         const resultDataAddress = entryDataAddress3 + normals.length * entryData3.BYTES_PER_ELEMENT;
         const resultData = new Float32Array(this.memory.buffer, resultDataAddress, vertices.length);
-        resultData.set(new Array(vertices.length).fill(0).map(i => 0));
+        // resultData.set(new Array(vertices.length).fill(0).map(i => 0)); <-- Avoid setting data as much as possible - array copying takes a *lot* of time!
 
         // calculating colors
         const success = (this.exports['mapColors'] as Function)

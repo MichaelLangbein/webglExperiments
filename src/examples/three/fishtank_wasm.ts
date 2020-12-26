@@ -97,9 +97,9 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
             + 10 * perlin3D(10 * x / X, 10 * y / Y, 10 * z / Z);
     }
 
-    const X = 90;
-    const Y = 60;
-    const Z = 60;
+    const X = 100;
+    const Y = 100;
+    const Z = 100;
     const allData = new ArrayCube(X, Y, Z);
     for (let x = 0; x < X; x++) {
         for (let y = 0; y < Y; y++) {
