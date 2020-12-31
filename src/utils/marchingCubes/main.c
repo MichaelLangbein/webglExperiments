@@ -422,29 +422,6 @@ Vertex crossProd(Vertex v1, Vertex v2) {
 }
 
 
-
-// float sqrt(float val) {
-//     float sqrt = val / 2;
-//     float temp = 0;
-//     while (sqrt != temp) {
-//         temp = sqrt;
-//         sqrt = (val / temp + temp) / 2;
-//     }
-//     return sqrt;
-// }
-
-
-// Vertex normalize(Vertex vec) {
-//     float l = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-//     Vertex out = {
-//         vec.x / l,
-//         vec.y / l,
-//         vec.z / l
-//     };
-//     return out;
-// }
-
-
 int getNormals(Vertex* vertices, int nrVertices, Vertex* normals) {
     for (int i = 0; i < nrVertices; i+= 3) {
         Vertex v0 = vertices[i];
@@ -454,7 +431,6 @@ int getNormals(Vertex* vertices, int nrVertices, Vertex* normals) {
         Vertex vec1 = vertexMin(v1, v0);
         Vertex vec2 = vertexMin(v2, v0);
         Vertex normal = crossProd(vec1, vec2);
-        // normal = normalize(normal);
         
         normals[i] = normal;
         normals[i + 1] = normal;
@@ -552,19 +528,19 @@ float getMeanValInDirection(float* data, int X, int Y, int Z, float sizeX, float
         i += 1;
     }
     if (normal.y < 0) {
-        sum += ns.top;
+        sum += ns.bottom;
         i += 1;
     } 
     if (normal.y > 0) {
-        sum += ns.bottom;
+        sum += ns.top;
         i += 1;
     }
     if (normal.z < 0) {
-        sum += ns.front;
+        sum += ns.back;
         i += 1;
     } 
     if (normal.z > 0) {
-        sum += ns.back;
+        sum += ns.front;
         i += 1;
     }
     return sum / i;
@@ -581,8 +557,8 @@ int mapColors(float* data, int X, int Y, int Z,
         float val = getMeanValInDirection(data, X, Y, Z, sizeX, sizeY, sizeZ, x0, y0, z0, v, n);
         float percentage = (val - minVal) / (maxVal - minVal);
         float r = percentage;
-        float g = (1.0 - percentage);
-        float b = 0.0;
+        float g = percentage;
+        float b = percentage;
         Vertex color = {r, g, b};
         colors[i] = color;
     }
