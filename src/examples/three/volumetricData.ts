@@ -4,7 +4,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createMarchingCubeBlockMeshes } from '../../utils/marchingCubes/marchingCubes.old';
-import { ArrayCube } from '../../utils/arrayMatrix';
+import { ArrayCubeF32 } from '../../utils/arrayMatrix';
 const Stats = require('stats.js');
 
 
@@ -76,7 +76,7 @@ const X = 80;
 const Y = 30;
 const Z = 80;
 
-const allDataCube = new ArrayCube(X, Y, Z);
+const allDataCube = new ArrayCubeF32(X, Y, Z);
 for (let x = 0; x < X; x++) {
     for (let y = 0; y < Y; y++) {
         for (let z = 0; z < Z; z++) {
@@ -114,7 +114,7 @@ slider.addEventListener('input', (ev: Event) => {
             const blockSize = vb.blockSize;
             const oldData = allDataCube.getSubBlock(startPoint, blockSize);
             
-            const newDataCube = new ArrayCube(blockSize[0], blockSize[1], blockSize[2]);
+            const newDataCube = new ArrayCubeF32(blockSize[0], blockSize[1], blockSize[2]);
             for (let x = 0; x < blockSize[0]; x++) {
                 for (let y = 0; y < blockSize[1]; y++) {
                     for (let z = 0; z < blockSize[2]; z++) {

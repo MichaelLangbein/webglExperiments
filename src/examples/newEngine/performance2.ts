@@ -77,12 +77,12 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = v_color;
     }
 `), {
-    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
-    'a_transform': new InstancedAttributeData(flatten3(initialTransforms), 'mat4', true, 1),
-    'a_color': new InstancedAttributeData(flatten2(colors), 'vec4', false, 1)
+    'a_position': new AttributeData(new Float32Array(flatten2(box.vertices)), 'vec4', false),
+    'a_transform': new InstancedAttributeData(new Float32Array(flatten3(initialTransforms)), 'mat4', true, 1),
+    'a_color': new InstancedAttributeData(new Float32Array(flatten2(colors)), 'vec4', false, 1)
 }, {
     'u_projection': new UniformData('mat4', flatten2(transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 1000)))),
-}, {}, 'triangles', new Index(flatten2(box.vertexIndices)), nrEntities);
+}, {}, 'triangles', new Index(new Uint32Array(flatten2(box.vertexIndices))), nrEntities);
 
 
 setup3dScene(context.gl);
@@ -99,6 +99,6 @@ renderLoop(60, (tDelta: number) => {
         newTransforms.push(transposeMatrix(entity.getTransformationMatrix(time)));
     }
 
-    bundle.updateAttributeData(context, 'a_transform', flatten3(newTransforms));
+    bundle.updateAttributeData(context, 'a_transform', new Float32Array(flatten3(newTransforms)));
     bundle.draw(context);    stats.end();
 });

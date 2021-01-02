@@ -61,14 +61,14 @@ const drawingBundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = v_color;
     }
 `), {
-    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
-    'a_transform': new InstancedAttributeData(flatten3(transformMatrices), 'mat4', true, 1),
-    'a_color': new InstancedAttributeData(flatten2(colors), 'vec4', false, 1)
+    'a_position': new AttributeData(new Float32Array(flatten2(box.vertices)), 'vec4', false),
+    'a_transform': new InstancedAttributeData(new Float32Array(flatten3(transformMatrices)), 'mat4', true, 1),
+    'a_color': new InstancedAttributeData(new Float32Array(flatten2(colors)), 'vec4', false, 1)
 }, {
     'u_projection': new UniformData('mat4', flatten2(projection))
 }, {},
 'triangles',
-new Index(flatten2(box.vertexIndices)), nrInstances);
+new Index(new Uint32Array(flatten2(box.vertexIndices))), nrInstances);
 
 
 const fb = createFramebuffer(gl);
@@ -113,8 +113,8 @@ const blurBundle = new ArrayBundle(new Program(`#version 300 es
         outputColor = color;
     }
 `), {
-    'a_position': new AttributeData(flatten2(rectangleA(2, 2).vertices), 'vec4', false),
-    'a_texPosition': new AttributeData(flatten2(rectangleA(2, 2).texturePositions), 'vec2', false),
+    'a_position': new AttributeData(new Float32Array(flatten2(rectangleA(2, 2).vertices)), 'vec4', false),
+    'a_texPosition': new AttributeData(new Float32Array(flatten2(rectangleA(2, 2).texturePositions)), 'vec2', false),
 }, {
     'u_blur': new UniformData('mat3', flatten2(transposeMatrix(gaussianKernel()))),
     'u_textureSize': new UniformData('vec2', [fbo.width, fbo.height])
@@ -143,7 +143,7 @@ renderLoop(60, (tDelta: number) => {
         transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, 0.5 * Math.sin(time * 0.10) + -1.5), rotateZMatrix(time * 0.1), ])),
         transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, 1.0 * Math.sin(time * 0.05) + -0.5), rotateXMatrix(time * 0.1), ])),
     ];
-    drawingBundle.updateAttributeData(context, 'a_transform', flatten3(transformMatrices));
+    drawingBundle.updateAttributeData(context, 'a_transform', new Float32Array(flatten3(transformMatrices)));
     drawingBundle.draw(context, [0, 0, 0, 0], fbo);
 
     blurBundle.bind(context);

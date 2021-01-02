@@ -53,7 +53,7 @@ const shader = new ArrayBundle(new Program(
         color = vec4(r, 0.0, g, 1.0);
     }
     `), {
-        'a_pos': new AttributeData(rect.vertices.flat(), 'vec4', false)
+        'a_pos': new AttributeData(new Float32Array(rect.vertices.flat()), 'vec4', false)
     }, {
         'u_time': new UniformData('float', [0]),
         'u_vertexOperations': new UniformData('int', [1000000]),

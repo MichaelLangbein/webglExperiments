@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial } from 'three';
 import { vectorSubtraction, vectorCrossProduct, binaryVectorOp } from '../math';
-import { ArrayCube } from '../arrayMatrix';
+import { ArrayCubeF32 } from '../arrayMatrix';
 
 
 
@@ -16,7 +16,7 @@ export interface Bbox {
 
 
 export function createMarchingCubeBlockMeshes(
-        data: ArrayCube, threshold: number,
+        data: ArrayCubeF32, threshold: number,
         cubeSize: number, blockSize: [number, number, number],
         colorFunc: (val: number) => [number, number, number]): BlockContainer[] {
     const blocks: BlockContainer[] = [];
@@ -59,7 +59,7 @@ export class BlockContainer {
     constructor(
         public startPoint: [number, number, number],
         public blockSize: [number, number, number],
-        public data: ArrayCube,
+        public data: ArrayCubeF32,
         public threshold: number,
         public cubeSize: number,
         public colorFunc: (val: number) => [number, number, number]) {
@@ -100,7 +100,7 @@ export class BlockContainer {
         this.mesh.translateZ(newPos[2]);
     }
 
-    public updateData(data: ArrayCube): void {
+    public updateData(data: ArrayCubeF32): void {
         this.data = data;
         const attrs = createSubBlockMarchingCubeAttributes(data, this.threshold, this.cubeSize, this.colorFunc);
         (this.mesh.geometry as BufferGeometry).setAttribute('position', attrs.position);
@@ -119,7 +119,7 @@ export class BlockContainer {
 
 
 function createSubBlockMarchingCubeAttributes(
-    data: ArrayCube, threshold: number,
+    data: ArrayCubeF32, threshold: number,
     cubeSize: number,
     colorFunc: (val: number) => [number, number, number]) {
 

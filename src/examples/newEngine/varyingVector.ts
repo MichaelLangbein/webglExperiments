@@ -35,10 +35,10 @@ const bundle = new ElementsBundle(new Program(`#version 300 es
         outputColor = vec4(v_color[0], v_color[1], v_color[2], v_color[3]);
     }
 `), {
-    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
+    'a_position': new AttributeData(new Float32Array(flatten2(box.vertices)), 'vec4', false),
 }, {}, {},
 'triangles',
-new Index(flatten2(box.vertexIndices)));
+new Index(new Uint32Array(flatten2(box.vertexIndices))));
 
 bundle.upload(context);
 bundle.initVertexArray(context);

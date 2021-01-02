@@ -5,7 +5,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { perlin3D } from '../../utils/noise';
-import { ArrayCube } from '../../utils/arrayMatrix';
+import { ArrayCubeF32 } from '../../utils/arrayMatrix';
 import { createMarchingCubeBlockMeshes, fetchWasm, MarchingCubeService } from '../../utils/marchingCubes/marchingCubes';
 const Stats = require('stats.js');
 
@@ -100,7 +100,7 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
     const X = 300;
     const Y = 100;
     const Z = 300;
-    const allData = new ArrayCube(X, Y, Z);
+    const allData = new ArrayCubeF32(X, Y, Z);
     for (let x = 0; x < X; x++) {
         for (let y = 0; y < Y; y++) {
             for (let z = 0; z < Z; z++) {
@@ -151,7 +151,7 @@ fetchWasm().subscribe((svc: MarchingCubeService) => {
             if (bbox.xMin <= newX && newX <= bbox.xMax) {
                 const startPointWC = mesh.mesh.position.toArray();
                 const originalData = allData.getSubBlock(mesh.startPoint, mesh.blockSize);
-                const newData = new ArrayCube(mesh.blockSize[0], mesh.blockSize[1], mesh.blockSize[2]);
+                const newData = new ArrayCubeF32(mesh.blockSize[0], mesh.blockSize[1], mesh.blockSize[2]);
                 for (let x = 0; x < mesh.blockSize[0]; x++) {
                     for (let y = 0; y < mesh.blockSize[1]; y++) {
                         for (let z = 0; z < mesh.blockSize[2]; z++) {

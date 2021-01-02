@@ -49,7 +49,7 @@ const bundle = new ArrayBundle(new Program(`#version 300 es
         outputColor = vec4(v_color.xyz, 1.0);
     }
 `), {
-    'a_matrix': new AttributeData(flatten3(matrices0), 'mat4', false)
+    'a_matrix': new AttributeData(new Float32Array(flatten3(matrices0)), 'mat4', false)
 }, {}, {},
 'triangles',
 3);

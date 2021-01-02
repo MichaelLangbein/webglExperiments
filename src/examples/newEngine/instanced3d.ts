@@ -48,13 +48,13 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
-    'a_transform': new InstancedAttributeData(flatten3(transformMatrices), 'mat4', true, 1)
+    'a_position': new AttributeData(new Float32Array(flatten2(box.vertices)), 'vec4', false),
+    'a_transform': new InstancedAttributeData(new Float32Array(flatten3(transformMatrices)), 'mat4', true, 1)
 }, {
     'u_projection': new UniformData('mat4', flatten2(projection))
 }, {},
 'triangles',
-new Index(flatten2(box.vertexIndices)), nrInstances);
+new Index(new Uint32Array(flatten2(box.vertexIndices))), nrInstances);
 
 bundle.upload(context);
 bundle.initVertexArray(context);
@@ -74,7 +74,7 @@ renderLoop(60, (tDelta: number) => {
         transposeMatrix(matrixMultiplyList([  translateMatrix( 0.5, -0.5, 0.5 * Math.sin(time * 0.10) + -1.5), rotateZMatrix(time * 0.1), ])),
         transposeMatrix(matrixMultiplyList([  translateMatrix(-0.5, -0.5, 1.0 * Math.sin(time * 0.05) + -0.5), rotateXMatrix(time * 0.1), ])),
     ];
-    bundle.updateAttributeData(context, 'a_transform', flatten3(transformMatrices));
+    bundle.updateAttributeData(context, 'a_transform', new Float32Array(flatten3(transformMatrices)));
 
     bundle.draw(context); stats.end();
 });

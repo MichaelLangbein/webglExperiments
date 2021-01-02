@@ -58,11 +58,11 @@ const bundle = new InstancedElementsBundle(new Program(`#version 300 es
         outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
 `), {
-    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false),
-    'a_translation': new InstancedAttributeData(flatten2(translations), 'vec4', true, 1)
+    'a_position': new AttributeData(new Float32Array(flatten2(box.vertices)), 'vec4', false),
+    'a_translation': new InstancedAttributeData(new Float32Array(flatten2(translations)), 'vec4', true, 1)
 }, {}, {},
 'triangles',
-new Index(flatten2(box.vertexIndices)), 4);
+new Index(new Uint32Array(flatten2(box.vertexIndices))), 4);
 
 bundle.upload(context);
 bundle.initVertexArray(context);
@@ -70,6 +70,6 @@ bundle.bind(context);
 renderLoop(100, (tDelta: number) => {
     time += tDelta;
     const newTranslations = calculateTranslations(nrInstances, time, startPositions);
-    bundle.updateAttributeData(context, 'a_translation', flatten2(newTranslations));
+    bundle.updateAttributeData(context, 'a_translation', new Float32Array(flatten2(newTranslations)));
     bundle.draw(context);
 });

@@ -1,7 +1,7 @@
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial } from 'three';
-import { ArrayCube } from '../arrayMatrix';
+import { ArrayCubeF32 } from '../arrayMatrix';
 
 
 /**
@@ -235,7 +235,7 @@ export class BlockContainer {
 
 
 export function createMarchingCubeBlockMeshes(
-    data: ArrayCube, threshold: number,
+    data: ArrayCubeF32, threshold: number,
     cubeSize: [number, number, number], blockSize: [number, number, number],
     minVal: number, maxVal: number,
     mcSvc: MarchingCubeService): BlockContainer[] {

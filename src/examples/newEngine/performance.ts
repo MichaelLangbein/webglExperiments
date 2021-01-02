@@ -67,12 +67,12 @@ const bundle = new ElementsBundle(new Program(`#version 300 es
         outputColor = u_color;
     }
 `), {
-    'a_position': new AttributeData(flatten2(box.vertices), 'vec4', false)
+    'a_position': new AttributeData(new Float32Array(flatten2(box.vertices)), 'vec4', false)
 }, {
     'u_transform': new UniformData('mat4', flatten2(transposeMatrix(identityMatrix()))),
     'u_projection': new UniformData('mat4', flatten2(transposeMatrix(projectionMatrix(Math.PI / 2, 1, 0.01, 1000)))),
     'u_color': new UniformData('vec4', [1, 0, 0, 1])
-}, {}, 'triangles', new Index(flatten2(box.vertexIndices)));
+}, {}, 'triangles', new Index(new Uint32Array(flatten2(box.vertexIndices))));
 
 
 setup3dScene(context.gl);
