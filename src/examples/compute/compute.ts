@@ -1,3 +1,10 @@
+/**
+ * https://hacks.mozilla.org/2020/04/experimental-webgpu-in-firefox/
+ * https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web
+ */
+
+
+
 export type ArrBuffer = Uint8Array | Uint32Array | Float32Array | Float64Array;
 let GPUBufferUsage: any;
 let GPUShaderStage: any;
