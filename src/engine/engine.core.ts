@@ -111,11 +111,11 @@ interface IAttributeData {
     hash: string;
     changesOften: boolean;
     attributeType: WebGLAttributeType;
-    data: number[];
+    data: Float32Array;
     buffer: BufferObject;
     upload (gl: WebGL2RenderingContext): void;
     bind (gl: WebGL2RenderingContext, location: number, va: VertexArrayObject): VertexArrayObject;
-    update (gl: WebGL2RenderingContext, newData: number[]): void;
+    update (gl: WebGL2RenderingContext, newData: Float32Array): void;
 }
 
 
@@ -130,9 +130,9 @@ export class AttributeData implements IAttributeData {
     readonly hash: string;
     changesOften: boolean;
     attributeType: WebGLAttributeType;
-    data: number[];      // raw data, user-provided
+    data: Float32Array;      // raw data, user-provided
     buffer: BufferObject;  // buffer on gpu
-    constructor(data: number[], attrType: WebGLAttributeType, changesOften: boolean) {
+    constructor(data: Float32Array, attrType: WebGLAttributeType, changesOften: boolean) {
         this.data = data;
         this.attributeType = attrType;
         this.changesOften = changesOften;
@@ -151,7 +151,7 @@ export class AttributeData implements IAttributeData {
         return va;
     }
 
-    update(gl: WebGL2RenderingContext, newData: number[]) {
+    update(gl: WebGL2RenderingContext, newData: Float32Array) {
         this.data = newData;
         this.buffer = updateBufferData(gl, this.buffer, this.data);
     }
@@ -163,7 +163,7 @@ export class InstancedAttributeData implements IAttributeData {
     readonly hash: string;
     attributeType: WebGLAttributeType;
     changesOften: boolean;
-    data: number[];      // raw data, user-provided
+    data: Float32Array;      // raw data, user-provided
     buffer: BufferObject;  // buffer on gpu
     /**
      * Number of instances that will be rotated through before moving along one step of this buffer.
@@ -171,7 +171,7 @@ export class InstancedAttributeData implements IAttributeData {
      * that is, for `nrInstances * data.length` vertices.
      */
     nrInstances: number;
-    constructor(data: number[], attrType: WebGLAttributeType, changesOften: boolean, nrInstances: number) {
+    constructor(data: Float32Array, attrType: WebGLAttributeType, changesOften: boolean, nrInstances: number) {
         this.data = data;
         this.attributeType = attrType;
         this.changesOften = changesOften;
@@ -191,7 +191,7 @@ export class InstancedAttributeData implements IAttributeData {
         return va;
     }
 
-    update(gl: WebGL2RenderingContext, newData: number[]) {
+    update(gl: WebGL2RenderingContext, newData: Float32Array) {
         this.data = newData;
         this.buffer = updateBufferData(gl, this.buffer, this.data);
     }
@@ -280,9 +280,9 @@ export class TextureData {
  */
 export class Index {
 
-    data: number[];             // raw data, user-provided
+    data: Uint32Array;             // raw data, user-provided
     index: IndexBufferObject;     // buffer on gpu
-    constructor(indices: number[]) {
+    constructor(indices: Uint32Array) {
         this.data = indices;
     }
 
@@ -295,6 +295,10 @@ export class Index {
             throw new Error(`Index: indexBufferObject has not yet been uploaded.`);
         }
         bindIndexBuffer(gl, this.index);
+    }
+
+    update(data: Uint32Array) {
+        this.data = data;
     }
 }
 
@@ -490,7 +494,7 @@ export abstract class Bundle {
     }
 
 
-    public updateAttributeData(context: Context, variableName: string, newData: number[]): void {
+    public updateAttributeData(context: Context, variableName: string, newData: Float32Array): void {
         const attribute = this.attributes[variableName];
         if (!attribute) {
             throw new Error(`No such attribute ${variableName} to be updated.`);
@@ -573,6 +577,12 @@ export class ElementsBundle extends Bundle {
         super.draw(context, background, frameBuffer, viewport);
         this.index.bind(context.gl);
         drawElements(context.gl, this.index.index, this.drawingMode);
+    }
+
+
+    public updateIndex(context: Context, newData: Uint32Array): void {
+        this.index.data = newData;
+
     }
 }
 

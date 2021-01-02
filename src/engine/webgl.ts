@@ -212,16 +212,14 @@ export interface BufferObject {
 /**
  * Create buffer. Creation is slow! Do *before* render loop.
  */
-export const createBuffer = (gl: WebGL2RenderingContext, datatype: WebGLAttributeType, data: number[], changesOften = false): BufferObject => {
-
-    const dataFlattened = new Float32Array(data);
+export const createBuffer = (gl: WebGL2RenderingContext, datatype: WebGLAttributeType, data: Float32Array, changesOften = false): BufferObject => {
 
     const buffer = gl.createBuffer();
     if (!buffer) {
         throw new Error('No buffer was created');
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, data, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
 
     const bufferObject: BufferObject = {
@@ -284,12 +282,10 @@ export const drawArrayInstanced = (gl: WebGL2RenderingContext, drawingMode: GlDr
 };
 
 
-export const updateBufferData = (gl: WebGL2RenderingContext, bo: BufferObject, newData: number[]): BufferObject => {
-
-    const dataFlattened = new Float32Array(newData);
+export const updateBufferData = (gl: WebGL2RenderingContext, bo: BufferObject, newData: Float32Array): BufferObject => {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, bo.buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, dataFlattened, bo.staticOrDynamicDraw);
+    gl.bufferData(gl.ARRAY_BUFFER, newData, bo.staticOrDynamicDraw);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);  // unbinding
 
     const newBufferObject: BufferObject = {
@@ -453,16 +449,14 @@ export interface IndexBufferObject {
     staticOrDynamicDraw: number; // gl.DYNAMIC_DRAW or gl.STATIC_DRAW
 }
 
-export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[], changesOften = false): IndexBufferObject => {
-
-    const indicesFlattened = new Uint32Array(indices);
+export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: Uint32Array, changesOften = false): IndexBufferObject => {
 
     const buffer = gl.createBuffer();
     if (!buffer) {
         throw new Error('No buffer was created');
     }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesFlattened, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
     // Back in WebGl 1, index-buffers were restricted to UShort (max allowed value inside `indicesFlattened`: 65535).
@@ -470,7 +464,7 @@ export const createIndexBuffer = (gl: WebGL2RenderingContext, indices: number[],
     // Thank god we now also have UInt indices (max allowed value inside `indicesFlattened`: 4294967296).
     const bufferObject: IndexBufferObject = {
         buffer: buffer,
-        count: indicesFlattened.length,
+        count: indices.length,
         type: gl.UNSIGNED_INT,
         offset: 0,
         staticOrDynamicDraw: changesOften ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW
