@@ -1,5 +1,5 @@
 import { ArrayBundle, Program, Context, AttributeData, UniformData } from '../../engine2/engine.core';
-import { rectangleA } from '../../engine2/engine.shapes';
+import { rectangleA } from '../../utils/shapes';
 const Stats = require('stats.js');
 
 const body = document.getElementById('body') as HTMLDivElement;

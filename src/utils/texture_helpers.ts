@@ -1,12 +1,14 @@
-import { TextureObject, createShaderProgram, createBuffer, getAttributeLocation, bindBufferToAttribute, clearBackground, getUniformLocation, bindTextureToUniform, bindProgram, bindValueToUniform, createTexture } from './webgl';
-import { rectangleA } from './engine.shapes';
-import { flatten2 } from '../utils/math';
+import { TextureObject, createShaderProgram, createBuffer, getAttributeLocation,
+    bindBufferToAttribute, clearBackground, getUniformLocation, bindTextureToUniform,
+    bindProgram, bindValueToUniform, createTexture } from '../engine1/webgl';
+import { flatten2 } from './math';
+import { rectangleA } from './shapes';
 
 
 
 export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElement): void => {
 
-    const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
+    const gl = canvas.getContext('webgl') as WebGLRenderingContext;
     if (!gl) {
         throw new Error('No context');
     }
@@ -52,7 +54,6 @@ export const displayImageOn = (canvas: HTMLCanvasElement, image: HTMLImageElemen
 };
 
 
-
 export const createTextCanvas = (text: string, width: number = 256, height: number = 256, color: string = 'red') => {
     const ctx = document.createElement('canvas').getContext('2d');
     if (!ctx) {
@@ -77,6 +78,7 @@ export const canvasToImage = (canvas: HTMLCanvasElement): HTMLImageElement => {
     return image;
 };
 
+
 export const arrayToCanvas = (data: number[][][]) => {
     const rows = data.length;
     const cols = data[0].length;
@@ -94,6 +96,7 @@ export const arrayToCanvas = (data: number[][][]) => {
 
     return arrayToCanvasDims(buffer, rows, cols);
 };
+
 
 export const arrayToCanvasDims = (buffer: Uint8Array, rows: number, cols: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');

@@ -1,4 +1,4 @@
-import { Vector, vectorAddition, scalarProduct, V4Matrix, V3Matrix, V2Matrix, Matrix } from '../utils/math';
+import { Vector, vectorAddition, scalarProduct, V4Matrix, V3Matrix, V2Matrix, Matrix } from './math';
 
 
 export function bezier(p0: Vector, p1: Vector, t: number): Vector {
