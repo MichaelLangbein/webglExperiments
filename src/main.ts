@@ -1,1 +1,1 @@
-import './examples/compute/compute';
+import './examples/ol/dataToMatrix';

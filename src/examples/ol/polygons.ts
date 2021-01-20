@@ -1,5 +1,5 @@
-import { ElementsBundle, Program, Index, AttributeData, Context, UniformData } from '../../engine/engine.core';
-import {setup3dScene } from '../../engine/webgl';
+import { ElementsBundle, Program, Index, AttributeData, Context, UniformData } from '../../engine2/engine.core';
+import {setup3dScene } from '../../engine2/webgl';
 
 import earcut from 'earcut';
 import { bboxPolygon } from 'turf';

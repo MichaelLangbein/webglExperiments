@@ -1,7 +1,7 @@
-import { bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, FramebufferObject } from '../../engine/webgl';
+import { bindTextureToFramebuffer, createEmptyTexture, createFramebuffer, FramebufferObject } from '../../engine2/webgl';
 import { Context, InstancedElementsBundle, Index, Program, AttributeData,
-    renderLoop, ElementsBundle, InstancedAttributeData, UniformData, ArrayBundle, TextureData } from '../../engine/engine.core';
-import { boxE, gaussianKernel, rectangleA } from '../../engine/engine.shapes';
+    renderLoop, ElementsBundle, InstancedAttributeData, UniformData, ArrayBundle, TextureData } from '../../engine2/engine.core';
+import { boxE, gaussianKernel, rectangleA } from '../../engine2/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
     rotateYMatrix, rotateZMatrix, translateMatrix, transposeMatrix, flatten2, flatten3 } from '../../utils/math';
 

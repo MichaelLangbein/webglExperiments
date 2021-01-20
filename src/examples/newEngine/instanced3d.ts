@@ -1,6 +1,6 @@
 import { Context, InstancedElementsBundle, Index, Program, AttributeData,
-    renderLoop, ElementsBundle, InstancedAttributeData, UniformData } from '../../engine/engine.core';
-import { boxE, identity } from '../../engine/engine.shapes';
+    renderLoop, ElementsBundle, InstancedAttributeData, UniformData } from '../../engine2/engine.core';
+import { boxE, identity } from '../../engine2/engine.shapes';
 import { projectionMatrix, identityMatrix, matrixMultiplyList, rotateXMatrix,
     rotateYMatrix, rotateZMatrix, translateMatrix, flatten2, flatten3, transposeMatrix } from '../../utils/math';
 import Stats from 'stats.js';

@@ -1,4 +1,4 @@
-import { Context, Program, AttributeData, renderLoop, ArrayBundle } from '../../engine/engine.core';
+import { Context, Program, AttributeData, renderLoop, ArrayBundle } from '../../engine2/engine.core';
 import { flatten3, transposeMatrix } from '../../utils/math';
 
 

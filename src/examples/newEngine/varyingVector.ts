@@ -1,5 +1,5 @@
-import { Context, Index, Program, AttributeData, renderLoop, ElementsBundle } from '../../engine/engine.core';
-import { boxE } from '../../engine/engine.shapes';
+import { Context, Index, Program, AttributeData, renderLoop, ElementsBundle } from '../../engine2/engine.core';
+import { boxE } from '../../engine2/engine.shapes';
 import { flatten2 } from '../../utils/math';
 
 

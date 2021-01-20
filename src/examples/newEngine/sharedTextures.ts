@@ -1,4 +1,4 @@
-import { Context } from "../../engine/engine.core";
+import { Context } from "../../engine2/engine.core";
 
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
