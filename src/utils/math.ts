@@ -305,3 +305,29 @@ export const rotateZMatrix = (rad: number): number[][] => {
         [0, 0, 0, 1]
     ];
 };
+
+
+
+/** ------------------------------------------------------------ /
+ *       Encoding / Decoding
+ * -------------------------------------------------------------*/
+
+export const encodeInBase = (base: number, value: number, maxPower: number): number[] => {
+    const coefficients = [];
+    for (let power = maxPower; power >= 0; power--) {
+        const factor = Math.pow(base, power);
+        const coefficient = Math.floor(value / factor);
+        coefficients.push(coefficient);
+        value = value % factor;
+    }
+    return coefficients.reverse();
+};
+
+
+export const decodeFromBase = (base: number, encodedData: number[]): number => {
+    let decVal = 0;
+    for (let power = 0; power < encodedData.length; power++) {
+        decVal += encodedData[power] * Math.pow(base, power);
+    }
+    return decVal;
+}

@@ -6,34 +6,74 @@ import { Vector as VectorSource } from 'ol/source';
 
 import { createPointGrid } from '../../utils/ol/createFeatures';
 import { SplineLayer } from '../../utils/ol/splineLayer';
+import { Style, Text } from 'ol/style';
+import { FeatureLike } from 'ol/Feature';
+import { assignRowAndColToFeatureGrid } from '../../utils/matrixTree';
 
 
 
-const data = createPointGrid([0, 0], 0.25, 0.25, 20, 30, [1, 0.25], [-0.25, 1], 0.2, 0.2, 0.1);
+document.getElementById('canvas').style.setProperty('height', '0px');
 
+
+
+fetch('assets/waveheight.json').then((response: Response) => {
+    response.json().then((data: any) => {
+
+        // const analyzedData = assignRowAndColToFeatureGrid(data.features, 'id');
+
+        // const dataLayer = new VectorLayer({
+        //     source: new VectorSource({
+        //         features: new GeoJSON().readFeatures({
+        //             'type': 'FeatureCollection',
+        //             'features': analyzedData
+        //         })
+        //     }),
+        //     style: (feature: FeatureLike) => {
+        //         return new Style({
+        //             text: new Text({
+        //                 text: feature.getProperties().row + '/' + feature.getProperties().col // feature.getProperties().id
+        //             })
+        //         });
+        //     }
+        // });
+        // map.addLayer(dataLayer);
+
+        const dataLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data)
+            }),
+            style: (feature: FeatureLike) => {
+                return new Style({
+                    text: new Text({
+                        text: feature.getProperties().id
+                    })
+                });
+            }
+        });
+        map.addLayer(dataLayer);
+
+
+        // const interpolLayer = new SplineLayer({
+        // });
+        // map.addLayer(interpolLayer);
+
+
+    });
+});
 
 const osm = new TileLayer({
     source: new OSM()
 });
 
-const dataLayer = new VectorLayer({
-    source: new VectorSource({
-        features: new GeoJSON().readFeatures(data)
-    })
-});
 
-const interpolLayer = new SplineLayer({
-
-});
-
-const layers = [osm, dataLayer, interpolLayer];
+const layers = [osm];
 
 const map = new Map({
     target: document.getElementById('map') as HTMLDivElement,
     layers,
     view: new View({
-        center: [0, 0],
-        zoom: 4,
+        center: [19, 56],
+        zoom: 8,
         projection: 'EPSG:4326'
     })
 });

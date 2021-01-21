@@ -99,11 +99,11 @@ function checkDataProvided(
         console.warn(`You have only provided one precision qualifier.
         This can cause issues when you want to use a uniform in both the vertex- and the fragment-shader.`);
     }
-    // @TODO: the below code does not account for instanced attributes.
-    const lengths = Object.values(attributes).map(a => a.data.length);
-    if (Math.min(...lengths) !== Math.max(...lengths)) {
-        throw new Error(`Your attributes are not of the same length!`);
-    }
+    // // @TODO: the below code does not account for instanced attributes.
+    // const lengths = Object.values(attributes).map(a => a.data.length);
+    // if (Math.min(...lengths) !== Math.max(...lengths)) {
+    //     throw new Error(`Your attributes are not of the same length!`);
+    // }
 }
 
 interface IAttributeData {

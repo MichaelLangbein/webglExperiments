@@ -1,3 +1,5 @@
+import { Feature, Point } from "geojson";
+import { reprojectDataAlongPrincipalAxes } from "./pcaAlign";
 
 export interface DataPoint {
     x: number;
@@ -22,7 +24,6 @@ function getBbox(data: DataPoint[]): Bbox {
         yMax: Math.max(...ys),
     };
 }
-
 
 interface SplitLine {
     dir: 'x' | 'y';
@@ -133,38 +134,6 @@ class MatrixTreeNode {
 
 }
 
-/**
- * This is a special kind of binary tree.
- * It is designed to parse a grid of data points into a matrix.
- *
- * ```js
- * const data: DataPoint[] = ...
- * const matrix: number[][] = getMatrixData(data);
- * ```
- *
- * Whereas normally a binary tree stops branching once there is 1 data point at every leave,
- * this tree keeps subdividing every branch until none has more than one data point.
- * In other words: normal binary trees may be asymmetric, whereas this one is always symmetric.
- * Also, normal binary trees have no leaves with no data in them, whereas this one does.
- */
-export function getMatrixData(data: DataPoint[]) {
-    const bbox = getBbox(data);
-    const tree = new MatrixTreeNode(data, bbox);
-
-    while (Math.max(...tree.getDataLengthRecursive()) > 1) {
-        tree.splitLowest();
-    }
-
-    const treeData = tree.getDataRecursive();
-
-    const matrix = sortTreeDataIntoMatrix(treeData);
-
-    const rowFilteredMatrix = filterMatrixRows(matrix);
-    const colFilteredMatrix = filterMatrixCols(rowFilteredMatrix);
-
-    return colFilteredMatrix;
-}
-
 function filterMatrixCols(matrix: any[][]): any[][] {
     if (matrix.length === 0) {
         return matrix;
@@ -224,4 +193,80 @@ function sortTreeDataIntoMatrix(treeData: NodeData[]): any[][] {
         }
     }
     return matrix;
+}
+
+
+/**
+ * This is a special kind of binary tree.
+ * It is designed to parse a grid of data points into a matrix.
+ *
+ * ```js
+ * const data: DataPoint[] = ...
+ * const matrix: number[][] = getMatrixData(data);
+ * ```
+ *
+ * Whereas normally a binary tree stops branching once there is 1 data point at every leave,
+ * this tree keeps subdividing every branch until none has more than one data point.
+ * In other words: normal binary trees may be asymmetric, whereas this one is always symmetric.
+ * Also, normal binary trees have no leaves with no data in them, whereas this one does.
+ */
+export function convertToDataMatrix(data: DataPoint[]): any[][] {
+    const bbox = getBbox(data);
+    const tree = new MatrixTreeNode(data, bbox);
+
+    while (Math.max(...tree.getDataLengthRecursive()) > 1) {
+        tree.splitLowest();
+    }
+
+    const treeData = tree.getDataRecursive();
+
+    const matrix = sortTreeDataIntoMatrix(treeData);
+
+    const rowFilteredMatrix = filterMatrixRows(matrix);
+    const colFilteredMatrix = filterMatrixCols(rowFilteredMatrix);
+
+    return colFilteredMatrix;
+}
+
+
+/**
+ * Often we get (semi-)regular grids of features and need to know to which row & column a feature belongs.
+ * This method tries to figure out the row & column of each feature in a grid.
+ * It then adds the properties `row` and `col` to each feature's properties.
+ * The grid does not have to be regular, it may be rotated, features may be slightly offset, and some entries may be missing.
+ * @param data: the features to be analyzed
+ * @param idProperty: a property by which a feature may be uniquely identified
+ */
+export function assignRowAndColToFeatureGrid(data: Feature<Point>[], idProperty: string): Feature<Point>[] {
+
+    const coords = data.map(f => f.geometry.coordinates);
+    const values = data.map(f => f.properties[idProperty]);
+
+    // Step 1: reproject data along principal axes, so that it's easier to parse into a matrix.
+    const reprojectedData = reprojectDataAlongPrincipalAxes(coords);
+
+    // Step 2: parse features' ids into a matrix
+    const dataPoints: DataPoint[] = [];
+    for (let i = 0; i < values.length; i++) {
+        dataPoints.push({
+            x: reprojectedData.reprojectedData[i][0],
+            y: reprojectedData.reprojectedData[i][1],
+            data: values[i]
+        });
+    }
+    const parsedData = convertToDataMatrix(dataPoints);
+
+    // Step 3: for each row/col, get the associated feature by it's id, and add the row/col information to that feature.
+    for (let row = 0; row < parsedData.length; row++) {
+        for (let col = 0; col < parsedData[0].length; col++) {
+            const id = parsedData[row][col];
+            const feature = data.find(f => f.properties[idProperty] === id);
+            if (feature) {
+                feature.properties['row'] = row;
+                feature.properties['col'] = col;
+            }
+        }
+    }
+
+    return data;
 }

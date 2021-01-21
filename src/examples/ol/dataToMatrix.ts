@@ -1,5 +1,5 @@
 // Algorithms
-import { getMatrixData, DataPoint } from '../../utils/matrixTree';
+import { convertToDataMatrix, DataPoint } from '../../utils/matrixTree';
 
 // Ol
 import { Map, View } from 'ol';
@@ -68,7 +68,7 @@ for (let i = 0; i < values.length; i++) {
     });
 }
 
-const matrixData = getMatrixData(reprojectedData);
+const matrixData = convertToDataMatrix(reprojectedData);
 
 
 

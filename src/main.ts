@@ -1,1 +1,1 @@
-import './examples/ol/interpolation';
+import './examples/engine1/idInterpolation';
