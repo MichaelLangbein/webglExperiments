@@ -1,5 +1,12 @@
 import { Bundle, Context, ArrayBundle, Program, AttributeData, TextureData, UniformData } from '../../engine1/engine.core';
 
+/**
+ * In this example we sample from a texture.
+ * The point where we sample is determined by a vertex-attribute: 'a_gridPosition'.
+ * 'a_gridPosition' does not need to have anything to do with the clip-position!
+ */
+
+
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl') as WebGLRenderingContext;
 
@@ -27,7 +34,7 @@ for (let row = 0; row < R - 1; row++) {
         clipPositions.push([clipSpaceX + deltaX, clipSpaceY - deltaY]);
         clipPositions.push([clipSpaceX         , clipSpaceY         ]);
         clipPositions.push([clipSpaceX + deltaX, clipSpaceY - deltaY]);
-        clipPositions.push([clipSpaceX + deltaX, clipSpaceY          ]);
+        clipPositions.push([clipSpaceX + deltaX, clipSpaceY         ]);
 
         gridPositions.push([row    , col    ]);
         gridPositions.push([row + 1, col    ]);
@@ -37,7 +44,6 @@ for (let row = 0; row < R - 1; row++) {
         gridPositions.push([row    , col + 1]);
     }
 }
-console.log(gridPositions)
 
 
 
@@ -49,7 +55,7 @@ const program = new Program(`
     varying vec2 v_gridPosition;
 
     void main() {
-        gl_Position = vec4(a_clipPosition, 0, 1);
+        gl_Position = vec4(a_clipPosition * 0.3, 0, 1);
         v_gridPosition = a_gridPosition;
     }
 `, `

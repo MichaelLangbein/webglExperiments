@@ -1,1 +1,1 @@
-import './examples/engine1/gridInterpolation';
+import './examples/engine1/cubicSplines';
