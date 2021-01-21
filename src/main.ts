@@ -1,1 +1,1 @@
-import './examples/engine1/idInterpolation';
+import './examples/engine1/gridInterpolation';

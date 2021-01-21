@@ -330,4 +330,4 @@ export const decodeFromBase = (base: number, encodedData: number[]): number => {
         decVal += encodedData[power] * Math.pow(base, power);
     }
     return decVal;
-}
+};

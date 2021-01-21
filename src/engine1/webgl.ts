@@ -637,6 +637,9 @@ export const createDataTexture = (gl: WebGLRenderingContext, data: number[][][],
     const height = data.length;
     const width = data[0].length;
     const channels = data[0][0].length;
+    if (!isPowerOf(height, 2) || !isPowerOf(width, 2)) {
+        throw new Error('Expecting texture to have a power-two width and height');
+    }
     // if ( channels !== 4) {
     //     // @todo: remove this when we implement non-rgba data-textures.
     //     throw new Error(`Expecting 4 channels, but ${channels} provided`);
@@ -656,7 +659,7 @@ export const createDataTexture = (gl: WebGLRenderingContext, data: number[][][],
 
     if (channels !== 4) {
         // have WebGL digest data one byte at a time.
-        // (Per default tries 4 bytes at a time, which causes errors when our data is not a mulitple of 4).
+        // (Per default tries 4 bytes at a time, which causes errors when our data is not a multiple of 4).
         const alignment = 1; // valid values are 1, 2, 4, and 8.
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, alignment);
     }

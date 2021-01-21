@@ -94,27 +94,28 @@ const program = new Program(`
 `);
 const bundle = new ArrayBundle(program, {
     'a_position': new AttributeData(new Float32Array([
-        -1,  1,
-        -1, -1,
-         1, -1,
-         1,  1,
-        -1,  1,
-         1, -1]), 'vec2', false),
+        -1,  1, // top left
+        -1, -1, // bot left
+         1, -1, // bot right
+         1,  1, // top right
+        -1,  1, // top left
+         1, -1, // bot right
+    ]), 'vec2', false),
     'a_role': new AttributeData(new Float32Array([
         1, 0, 0, 0, // top left
-        0, 0, 0, 1, // bot left
-        0, 0, 1, 0, // bot right
+        0, 0, 1, 0, // bot left
+        0, 0, 0, 1, // bot right
         0, 1, 0, 0, // top right
         1, 0, 0, 0, // top left
-        0, 0, 1, 0 // bot right
+        0, 0, 0, 1, // bot right
     ]), 'vec4', false),
     'a_id': new AttributeData(new Float32Array([
         1, 0, 0, 0, // top left
-        0, 0, 0, 3, // bot left
-        0, 0, 4, 0, // bot right
+        0, 0, 3, 0, // bot left
+        0, 0, 0, 4, // bot right
         0, 2, 0, 0, // top right
         1, 0, 0, 0, // top left
-        0, 0, 4, 0 // bot right
+        0, 0, 0, 4, // bot right
     ]), 'vec4', false)
 }, {}, {}, 'triangles', 6);
 bundle.upload(context);
