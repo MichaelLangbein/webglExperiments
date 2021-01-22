@@ -6,52 +6,48 @@ const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const gl = canvas.getContext('webgl') as WebGLRenderingContext;
 
 
-
+// NB: coordinates and values have been transformed into a range of 0-255.
 const nbhMatrix = [
-    [[1, 0, 0, 255], [2, 0, 0, 255], [3, 0, 0, 255], [4, 0, 0, 255], [5, 0, 0, 255], [6, 0, 0, 255], [7, 0, 0, 255], [8, 0, 0, 255]],
-    [[9, 0, 0, 255], [10, 0, 0, 255], [11, 0, 0, 255], [12, 0, 0, 255], [13, 0, 0, 255], [14, 0, 0, 255], [15, 0, 0, 255], [16, 0, 0, 255]],
-    [[17, 0, 0, 255], [18, 0, 0, 255], [19, 0, 0, 255], [20, 0, 0, 255], [21, 0, 0, 255], [22, 0, 0, 255], [23, 0, 0, 255], [24, 0, 0, 255]],
-    [[25, 0, 0, 255], [26, 0, 0, 255], [27, 0, 0, 255], [28, 0, 0, 255], [29, 0, 0, 255], [30, 0, 0, 255], [31, 0, 0, 255], [32, 0, 0, 255]],
+    [
+    //  id    x   y   val
+        [1 ,   0, 80, Math.random() * 255],
+        [2 ,  10, 80, Math.random() * 255],
+        [3 ,  20, 80, Math.random() * 255],
+        [4 ,  30, 80, Math.random() * 255],
+        [5 ,  40, 80, Math.random() * 255],
+        [6 ,  50, 80, Math.random() * 255],
+        [7 ,  60, 80, Math.random() * 255],
+        [8 ,  70, 80, Math.random() * 255],
+    ], [
+        [9 ,   0, 60, Math.random() * 255],
+        [10,  10, 60, Math.random() * 255],
+        [11,  20, 60, Math.random() * 255],
+        [12,  30, 60, Math.random() * 255],
+        [13,  40, 60, Math.random() * 255],
+        [14,  50, 60, Math.random() * 255],
+        [15,  60, 60, Math.random() * 255],
+        [16,  70, 60, Math.random() * 255],
+    ], [
+        [17,   0, 40, Math.random() * 255],
+        [18,  10, 40, Math.random() * 255],
+        [19,  20, 40, Math.random() * 255],
+        [20,  30, 40, Math.random() * 255],
+        [21,  40, 40, Math.random() * 255],
+        [22,  50, 40, Math.random() * 255],
+        [23,  60, 40, Math.random() * 255],
+        [24,  70, 40, Math.random() * 255],
+    ], [
+        [25,   0, 20, Math.random() * 255],
+        [26,  10, 20, Math.random() * 255],
+        [27,  20, 20, Math.random() * 255],
+        [28,  30, 20, Math.random() * 255],
+        [29,  40, 20, Math.random() * 255],
+        [30,  50, 20, Math.random() * 255],
+        [31,  60, 20, Math.random() * 255],
+        [32,  70, 20, Math.random() * 255],
+    ],
 ];
 
-const valData = [
-  // id, x,   y,    val
-    [1 , -0.2, 0.8, Math.random() * 20],
-    [2 , -0.1, 0.8, Math.random() * 20],
-    [3 ,  0.0, 0.8, Math.random() * 20],
-    [4 ,  0.1, 0.8, Math.random() * 20],
-    [5 ,  0.2, 0.8, Math.random() * 20],
-    [6 ,  0.3, 0.8, Math.random() * 20],
-    [7 ,  0.4, 0.8, Math.random() * 20],
-    [8 ,  0.5, 0.8, Math.random() * 20],
-
-    [9 , -0.2, 0.6, Math.random() * 20],
-    [10, -0.1, 0.6, Math.random() * 20],
-    [11,  0.0, 0.6, Math.random() * 20],
-    [12,  0.1, 0.6, Math.random() * 20],
-    [13,  0.2, 0.6, Math.random() * 20],
-    [14,  0.3, 0.6, Math.random() * 20],
-    [15,  0.4, 0.6, Math.random() * 20],
-    [16,  0.5, 0.6, Math.random() * 20],
-
-    [17, -0.2, 0.4, Math.random() * 20],
-    [18, -0.1, 0.4, Math.random() * 20],
-    [19,  0.0, 0.4, Math.random() * 20],
-    [20,  0.1, 0.4, Math.random() * 20],
-    [21,  0.2, 0.4, Math.random() * 20],
-    [22,  0.3, 0.4, Math.random() * 20],
-    [23,  0.4, 0.4, Math.random() * 20],
-    [24,  0.5, 0.4, Math.random() * 20],
-
-    [25, -0.2, 0.2, Math.random() * 20],
-    [26, -0.1, 0.2, Math.random() * 20],
-    [27,  0.0, 0.2, Math.random() * 20],
-    [28,  0.1, 0.2, Math.random() * 20],
-    [29,  0.2, 0.2, Math.random() * 20],
-    [30,  0.3, 0.2, Math.random() * 20],
-    [31,  0.4, 0.2, Math.random() * 20],
-    [32,  0.5, 0.2, Math.random() * 20],
-];
 
 const clipPositions = [];
 const gridPositions = [];
@@ -99,34 +95,23 @@ const program = new Program(`
     varying vec2 v_gridPosition;
     uniform sampler2D u_nbhTexture;
     uniform vec2 u_nbhTextureSize;
-    uniform vec4 u_values[32];
-
-    vec4 getValueAtIndex(int index) {
-        for (int i = 0; i < 32; i++) {
-            if (i == index) {
-                return u_values[i];
-            }
-        }
-    }
 
     void main() {
 
         // gridPosition: [row, col]; textureSize: [width, height] == [col, row]
-        vec2 ownPosition = vec2(v_gridPosition.y / u_nbhTextureSize.x, v_gridPosition.x / u_nbhTextureSize.y);
+        vec2 ownGridPosition = vec2(v_gridPosition.y / u_nbhTextureSize.x, v_gridPosition.x / u_nbhTextureSize.y);
 
-        float ownId = texture2D(u_nbhTexture, ownPosition).x;
-        float topId = texture2D(u_nbhTexture, ownPosition + vec2(   0.0 / u_nbhTextureSize.x,   1.0 / u_nbhTextureSize.y)).x;
-        float botId = texture2D(u_nbhTexture, ownPosition + vec2(   0.0 / u_nbhTextureSize.x, - 1.0 / u_nbhTextureSize.y)).x;
-        float lftId = texture2D(u_nbhTexture, ownPosition + vec2( - 1.0 / u_nbhTextureSize.x,   0.0 / u_nbhTextureSize.y)).x;
-        float rgtId = texture2D(u_nbhTexture, ownPosition + vec2(   1.0 / u_nbhTextureSize.x,   0.0 / u_nbhTextureSize.y)).x;
+        vec2 deltaX = vec2( 1.0 / u_nbhTextureSize.x, 0.0 );
+        vec2 deltaY = vec2( 0.0, 1.0 / u_nbhTextureSize.y );
+        vec4 ownData = texture2D(u_nbhTexture, ownGridPosition);
+        vec4 topData = texture2D(u_nbhTexture, ownGridPosition + deltaY);
+        vec4 botData = texture2D(u_nbhTexture, ownGridPosition - deltaY);
+        vec4 lftData = texture2D(u_nbhTexture, ownGridPosition - deltaX);
+        vec4 rgtData = texture2D(u_nbhTexture, ownGridPosition + deltaX);
 
-        vec4 topVal = getValueAtIndex(int(topId));
-        vec4 botVal = getValueAtIndex(int(botId));
-        vec4 lftVal = getValueAtIndex(int(lftId));
-        vec4 rgtVal = getValueAtIndex(int(rgtId));
 
         // @TODO: interpolate by distance
-        float interpolated = (topVal.w + botVal.w + lftVal.w + rgtVal.w) / (4.0 * 20.0);
+        float interpolated = topData.w + botData.w + lftData.w + rgtData.w / 4.0;
 
         gl_FragColor = vec4(interpolated, 0, 0, 1);
     }
@@ -136,7 +121,6 @@ const bundle = new ArrayBundle(program, {
     'a_gridPosition': new AttributeData(new Float32Array(gridPositions.flat()), 'vec2', false)
 }, {
     'u_nbhTextureSize': new UniformData('vec2', [nbhMatrix[1].length - 1, nbhMatrix.length - 1]),  // width * height === cols * rows
-    'u_values': new UniformData('vec4[]', valData.flat())
 }, {
     'u_nbhTexture': new TextureData(nbhMatrix, 'ubyte4')
 }, 'triangles', gridPositions.flat().length);

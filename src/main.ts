@@ -1,1 +1,1 @@
-import './examples/engine1/cubicSplines';
+import './examples/ol/interpolation';

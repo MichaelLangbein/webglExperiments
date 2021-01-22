@@ -9,23 +9,23 @@ import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context,
 
 
 
-export interface SplineLayerOptions extends Options {}
+export interface InterpolationLayerOptions extends Options {}
 
-export class SplineLayer extends VectorLayer {
+export class InterpolationLayer extends VectorLayer {
 
-    constructor(opt_options: SplineLayerOptions) {
+    constructor(opt_options: InterpolationLayerOptions) {
         super(opt_options);
     }
 
     createRenderer(): LayerRenderer<VectorLayer> {
-        const renderer = new SplineRenderer(this);
+        const renderer = new InterpolationRenderer(this);
         return renderer;
     }
 }
 
 
 
-export class SplineRenderer extends LayerRenderer<VectorLayer> {
+export class InterpolationRenderer extends LayerRenderer<VectorLayer> {
 
     private canvas: HTMLCanvasElement;
     private bundle: Bundle;
