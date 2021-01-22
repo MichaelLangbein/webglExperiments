@@ -4,7 +4,7 @@ import { OSM } from 'ol/source';
 import { GeoJSON } from 'ol/format';
 import { Vector as VectorSource } from 'ol/source';
 
-import { SplineLayer } from '../../utils/ol/splineLayer';
+import { InterpolationLayer } from '../../utils/ol/interpolation';
 import { Style, Text } from 'ol/style';
 import { FeatureLike } from 'ol/Feature';
 
@@ -21,17 +21,10 @@ fetch('assets/testdata.json').then((response: Response) => {
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data)
             }),
-            style: (feature: FeatureLike) => {
-                return new Style({
-                    text: new Text({
-                        text: `${feature.getProperties().id}`
-                    })
-                });
-            }
         });
         map.addLayer(dataLayer);
 
-        const interpolLayer = new SplineLayer({
+        const interpolLayer = new InterpolationLayer({
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data)
             })
@@ -53,8 +46,8 @@ const map = new Map({
     target: document.getElementById('map') as HTMLDivElement,
     layers,
     view: new View({
-        center: [21, 56],
-        zoom: 6,
+        center: [16, 55],
+        zoom: 7,
         projection: 'EPSG:4326'
     })
 });

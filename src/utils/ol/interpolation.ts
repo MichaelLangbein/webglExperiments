@@ -9,23 +9,23 @@ import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context,
 
 
 
-export interface SplineLayerOptions extends Options {}
+export interface InterpolationLayerOptions extends Options {}
 
-export class SplineLayer extends VectorLayer {
+export class InterpolationLayer extends VectorLayer {
 
-    constructor(opt_options: SplineLayerOptions) {
+    constructor(opt_options: InterpolationLayerOptions) {
         super(opt_options);
     }
 
     createRenderer(): LayerRenderer<VectorLayer> {
-        const renderer = new SplineRenderer(this);
+        const renderer = new InterpolationRenderer(this);
         return renderer;
     }
 }
 
 
 
-export class SplineRenderer extends LayerRenderer<VectorLayer> {
+export class InterpolationRenderer extends LayerRenderer<VectorLayer> {
 
     private canvas: HTMLCanvasElement;
     private bundle: Bundle;
@@ -33,8 +33,6 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
 
     constructor(layer: VectorLayer) {
         super(layer);
-
-        
 
         this.canvas = document.createElement('canvas') as HTMLCanvasElement;
         this.canvas.width = 600;
@@ -44,8 +42,6 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
         this.canvas.style.setProperty('top', '0px');
         this.canvas.style.setProperty('width', '100%');
         this.canvas.style.setProperty('height', '100%');
-
-
 
 
         const features = layer.getSource().getFeatures().sort((f1, f2) => f1.getProperties()['id'] > f2.getProperties()['id'] ? 1 : -1);
@@ -68,7 +64,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             colsAndRows.push(col, row);
         }
 
-        this.context = new Context(this.canvas.getContext('webgl2') as WebGL2RenderingContext, true);
+        this.context = new Context(this.canvas.getContext('webgl2') as WebGL2RenderingContext, false);
         const program = new Program(`
         precision mediump float;
         attribute vec2 a_geoPosition;
@@ -99,27 +95,34 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
         uniform vec2 u_textureSize;
 
         void main() {
-            vec2 deltaX = vec2(1.0, 0.0);
-            vec2 deltaY = vec2(0.0, 1.0);
-
+            float factor = 1.0;
+            vec2 deltaX = factor * vec2(1.0, 0.0);
+            vec2 deltaY = factor * vec2(0.0, 1.0);
+            vec4 data = texture2D(u_dataTexture, v_texturePosition / u_textureSize );
             vec4 dataRgt = texture2D(u_dataTexture, (v_texturePosition + deltaX) / u_textureSize );
             vec4 dataLft = texture2D(u_dataTexture, (v_texturePosition - deltaX) / u_textureSize );
             vec4 dataBot = texture2D(u_dataTexture, (v_texturePosition + deltaY) / u_textureSize );
             vec4 dataTop = texture2D(u_dataTexture, (v_texturePosition - deltaY) / u_textureSize );
 
-            float distRgt = distance(dataRgt.yz, v_geoPosition);
-            float distLft = distance(dataLft.yz, v_geoPosition);
-            float distTop = distance(dataTop.yz, v_geoPosition);
-            float distBot = distance(dataBot.yz, v_geoPosition);
+            vec2 geoPosRgt = vec2(dataRgt.y * 4.0 + 16.0, dataRgt.z * 2.0 + 54.0);
+            vec2 geoPosLft = vec2(dataLft.y * 4.0 + 16.0, dataLft.z * 2.0 + 54.0);
+            vec2 geoPosTop = vec2(dataTop.y * 4.0 + 16.0, dataTop.z * 2.0 + 54.0);
+            vec2 geoPosBot = vec2(dataBot.y * 4.0 + 16.0, dataBot.z * 2.0 + 54.0);
 
+            float distRgt = distance(geoPosRgt, v_geoPosition);
+            float distLft = distance(geoPosLft, v_geoPosition);
+            float distTop = distance(geoPosTop, v_geoPosition);
+            float distBot = distance(geoPosBot, v_geoPosition);
+
+            float normalizer = 1.0 / ((1.0 / distRgt) + (1.0 / distLft) + (1.0 / distTop) + (1.0 / distBot));
             float weightedValRgt = dataRgt.w / distRgt;
             float weightedValLft = dataLft.w / distLft;
             float weightedValTop = dataTop.w / distTop;
             float weightedValBot = dataBot.w / distBot;
 
-            float valInterpolated = (distRgt + distLft + distTop + distBot) * (weightedValRgt + weightedValLft + weightedValTop + weightedValBot);
+            float valInterpolated = normalizer * (weightedValRgt + weightedValLft + weightedValTop + weightedValBot);
 
-            gl_FragColor = vec4(valInterpolated, 0, 0, 1);
+            gl_FragColor = vec4(valInterpolated * 255.0 / 10.0, 0, 0, 0.7);
         }
         `);
         this.bundle = new ElementsBundle(program, {
@@ -127,7 +130,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             'a_texturePosition': new AttributeData(new Float32Array(colsAndRows), 'vec2', false),
         }, {
             'u_geoBbox': new UniformData('vec4', [0, 0, 360, 180]),
-            'u_textureSize': new UniformData('vec2', [nrCols - 1, nrRows - 1])
+            'u_textureSize': new UniformData('vec2', [nrCols, nrRows])
         }, {
             'u_dataTexture': new TextureData(dataMatrix255, 'ubyte4')
         }, 'triangles', new Index(index));
