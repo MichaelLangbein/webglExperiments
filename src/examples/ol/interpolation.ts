@@ -1,12 +1,11 @@
 import { Map, View } from 'ol';
-import { Vector as VectorLayer, Tile as TileLayer } from 'ol/layer';
+import { Vector as VectorLayer, Tile as TileLayer, Vector } from 'ol/layer';
 import { OSM } from 'ol/source';
 import { GeoJSON } from 'ol/format';
 import { Vector as VectorSource } from 'ol/source';
 
-import { InterpolationLayer } from '../../utils/ol/interpolation';
-import { Style, Text } from 'ol/style';
-import { FeatureLike } from 'ol/Feature';
+import { SplineLayer } from '../../utils/ol/cubicSplines';
+import { InverseDistanceLayer } from '../../utils/ol/inverseDistance';
 
 
 
@@ -24,13 +23,19 @@ fetch('assets/testdata.json').then((response: Response) => {
         });
         map.addLayer(dataLayer);
 
-        const interpolLayer = new InterpolationLayer({
+        // const splineLayer = new SplineLayer({
+        //     source: new VectorSource({
+        //         features: new GeoJSON().readFeatures(data)
+        //     })
+        // });
+        // map.addLayer(splineLayer);
+
+        const intpLayer = new InverseDistanceLayer({
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data)
             })
         });
-        map.addLayer(interpolLayer);
-
+        map.addLayer(intpLayer);
 
     });
 });
