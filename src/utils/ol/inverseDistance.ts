@@ -121,39 +121,35 @@ export class InverseDistanceRenderer extends LayerRenderer<VectorLayer> {
             float factor = 1.0;
             vec2 deltaX = factor * vec2(1.0, 0.0);
             vec2 deltaY = factor * vec2(0.0, 1.0);
-            vec4 dataCtr = texture2D(u_dataTexture, v_texturePosition / u_textureSize );
-            vec4 dataRgt = texture2D(u_dataTexture, (v_texturePosition + deltaX) / u_textureSize );
-            vec4 dataLft = texture2D(u_dataTexture, (v_texturePosition - deltaX) / u_textureSize );
-            vec4 dataBot = texture2D(u_dataTexture, (v_texturePosition + deltaY) / u_textureSize );
-            vec4 dataTop = texture2D(u_dataTexture, (v_texturePosition - deltaY) / u_textureSize );
 
-            vec2 geoPosCtr = readCoordsFromTexture(dataCtr);
-            vec2 geoPosRgt = readCoordsFromTexture(dataRgt);
-            vec2 geoPosLft = readCoordsFromTexture(dataLft);
-            vec2 geoPosTop = readCoordsFromTexture(dataTop);
-            vec2 geoPosBot = readCoordsFromTexture(dataBot);
+            vec4 dataTL = texture2D(u_dataTexture, v_texturePosition / u_textureSize);
+            vec4 dataTR = texture2D(u_dataTexture, (v_texturePosition + deltaX) / u_textureSize );
+            vec4 dataBL = texture2D(u_dataTexture, (v_texturePosition + deltaY) / u_textureSize );
+            vec4 dataBR = texture2D(u_dataTexture, (v_texturePosition + deltaX + deltaY) / u_textureSize );
 
-            float valueCtr = readValueFromTexture(dataCtr);
-            float valueRgt = readValueFromTexture(dataRgt);
-            float valueLft = readValueFromTexture(dataLft);
-            float valueTop = readValueFromTexture(dataTop);
-            float valueBot = readValueFromTexture(dataBot);
+            vec2 geoPosTL = readCoordsFromTexture(dataTL);
+            vec2 geoPosTR = readCoordsFromTexture(dataTR);
+            vec2 geoPosBL = readCoordsFromTexture(dataBL);
+            vec2 geoPosBR = readCoordsFromTexture(dataBR);
 
-            float distCtr = distance(geoPosCtr, v_geoPosition);
-            float distRgt = distance(geoPosRgt, v_geoPosition);
-            float distLft = distance(geoPosLft, v_geoPosition);
-            float distTop = distance(geoPosTop, v_geoPosition);
-            float distBot = distance(geoPosBot, v_geoPosition);
+            float valueTL = readValueFromTexture(dataTL);
+            float valueTR = readValueFromTexture(dataTR);
+            float valueBL = readValueFromTexture(dataBL);
+            float valueBR = readValueFromTexture(dataBR);
 
-            float normalizer = 1.0 / ((1.0 / (distCtr * distCtr)) + (1.0 / (distTop * distTop)) + (1.0 / (distBot * distBot)) + (1.0 / (distLft * distLft)) + (1.0 / (distRgt * distRgt)));
-            float weightedValCtr = dataCtr.w / ( distCtr * distCtr );
-            float weightedValTop = dataTop.w / ( distTop * distTop );
-            float weightedValBot = dataBot.w / ( distBot * distBot );
-            float weightedValRgt = dataRgt.w / ( distRgt * distRgt );
-            float weightedValLft = dataLft.w / ( distLft * distLft );
+            float distTL = distance(geoPosTL, v_geoPosition);
+            float distTR = distance(geoPosTR, v_geoPosition);
+            float distBL = distance(geoPosBL, v_geoPosition);
+            float distBR = distance(geoPosBR, v_geoPosition);
 
-            float valInterpolated = normalizer * (weightedValCtr + weightedValTop + weightedValBot + weightedValLft + weightedValRgt);
-            float valInterpolatedNormalized = 5.0 * (valInterpolated - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
+            float normalizer = 1.0 / ((1.0 / (distTL * distTL)) + (1.0 / (distTR * distTR)) + (1.0 / (distBL * distBL)) + (1.0 / (distBR * distBR)));
+            float weightedValTL = valueTL / ( distTL * distTL );
+            float weightedValTR = valueTR / ( distTR * distTR );
+            float weightedValBL = valueBL / ( distBL * distBL );
+            float weightedValBR = valueBR / ( distBR * distBR );
+
+            float valInterpolated = normalizer * (weightedValTL + weightedValTR + weightedValBL + weightedValBR);
+            float valInterpolatedNormalized = (valInterpolated - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
 
             gl_FragColor = vec4(valInterpolatedNormalized, valInterpolatedNormalized, valInterpolatedNormalized, 0.7);
         }
