@@ -51,9 +51,11 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
 
         const nrCols = features.reduce((carry, val) => val.getProperties()['col'] > carry ? val.getProperties()['col'] : carry, 0) + 1;
         const nrRows = features.reduce((carry, val) => val.getProperties()['row'] > carry ? val.getProperties()['row'] : carry, 0) + 1;
-        const lowerLeft = (features.find(f => f.getProperties()['row'] === nrRows - 1 && f.getProperties()['col'] === 0).getGeometry() as Point).getCoordinates();
-        const upperRight = (features.find(f => f.getProperties()['row'] === 0 && f.getProperties()['col'] === nrCols - 1).getGeometry() as Point).getCoordinates();
-        const gridBounds = [... lowerLeft, ...upperRight];
+        const minX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const minY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const maxX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const maxY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const gridBounds = [minX, minY, maxX, maxY];
         const minVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val < carry ? val : carry, 100000);
         const maxVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val > carry ? val : carry, -100000);
         const valueBounds = [minVal, maxVal];
@@ -67,7 +69,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             const val = feature.getProperties()['value'];
             const coords = (feature.getGeometry() as Point).getCoordinates();
             const xNormalized = 255 * (coords[0] - gridBounds[0]) / (gridBounds[2] - gridBounds[0]);
-            const yNormalized = 255 * (coords[0] - gridBounds[1]) / (gridBounds[3] - gridBounds[1]);
+            const yNormalized = 255 * (coords[1] - gridBounds[1]) / (gridBounds[3] - gridBounds[1]);
             const valNormalized = 255 * (val - valueBounds[0]) / (valueBounds[1] - valueBounds[0]);
             dataMatrix255[row][col] = [id, xNormalized, yNormalized, valNormalized];
             colsAndRows.push(col, row);
@@ -115,97 +117,170 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             return textureData[3] * (u_valueBounds[1] - u_valueBounds[0]) + u_valueBounds[0];
         }
 
-        mat4 kernel = mat4(
-             0,  2,  0,  0,
-            -1,  0,  1,  0,
-             2, -5,  4, -1,
-            -1,  3, -3,  1
-        );
+        float splineInterpolate(
+                float x, float y, float x0, float y0, float x1, float y1,
+                float f00, float f01, float fy00, float fy01,
+                float f10, float f11, float fy10, float fy11,
+                float fx00, float fx01, float fxy00, float fxy01,
+                float fx10, float fx11, float fxy10, float fxy11
+        ) {
+            mat4 alpha = mat4(
+                1, 0, 0, 0,
+                0, 0, 1, 0,
+                -3, 3, -2, -1,
+                2, -2, 1, 1
+            ) * mat4(
+                f00, f01, fy00, fy01,
+                f10, f11, fy10, fy11,
+                fx00, fx01, fxy00, fxy01,
+                fx10, fx11, fxy10, fxy11
+            ) * mat4(
+                1, 0, -3, 2,
+                0, 0, 3, -2,
+                0, 1, -2, 1,
+                0, 0, -1, 1
+            );
 
-        float convIntp1D(float t, float fm1, float f0, float f1, float f2) {
-            return 0.5 * dot(
-                vec4(1, t, t*t, t*t*t) * kernel, 
-                vec4(fm1, f0, f1, f2)
+            float xM = (x - x0) / (x1 - x0);
+            float yM = (y - y0) / (y1 - y0);
+
+            return dot(
+                vec4(1, xM, xM*xM, xM*xM*xM) * alpha,
+                vec4(1, yM, yM*yM, yM*yM*yM)
             );
         }
 
-        float convIntp2D(float tx, float ty,
-                        float fm1m1, float f0m1, float f1m1, float f2m1,
-                        float fm10 , float f00 , float f10 , float f20,
-                        float fm11 , float f01 , float f11 , float f21,
-                        float fm12 , float f02 , float f12 , float f22
-            ) {
-            float bm1 = convIntp1D(tx, fm1m1, f0m1, f1m1, f2m1);
-            float b0  = convIntp1D(tx, fm10 , f00 , f10 , f20 );
-            float b1  = convIntp1D(tx, fm11 , f01 , f11 , f21 );
-            float b2  = convIntp1D(tx, fm12 , f02 , f12 , f22 );
-            float p = convIntp1D(ty, bm1, b0, b1, b2);
-            return p;
-        }
+
+        // from http://www.java-gaming.org/index.php?topic=35123.0
+vec4 cubic(float v){
+    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+    vec4 s = n * n * n;
+    float x = s.x;
+    float y = s.y - 4.0 * s.x;
+    float z = s.z - 4.0 * s.y + 6.0 * s.x;
+    float w = 6.0 - x - y - z;
+    return vec4(x, y, z, w) * (1.0/6.0);
+}
+
+vec4 textureBicubic(sampler2D sampler, vec2 texCoords){
+
+   vec2 texSize = textureSize(sampler, 0);
+   vec2 invTexSize = 1.0 / texSize;
+
+   texCoords = texCoords * texSize - 0.5;
+
+
+    vec2 fxy = fract(texCoords);
+    texCoords -= fxy;
+
+    vec4 xcubic = cubic(fxy.x);
+    vec4 ycubic = cubic(fxy.y);
+
+    vec4 c = texCoords.xxyy + vec2 (-0.5, +1.5).xyxy;
+
+    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+    vec4 offset = c + vec4 (xcubic.yw, ycubic.yw) / s;
+
+    offset *= invTexSize.xxyy;
+
+    vec4 sample0 = texture(sampler, offset.xz);
+    vec4 sample1 = texture(sampler, offset.yz);
+    vec4 sample2 = texture(sampler, offset.xw);
+    vec4 sample3 = texture(sampler, offset.yw);
+
+    float sx = s.x / (s.x + s.y);
+    float sy = s.z / (s.z + s.w);
+
+    return mix(
+       mix(sample3, sample2, sx), mix(sample1, sample0, sx)
+    , sy);
+}
 
         void main() {
-            float factor = 1.0;
-            vec2 deltaX = factor * vec2(1.0, 0.0);
-            vec2 deltaY = factor * vec2(0.0, 1.0);
+            // vec2 deltaX = vec2(1.0, 0.0);
+            // vec2 deltaY = vec2(0.0, 1.0);
 
-            vec4 texN1N1 = texture2D(u_dataTexture, (v_texturePosition -       deltaX -      deltaY) / u_textureSize );
-            vec4 tex0N1  = texture2D(u_dataTexture, (v_texturePosition                -      deltaY) / u_textureSize );
-            vec4 tex1N1  = texture2D(u_dataTexture, (v_texturePosition +       deltaX -      deltaY) / u_textureSize );
-            vec4 tex2N1  = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX -      deltaY) / u_textureSize );
-            vec4 texN10 = texture2D(u_dataTexture, (v_texturePosition -       deltaX               ) / u_textureSize );
-            vec4 tex00  = texture2D(u_dataTexture, (v_texturePosition                              ) / u_textureSize );
-            vec4 tex10  = texture2D(u_dataTexture, (v_texturePosition +       deltaX               ) / u_textureSize );
-            vec4 tex20  = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX               ) / u_textureSize );
-            vec4 texN11 = texture2D(u_dataTexture, (v_texturePosition -       deltaX +       deltaY) / u_textureSize );
-            vec4 tex01  = texture2D(u_dataTexture, (v_texturePosition                +       deltaY) / u_textureSize );
-            vec4 tex11  = texture2D(u_dataTexture, (v_texturePosition +       deltaX +       deltaY) / u_textureSize );
-            vec4 tex21  = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX +       deltaY) / u_textureSize );
-            vec4 texN12 = texture2D(u_dataTexture, (v_texturePosition -       deltaX + 2.0 * deltaY) / u_textureSize );
-            vec4 tex02  = texture2D(u_dataTexture, (v_texturePosition                + 2.0 * deltaY) / u_textureSize );
-            vec4 tex12  = texture2D(u_dataTexture, (v_texturePosition +       deltaX + 2.0 * deltaY) / u_textureSize );
-            vec4 tex22  = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX + 2.0 * deltaY) / u_textureSize );
+            // vec4 texN1N1 = texture2D(u_dataTexture, (v_texturePosition -       deltaX -       deltaY) / u_textureSize );
+            // vec4 texN10  = texture2D(u_dataTexture, (v_texturePosition                -       deltaY) / u_textureSize );
+            // vec4 texN11  = texture2D(u_dataTexture, (v_texturePosition +       deltaX -       deltaY) / u_textureSize );
+            // vec4 texN12  = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX -       deltaY) / u_textureSize );
+            // vec4 tex0N1  = texture2D(u_dataTexture, (v_texturePosition -       deltaX               ) / u_textureSize );
+            // vec4 tex00   = texture2D(u_dataTexture, (v_texturePosition                              ) / u_textureSize );
+            // vec4 tex01   = texture2D(u_dataTexture, (v_texturePosition +       deltaX               ) / u_textureSize );
+            // vec4 tex02   = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX               ) / u_textureSize );
+            // vec4 tex1N1  = texture2D(u_dataTexture, (v_texturePosition -       deltaX +       deltaY) / u_textureSize );
+            // vec4 tex10   = texture2D(u_dataTexture, (v_texturePosition                +       deltaY) / u_textureSize );
+            // vec4 tex11   = texture2D(u_dataTexture, (v_texturePosition +       deltaX +       deltaY) / u_textureSize );
+            // vec4 tex12   = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX +       deltaY) / u_textureSize );
+            // vec4 tex2N1  = texture2D(u_dataTexture, (v_texturePosition -       deltaX + 2.0 * deltaY) / u_textureSize );
+            // vec4 tex20   = texture2D(u_dataTexture, (v_texturePosition                + 2.0 * deltaY) / u_textureSize );
+            // vec4 tex21   = texture2D(u_dataTexture, (v_texturePosition +       deltaX + 2.0 * deltaY) / u_textureSize );
+            // vec4 tex22   = texture2D(u_dataTexture, (v_texturePosition + 2.0 * deltaX + 2.0 * deltaY) / u_textureSize );
 
-            vec2 geoLocN1N1 = readCoordsFromTexture(texN1N1);
-            vec2 geoLoc0N1 = readCoordsFromTexture(tex0N1);
-            vec2 geoLoc1N1 = readCoordsFromTexture(tex1N1);
-            vec2 geoLoc2N1 = readCoordsFromTexture(tex2N1);
-            vec2 geoLocN10 = readCoordsFromTexture(texN10);
-            vec2 geoLoc00 = readCoordsFromTexture(tex00);
-            vec2 geoLoc10 = readCoordsFromTexture(tex10);
-            vec2 geoLoc20 = readCoordsFromTexture(tex20);
-            vec2 geoLocN11 = readCoordsFromTexture(texN11);
-            vec2 geoLoc01 = readCoordsFromTexture(tex01);
-            vec2 geoLoc11 = readCoordsFromTexture(tex11);
-            vec2 geoLoc21 = readCoordsFromTexture(tex21);
-            vec2 geoLocN12 = readCoordsFromTexture(texN12);
-            vec2 geoLoc02 = readCoordsFromTexture(tex02);
-            vec2 geoLoc12 = readCoordsFromTexture(tex12);
-            vec2 geoLoc22 = readCoordsFromTexture(tex22);
+            // vec2 geoLocN1N1 = readCoordsFromTexture(texN1N1);
+            // vec2 geoLocN10 = readCoordsFromTexture(texN10);
+            // vec2 geoLocN11 = readCoordsFromTexture(texN11);
+            // vec2 geoLocN12 = readCoordsFromTexture(texN12);
+            // vec2 geoLoc0N1 = readCoordsFromTexture(tex0N1);
+            // vec2 geoLoc00 = readCoordsFromTexture(tex00);
+            // vec2 geoLoc01 = readCoordsFromTexture(tex01);
+            // vec2 geoLoc02 = readCoordsFromTexture(tex02);
+            // vec2 geoLoc1N1 = readCoordsFromTexture(tex1N1);
+            // vec2 geoLoc10 = readCoordsFromTexture(tex10);
+            // vec2 geoLoc11 = readCoordsFromTexture(tex11);
+            // vec2 geoLoc12 = readCoordsFromTexture(tex12);
+            // vec2 geoLoc2N1 = readCoordsFromTexture(tex2N1);
+            // vec2 geoLoc20 = readCoordsFromTexture(tex20);
+            // vec2 geoLoc21 = readCoordsFromTexture(tex21);
+            // vec2 geoLoc22 = readCoordsFromTexture(tex22);
 
-            float valueN1N1 = readValueFromTexture(texN1N1);
-            float value0N1 = readValueFromTexture(tex0N1);
-            float value1N1 = readValueFromTexture(tex1N1);
-            float value2N1 = readValueFromTexture(tex2N1);
-            float valueN10 = readValueFromTexture(texN10);
-            float value00 = readValueFromTexture(tex00);
-            float value10 = readValueFromTexture(tex10);
-            float value20 = readValueFromTexture(tex20);
-            float valueN11 = readValueFromTexture(texN11);
-            float value01 = readValueFromTexture(tex01);
-            float value11 = readValueFromTexture(tex11);
-            float value21 = readValueFromTexture(tex21);
-            float valueN12 = readValueFromTexture(texN12);
-            float value02 = readValueFromTexture(tex02);
-            float value12 = readValueFromTexture(tex12);
-            float value22 = readValueFromTexture(tex22);
+            // float valueN1N1 = readValueFromTexture(texN1N1);
+            // float valueN10 = readValueFromTexture(texN10);
+            // float valueN11 = readValueFromTexture(texN11);
+            // float valueN12 = readValueFromTexture(texN12);
+            // float value0N1 = readValueFromTexture(tex0N1);
+            // float value00 = readValueFromTexture(tex00);
+            // float value01 = readValueFromTexture(tex01);
+            // float value02 = readValueFromTexture(tex02);
+            // float value1N1 = readValueFromTexture(tex1N1);
+            // float value10 = readValueFromTexture(tex10);
+            // float value11 = readValueFromTexture(tex11);
+            // float value12 = readValueFromTexture(tex12);
+            // float value2N1 = readValueFromTexture(tex2N1);
+            // float value20 = readValueFromTexture(tex20);
+            // float value21 = readValueFromTexture(tex21);
+            // float value22 = readValueFromTexture(tex22);
 
-            vec2 offset0 = v_geoPosition - geoLoc00;
+            // float f00 = value00;
+            // float f10 = value10;
+            // float f01 = value01;
+            // float f11 = value11;
+            // float fx00 = value10 - valueN10;
+            // float fx01 = value02 - value00;
+            // float fx10 = value11 - value1N1;
+            // float fx11 = value12 - value10;
+            // float fy00 = value10 - valueN10;
+            // float fy01 = value11 - valueN11;
+            // float fy10 = value20 - value00;
+            // float fy11 = value21 - value01;
+            // float fxy00 = value11 - value10 - value01 + value00;
+            // float fxy10 = value21 - value20 - value11 + value10;
+            // float fxy01 = value12 - value11 - value02 + value01;
+            // float fxy11 = value22 - value21 - value12 + value11;
 
-            float interpolatedValue = convIntp2D(offset0.x, offset0.y,
-                valueN1N1, value0N1, value1N1, value2N1, valueN10, value00, value10, value20, valueN11, value01, value11, value21, valueN12, value02, value12, value22
-            );
+            // float interpolatedValue = splineInterpolate(
+            //     v_geoPosition.x, v_geoPosition.y, geoLoc00.x, geoLoc00.y, geoLoc11.x, geoLoc11.y,
+            //     f00, f01, fy00, fy01,
+            //     f10, f11, fy10, fy11,
+            //     fx00, fx01, fxy00, fxy01,
+            //     fx10, fx11, fxy10, fxy11
+            // );
 
-            gl_FragColor = vec4(interpolatedValue, 0, 0, 0.7);
+            float interpolatedValue = textureBicubic(u_dataTexture, v_texturePosition).w;
+
+
+            float valInterpolatedNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
+            gl_FragColor = vec4(valInterpolatedNormalized, valInterpolatedNormalized, valInterpolatedNormalized, 0.7);
         }
         `);
         this.bundle = new ElementsBundle(program, {

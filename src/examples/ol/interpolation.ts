@@ -23,19 +23,19 @@ fetch('assets/testdata.json').then((response: Response) => {
         });
         map.addLayer(dataLayer);
 
-        // const splineLayer = new SplineLayer({
-        //     source: new VectorSource({
-        //         features: new GeoJSON().readFeatures(data)
-        //     })
-        // });
-        // map.addLayer(splineLayer);
-
-        const intpLayer = new InverseDistanceLayer({
+        const splineLayer = new SplineLayer({
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data)
             })
         });
-        map.addLayer(intpLayer);
+        map.addLayer(splineLayer);
+
+        // const intpLayer = new InverseDistanceLayer({
+        //     source: new VectorSource({
+        //         features: new GeoJSON().readFeatures(data)
+        //     })
+        // });
+        // map.addLayer(intpLayer);
 
     });
 });
