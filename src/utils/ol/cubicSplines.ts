@@ -141,7 +141,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             return 1.0;
         }
 
-
+        // as per https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
         float biCubic(sampler2D textureSampler, vec2 textureSize, vec2 textureCoordinate) {
             float nSum = 0.0;
             float nDenom = 0.0;
