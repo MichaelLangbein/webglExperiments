@@ -4,7 +4,7 @@ import { OSM } from 'ol/source';
 import { GeoJSON } from 'ol/format';
 import { Vector as VectorSource } from 'ol/source';
 
-import { SplineLayer } from '../../utils/ol/cubicSplines';
+import { SplineLayer } from '../../utils/ol/cubicSplines2';
 import { InverseDistanceLayer } from '../../utils/ol/inverseDistance';
 
 
