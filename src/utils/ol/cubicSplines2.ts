@@ -139,6 +139,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             vec4 textureData12   = texture2D(textureSampler, (textureCoordinate + 1.0 * dX + 2.0 * dY) / textureSize);
             vec4 textureData22   = texture2D(textureSampler, (textureCoordinate + 2.0 * dX + 2.0 * dY) / textureSize);
 
+            // values
             float f_1_1 = readValueFromTexture(textureData_1_1);
             float f0_1 = readValueFromTexture(textureData0_1);
             float f1_1 = readValueFromTexture(textureData1_1);
@@ -156,6 +157,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             float f12 = readValueFromTexture(textureData12);
             float f22 = readValueFromTexture(textureData22);
 
+            // 1st. derivatives [val/pixel]
             float fx0_1 = (f1_1 - f_1_1) / 2.0;
             float fx1_1 = (f2_1 - f0_1) / 2.0;
             float fx00 = (f10 - f_10) / 2.0;
@@ -173,6 +175,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             float fy20 = (f21 - f2_1) / 2.0;
             float fy21 = (f22 - f20) / 2.0;
 
+            // 2nd derivatives [val/pixel^2]
             float fxy00 = (fx01 - fx0_1) / 2.0;
             float fxy01 = (fx02 - fx00) / 2.0;
             float fxy10 = (fx11 - fx1_1) / 2.0;
@@ -206,7 +209,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             vec4 xVec = vec4(1, x, x*x, x*x*x);
             vec4 yVec = vec4(1, y, y*y, y*y*y);
 
-            return dot(xVec * coefMatrix, yVec);
+            return dot(xVec, coefMatrix * yVec);
         }
 
         float bicubicInterpolationRectilinear(
@@ -222,13 +225,13 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
            vec4 xVec = vec4(1, xM, xM*xM, xM*xM*xM);
            vec4 yVec = vec4(1, yM, yM*yM, yM*yM*yM);
 
-            return dot(xVec * coefMatrix, yVec);
+            return dot(xVec, coefMatrix * yVec);
         }
 
         void main() {
+            mat4 derivativeMatrix = calcDerivativeMatrix( u_dataTexture, v_texturePosition, u_textureSize );
             float x = fract(v_texturePosition.x);
             float y = fract(v_texturePosition.y);
-            mat4 derivativeMatrix = calcDerivativeMatrix( u_dataTexture, v_texturePosition, u_textureSize );
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);
@@ -239,7 +242,6 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             'a_texturePosition': new AttributeData(new Float32Array(colsAndRows), 'vec2', false),
         }, {
             'u_geoBbox': new UniformData('vec4', [0, 0, 360, 180]),
-            // 'u_gridBounds': new UniformData('vec4', gridBounds),
             'u_valueBounds': new UniformData('vec2', valueBounds),
             'u_textureSize': new UniformData('vec2', [nrCols, nrRows])
         }, {
