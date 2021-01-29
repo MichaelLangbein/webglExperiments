@@ -235,9 +235,6 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);
-            // mat4 coefMatrix = calcBicubicCoefMatrix(derivativeMatrix);
-            // float v = coefMatrix[0][1] / 1.0;
-            // gl_FragColor = vec4(v, v, v, 1.0);
         }
         `);
         this.bundle = new ElementsBundle(program, {
