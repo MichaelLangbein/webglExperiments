@@ -191,15 +191,15 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
 
         mat4 calcBicubicCoefMatrix(mat4 derivativeMatrix) {
             return mat4(
-                 1,  0,  0,  0,
-                 0,  0,  1,  0,
-                -3,  3, -2, -1,
-                 2, -2,  1,  1
-            ) * derivativeMatrix * mat4(
-                 1,  0, -3,  2,
+                1,  0, -3,  2,
                  0,  0,  3, -2,
                  0,  1, -2,  1,
                  0,  0, -1,  1
+            ) * derivativeMatrix * mat4(
+                1,  0,  0,  0,
+                0,  0,  1,  0,
+               -3,  3, -2, -1,
+                2, -2,  1,  1
             );
         }
 
@@ -209,7 +209,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             vec4 xVec = vec4(1, x, x*x, x*x*x);
             vec4 yVec = vec4(1, y, y*y, y*y*y);
 
-            return dot(xVec, coefMatrix * yVec);
+            return dot(yVec, coefMatrix * xVec);
         }
 
         float bicubicInterpolationRectilinear(
@@ -235,6 +235,9 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);
+            // mat4 coefMatrix = calcBicubicCoefMatrix(derivativeMatrix);
+            // float v = coefMatrix[0][1] / 1.0;
+            // gl_FragColor = vec4(v, v, v, 1.0);
         }
         `);
         this.bundle = new ElementsBundle(program, {
