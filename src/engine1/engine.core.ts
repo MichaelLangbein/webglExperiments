@@ -279,9 +279,9 @@ export class TextureData {
  */
 export class Index {
 
-    data: Uint32Array;             // raw data, user-provided
+    data: Uint16Array;             // raw data, user-provided
     index: IndexBufferObject;     // buffer on gpu
-    constructor(indices: Uint32Array) {
+    constructor(indices: Uint16Array) {
         this.data = indices;
     }
 
@@ -296,7 +296,7 @@ export class Index {
         bindIndexBuffer(gl, this.index);
     }
 
-    update(data: Uint32Array) {
+    update(data: Uint16Array) {
         this.data = data;
     }
 }
@@ -579,7 +579,7 @@ export class ElementsBundle extends Bundle {
     }
 
 
-    public updateIndex(context: Context, newData: Uint32Array): void {
+    public updateIndex(context: Context, newData: Uint16Array): void {
         this.index.data = newData;
 
     }

@@ -5,7 +5,7 @@ import { FrameState } from 'ol/PluggableMap';
 import Point from 'ol/geom/Point';
 
 import Delaunator from 'delaunator';
-import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine2/engine.core';
+import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine1/engine.core';
 
 
 
@@ -47,7 +47,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
         const features = layer.getSource().getFeatures().sort((f1, f2) => f1.getProperties()['id'] > f2.getProperties()['id'] ? 1 : -1);
         const coordinates = features.map(f => (f.getGeometry() as Point).getCoordinates());
         const d = Delaunator.from(coordinates);
-        const index = d.triangles;
+        const index = new Uint16Array(d.triangles.buffer);
 
         const nrCols = features.reduce((carry, val) => val.getProperties()['col'] > carry ? val.getProperties()['col'] : carry, 0) + 1;
         const nrRows = features.reduce((carry, val) => val.getProperties()['row'] > carry ? val.getProperties()['row'] : carry, 0) + 1;
@@ -75,7 +75,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             colsAndRows.push(col, row);
         }
 
-        this.context = new Context(this.canvas.getContext('webgl2') as WebGL2RenderingContext, false);
+        this.context = new Context(this.canvas.getContext('webgl') as WebGL2RenderingContext, false);
         const program = new Program(`
         precision mediump float;
         attribute vec2 a_geoPosition;
@@ -104,14 +104,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
         varying vec2 v_geoPosition;
         uniform sampler2D u_dataTexture;
         uniform vec2 u_textureSize;
-        uniform vec4 u_gridBounds;
         uniform vec2 u_valueBounds;
-
-        vec2 readCoordsFromTexture(vec4 textureData) {
-            float x = textureData[1] * (u_gridBounds[2] - u_gridBounds[0]) + u_gridBounds[0];
-            float y = textureData[2] * (u_gridBounds[3] - u_gridBounds[1]) + u_gridBounds[1];
-            return vec2(x, y);
-        }
 
         float readValueFromTexture(vec4 textureData) {
             return textureData[3] * (u_valueBounds[1] - u_valueBounds[0]) + u_valueBounds[0];
