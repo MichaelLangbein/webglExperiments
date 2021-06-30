@@ -1,38 +1,42 @@
-import { Vector as VectorLayer } from 'ol/layer';
-import { Options } from 'ol/layer/BaseVector';
-import LayerRenderer from 'ol/renderer/Layer';
-import { FrameState } from 'ol/PluggableMap';
-import Point from 'ol/geom/Point';
-
 import Delaunator from 'delaunator';
 import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine1/engine.core';
+import { ImageCanvas } from 'ol/source';
+import Projection from 'ol/proj/Projection';
+import { FeatureCollection, Point } from 'geojson';
 
 
 
-export interface SplineLayerOptions extends Options {}
 
-export class SplineLayer extends VectorLayer {
+export function createSplineSource(data: FeatureCollection, projection: Projection): ImageCanvas {
 
-    constructor(opt_options: SplineLayerOptions) {
-        super(opt_options);
-    }
+    const splineRenderer = new SplineRenderer(data);
 
-    createRenderer(): LayerRenderer<VectorLayer> {
-        const renderer = new SplineRenderer(this);
-        return renderer;
-    }
+    const splineSource = new ImageCanvas({
+        canvasFunction: (extent, imageResolution, devicePixelRatio, imageSize, projection) => {
+            console.log('canvasFunction', extent, imageResolution, devicePixelRatio, imageSize)
+            splineRenderer.setBbox(extent);
+            splineRenderer.setCanvasSize(imageSize[0], imageSize[1]);
+            const canvas = splineRenderer.renderFrame();
+            return canvas;
+        },
+        projection, ratio: 1
+    });
+
+    return splineSource;
 }
 
 
 
-export class SplineRenderer extends LayerRenderer<VectorLayer> {
+
+
+
+class SplineRenderer {
 
     private canvas: HTMLCanvasElement;
     private bundle: Bundle;
     private context: Context;
 
-    constructor(layer: VectorLayer) {
-        super(layer);
+    constructor(data: FeatureCollection) {
 
         this.canvas = document.createElement('canvas') as HTMLCanvasElement;
         this.canvas.width = 600;
@@ -44,30 +48,30 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
         this.canvas.style.setProperty('height', '100%');
 
 
-        const features = layer.getSource().getFeatures().sort((f1, f2) => f1.getProperties()['id'] > f2.getProperties()['id'] ? 1 : -1);
-        const coordinates = features.map(f => (f.getGeometry() as Point).getCoordinates());
+        const features = data.features.sort((f1, f2) => f1.properties['id'] > f2.properties['id'] ? 1 : -1);
+        const coordinates = features.map(f => (f.geometry as Point).coordinates);
         const d = Delaunator.from(coordinates);
         const index = new Uint16Array(d.triangles.buffer);
 
-        const nrCols = features.reduce((carry, val) => val.getProperties()['col'] > carry ? val.getProperties()['col'] : carry, 0) + 1;
-        const nrRows = features.reduce((carry, val) => val.getProperties()['row'] > carry ? val.getProperties()['row'] : carry, 0) + 1;
-        const minX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const minY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const maxX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
-        const maxY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const nrCols = features.reduce((carry, val) => val.properties['col'] > carry ? val.properties['col'] : carry, 0) + 1;
+        const nrRows = features.reduce((carry, val) => val.properties['row'] > carry ? val.properties['row'] : carry, 0) + 1;
+        const minX = features.map(f => (f.geometry as Point).coordinates[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const minY = features.map(f => (f.geometry as Point).coordinates[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const maxX = features.map(f => (f.geometry as Point).coordinates[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const maxY = features.map(f => (f.geometry as Point).coordinates[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
         const gridBounds = [minX, minY, maxX, maxY];
-        const minVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val < carry ? val : carry, 100000);
-        const maxVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val > carry ? val : carry, -100000);
+        const minVal = features.map(f => f.properties['value']).reduce((carry, val) => val < carry ? val : carry, 100000);
+        const maxVal = features.map(f => f.properties['value']).reduce((carry, val) => val > carry ? val : carry, -100000);
         const valueBounds = [minVal, maxVal];
 
         const dataMatrix255: number[][][] = new Array(nrRows).fill(0).map(v => new Array(nrRows).fill(0).map(v => [0, 0, 0, 0]));
         const colsAndRows: number[] = [];
         for (const feature of features) {
-            const id = feature.getProperties()['id'];
-            const row = feature.getProperties()['row'];
-            const col = feature.getProperties()['col'];
-            const val = feature.getProperties()['value'];
-            const coords = (feature.getGeometry() as Point).getCoordinates();
+            const id = feature.properties['id'];
+            const row = feature.properties['row'];
+            const col = feature.properties['col'];
+            const val = feature.properties['value'];
+            const coords = (feature.geometry as Point).coordinates;
             const xNormalized = 255 * (coords[0] - gridBounds[0]) / (gridBounds[2] - gridBounds[0]);
             const yNormalized = 255 * (coords[1] - gridBounds[1]) / (gridBounds[3] - gridBounds[1]);
             const valNormalized = 255 * (val - valueBounds[0]) / (valueBounds[1] - valueBounds[0]);
@@ -75,7 +79,7 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             colsAndRows.push(col, row);
         }
 
-        this.context = new Context(this.canvas.getContext('webgl') as WebGLRenderingContext, false);
+        this.context = new Context(this.canvas.getContext('webgl', {preserveDrawingBuffer: true}) as WebGLRenderingContext, false);
         const program = new Program(`
         precision mediump float;
         attribute vec2 a_geoPosition;
@@ -241,16 +245,14 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
             'u_dataTexture': new TextureData(dataMatrix255, 'ubyte4')
         }, 'triangles', new Index(index));
 
-
         this.bundle.upload(this.context);
         this.bundle.initVertexArray(this.context);
         this.bundle.bind(this.context);
-        this.bundle.draw(this.context);
+        this.bundle.draw(this.context, [0, 0, 0, 255]);
 
     }
 
-    prepareFrame(frameState: FrameState): boolean {
-        const newBbox = frameState.extent;
+    setBbox(newBbox: number[]): boolean {
         if (newBbox !== this.bundle.uniforms['u_geoBbox'].value) {
             this.bundle.updateUniformData(this.context, 'u_geoBbox', newBbox);
             this.bundle.upload(this.context);
@@ -258,12 +260,15 @@ export class SplineRenderer extends LayerRenderer<VectorLayer> {
         return true;
     }
 
-    renderFrame(frameState: FrameState, target: HTMLElement): HTMLElement {
+    setCanvasSize(width: number, height: number): void {
+        if (this.canvas.width !== width) this.canvas.width = width;
+        if (this.canvas.height !== height) this.canvas.height = height;
+    }
+
+    renderFrame(): HTMLCanvasElement {
         this.bundle.draw(this.context);
         return this.canvas;
     }
 
-    renderDeclutter(frameState: FrameState): void {
-    }
 }
 
