@@ -17,6 +17,29 @@ export function first<T>(arr: T[], condition: (el: T) => boolean): T | null {
     return null;
 }
 
+
+export function interpolate(x0: number, y0: number, x1: number, y1: number, x: number): number {
+    const degree = (x - x0) / (x1 - x0);
+    const interp = degree * (y1 - y0) + y0;
+    return interp;
+}
+
+export function interpolateRangewise(x: number, xs: number[], ys: number[]): number {
+    if (x < xs[0]) return ys[0];
+
+    for (let i = 0; i < xs.length - 1; i++) {
+        if (xs[i] <= x && x < xs[i + 1]) {
+            return interpolate(xs[i], ys[i], xs[i + 1], ys[i + 1], x);
+        }
+    }
+
+    if (xs[xs.length - 1] <= x) {
+        return ys[ys.length - 1];
+    }
+}
+
+
+
 /** ------------------------------------------------------------ /
  *       Powers
  * -------------------------------------------------------------*/
