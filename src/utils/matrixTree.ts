@@ -4,7 +4,7 @@ import { reprojectDataAlongPrincipalAxes } from "./pcaAlign";
 export interface DataPoint {
     x: number;
     y: number;
-    data: any;
+    id: any;
 }
 
 interface Bbox {
@@ -75,7 +75,7 @@ function splitBbox(splitLine: SplitLine, bbox: Bbox): [Bbox, Bbox] {
 interface NodeData {
     bbox: Bbox;
     data: DataPoint[];
-};
+}
 
 class MatrixTreeNode {
 
@@ -188,7 +188,7 @@ function sortTreeDataIntoMatrix(treeData: NodeData[]): any[][] {
             c += 1;
             const colData = rowData.find(td => td.bbox.xMin === colX);
             if (colData && colData.data.length > 0) {
-                matrix[r][c] = colData.data[0].data;
+                matrix[r][c] = colData.data[0].id;
             }
         }
     }
@@ -202,7 +202,7 @@ function sortTreeDataIntoMatrix(treeData: NodeData[]): any[][] {
  *
  * ```js
  * const data: DataPoint[] = ...
- * const matrix: number[][] = getMatrixData(data);
+ * const matrix: number[][] = convertToDataMatrix(data);
  * ```
  *
  * Whereas normally a binary tree stops branching once there is 1 data point at every leave,
@@ -240,18 +240,18 @@ export function convertToDataMatrix(data: DataPoint[]): any[][] {
 export function assignRowAndColToFeatureGrid(data: Feature<Point>[], idProperty: string): Feature<Point>[] {
 
     const coords = data.map(f => f.geometry.coordinates);
-    const values = data.map(f => f.properties[idProperty]);
+    const ids = data.map(f => f.properties[idProperty]);
 
     // Step 1: reproject data along principal axes, so that it's easier to parse into a matrix.
     const reprojectedData = reprojectDataAlongPrincipalAxes(coords);
 
     // Step 2: parse features' ids into a matrix
     const dataPoints: DataPoint[] = [];
-    for (let i = 0; i < values.length; i++) {
+    for (let i = 0; i < ids.length; i++) {
         dataPoints.push({
             x: reprojectedData.reprojectedData[i][0],
             y: reprojectedData.reprojectedData[i][1],
-            data: values[i]
+            id: ids[i]
         });
     }
     const parsedData = convertToDataMatrix(dataPoints);

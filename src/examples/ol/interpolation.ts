@@ -1,15 +1,17 @@
 import { Map, View } from 'ol';
 import { GeoJSON } from 'ol/format';
-import { OSM, XYZ, ImageCanvas, Vector as VectorSource  } from 'ol/source';
-import { Vector as VectorLayer, Tile as TileLayer, Vector, Image as ImageLayer, Tile } from 'ol/layer';
+import { OSM, XYZ, Vector as VectorSource } from 'ol/source';
+import { Vector as VectorLayer, Tile as TileLayer, Image as ImageLayer } from 'ol/layer';
 import RasterSource from 'ol/source/Raster';
-import Static from 'ol/source/ImageStatic';
-import { createSplineSource } from '../../utils/ol/cubicSplines3';
-import { SplineLayer } from '../../utils/ol/cubicSplines2';
-import Delaunator from 'delaunator';
-import bbox from '@turf/bbox';
-import { FeatureCollection, Point } from 'geojson';
 import 'ol/ol.css';
+
+import { FeatureCollection, Point } from 'geojson';
+
+import { createSplineSource, GridPointProps } from '../../utils/ol/cubicSplines3';
+
+import CircleStyle from 'ol/style/Circle';
+import { Fill, Style } from 'ol/style';
+import { assignRowAndColToFeatureGrid } from '../../utils/matrixTree';
 
 
 function interpolate(x0: number, y0: number, x1: number, y1: number, x: number): number {
@@ -38,13 +40,7 @@ function interpolateRangewise(x: number, xs: number[], ys: number[]): number {
 /**
  * @TODO:
  * - splineSource has strange line-artifacts
- *      - don't even align with triangle edges
- *          - rounding error?
- * - handle non-power2 textures
- * - interpolation messed up if nonsquare datapoints
- *      - maybe buffer such that always 16 neighbors?
  * - out of memory error
- * 
  */
 
 
@@ -54,7 +50,7 @@ const fpser = document.getElementById('fpser');
 
 
 fetch('assets/testdata2.json').then((response: Response) => {
-    response.json().then((data: FeatureCollection) => {
+    response.json().then((data: FeatureCollection<Point, GridPointProps>) => {
 
         const splineSource = createSplineSource(data, map.getView().getProjection());
 
@@ -72,9 +68,9 @@ fetch('assets/testdata2.json').then((response: Response) => {
                 // if inside interpolated range and water ...
                 if (splinePixel[3] > 0 && waterPixel[3] > 0) {
                     const v = splinePixel[0];
-                    const r = interpolateRangewise(v, [50, 130, 210], [244, 168, 67]);
-                    const g = interpolateRangewise(v, [50, 130, 210], [243, 221, 181]);
-                    const b = interpolateRangewise(v, [50, 130, 210], [219, 181, 202]);
+                    const r = interpolateRangewise(v, [50, 130, 210], [67, 168, 244]);
+                    const g = interpolateRangewise(v, [50, 130, 210], [181, 221, 243]);
+                    const b = interpolateRangewise(v, [50, 130, 210], [202, 181, 219]);
 
                     return [r, g, b, waterPixel[3]];
                     // return [splinePixel[0], splinePixel[1], splinePixel[2], waterPixel[3]];
@@ -95,6 +91,39 @@ fetch('assets/testdata2.json').then((response: Response) => {
             }),
         });
         map.addLayer(dataLayer);
+
+    });
+});
+
+
+
+
+fetch('assets/waveheight.json').then((response: Response) => {
+    response.json().then((data: FeatureCollection<Point>) => {
+
+
+        const instrumentedData = assignRowAndColToFeatureGrid(data.features, 'id');
+        map.addLayer(new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures({
+                    type: 'FeatureCollection',
+                    features: instrumentedData
+                })
+            }),
+            style: (f) => {
+                const row = f.getProperties()['row'];
+                const col = f.getProperties()['col'];
+                return new Style({
+                    image: new CircleStyle({
+                        radius: 10,
+                        fill: new Fill({
+                            color: `rgba(${row}, ${col}, 0.0, 1.0)`
+                        })
+                    })
+                });
+            }
+        }));
+
 
     });
 });

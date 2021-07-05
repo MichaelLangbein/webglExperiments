@@ -64,7 +64,7 @@ for (let i = 0; i < values.length; i++) {
     reprojectedData.push({
         x: reprojectedCoords.reprojectedData[i][0],
         y: reprojectedCoords.reprojectedData[i][1],
-        data: values[i]
+        id: values[i]
     });
 }
 
@@ -78,7 +78,7 @@ const matrixData = convertToDataMatrix(reprojectedData);
 const reprojectedFeatures = reprojectedData.map(o => ({
     type: 'Feature',
     properties: {
-        value: o.data
+        value: o.id
     },
     geometry: {
         type: 'Point',

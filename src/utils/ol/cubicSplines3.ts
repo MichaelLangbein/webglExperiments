@@ -1,15 +1,18 @@
 import Delaunator from 'delaunator';
-import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine2/engine.core';
+import { Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine2/engine.core';
 import { ImageCanvas } from 'ol/source';
 import Projection from 'ol/proj/Projection';
 import { FeatureCollection, Point } from 'geojson';
-import { downloadCanvas } from '../download';
-import { nextPowerOf } from '../math';
 
 
+export interface GridPointProps {
+    id: number;
+    col: number;
+    row: number;
+    value: number;
+}
 
-
-export function createSplineSource(data: FeatureCollection, projection: Projection): ImageCanvas {
+export function createSplineSource(data: FeatureCollection<Point, GridPointProps>, projection: Projection): ImageCanvas {
 
     const splineRenderer = new SplineRenderer(data);
 
@@ -37,7 +40,7 @@ class SplineRenderer {
     private bundle: Bundle;
     private context: Context;
 
-    constructor(data: FeatureCollection) {
+    constructor(data: FeatureCollection<Point, GridPointProps>) {
 
         this.canvas = document.createElement('canvas') as HTMLCanvasElement;
         this.canvas.width = 600;
@@ -49,20 +52,20 @@ class SplineRenderer {
         this.canvas.style.setProperty('height', '100%');
 
 
-        const features = data.features.sort((f1, f2) => f1.properties['id'] > f2.properties['id'] ? 1 : -1);
-        const coordinates = features.map(f => (f.geometry as Point).coordinates);
+        const features = data.features.sort((f1, f2) => f1.properties.id > f2.properties.id ? 1 : -1);
+        const coordinates = features.map(f => f.geometry.coordinates);
         const d = Delaunator.from(coordinates);
         const index = new Uint32Array(d.triangles.buffer);
 
-        const nrCols = features.reduce((carry, val) => val.properties['col'] > carry ? val.properties['col'] : carry, 0) + 1;
-        const nrRows = features.reduce((carry, val) => val.properties['row'] > carry ? val.properties['row'] : carry, 0) + 1;
-        const minX = features.map(f => (f.geometry as Point).coordinates[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const minY = features.map(f => (f.geometry as Point).coordinates[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const maxX = features.map(f => (f.geometry as Point).coordinates[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
-        const maxY = features.map(f => (f.geometry as Point).coordinates[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const nrCols = features.reduce((carry, val) => val.properties.col > carry ? val.properties.col : carry, 0) + 1;
+        const nrRows = features.reduce((carry, val) => val.properties.row > carry ? val.properties.row : carry, 0) + 1;
+        const minX = features.map(f => f.geometry.coordinates[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const minY = features.map(f => f.geometry.coordinates[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const maxX = features.map(f => f.geometry.coordinates[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const maxY = features.map(f => f.geometry.coordinates[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
         const gridBounds = [minX, minY, maxX, maxY];
-        const minVal = features.map(f => f.properties['value']).reduce((carry, val) => val < carry ? val : carry, 100000);
-        const maxVal = features.map(f => f.properties['value']).reduce((carry, val) => val > carry ? val : carry, -100000);
+        const minVal = features.map(f => f.properties.value).reduce((carry, val) => val < carry ? val : carry, 100000);
+        const maxVal = features.map(f => f.properties.value).reduce((carry, val) => val > carry ? val : carry, -100000);
         const valueBounds = [minVal, maxVal];
 
         const dataMatrix255: number[][][] = new Array(nrRows).fill(0)
@@ -70,11 +73,11 @@ class SplineRenderer {
                     .map(v => [0, 0, 0, 0]));
         const colsAndRows: number[] = [];
         for (const feature of features) {
-            const id = feature.properties['id'];
-            const row = feature.properties['row'];
-            const col = feature.properties['col'];
-            const val = feature.properties['value'];
-            const coords = (feature.geometry as Point).coordinates;
+            const id = feature.properties.id;
+            const row = feature.properties.row;
+            const col = feature.properties.col;
+            const val = feature.properties.value;
+            const coords = feature.geometry.coordinates;
             const xNormalized = 255 * (coords[0] - gridBounds[0]) / (gridBounds[2] - gridBounds[0]);
             const yNormalized = 255 * (coords[1] - gridBounds[1]) / (gridBounds[3] - gridBounds[1]);
             const valNormalized = 255 * (val - valueBounds[0]) / (valueBounds[1] - valueBounds[0]);
@@ -218,6 +221,8 @@ class SplineRenderer {
             mat4 derivativeMatrix = calcDerivativeMatrix( u_dataTexture, v_texturePosition, u_textureSize );
             float x = fract(v_texturePosition.x);
             float y = fract(v_texturePosition.y);
+            if (x > 0.998) { x = 1.0 - x; }
+            if (y > 0.998) { y = 1.0 - y; }
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);
