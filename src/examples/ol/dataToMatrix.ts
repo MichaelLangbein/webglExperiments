@@ -1,5 +1,5 @@
 // Algorithms
-import { convertToDataMatrix, DataPoint } from '../../utils/matrixTree';
+import { convertToDataMatrix, DataPoint } from '../../utils/gridFitting/matrixTree';
 
 // Ol
 import { Map, View } from 'ol';
@@ -9,10 +9,9 @@ import { GeoJSON } from 'ol/format';
 import 'ol/ol.css';
 import { FeatureLike } from 'ol/Feature';
 import Point from 'ol/geom/Point';
-import { scalarProduct, vectorAddition } from '../../utils/math';
 import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Circle } from 'ol/style';
-import { reprojectDataAlongPrincipalAxes } from '../../utils/pcaAlign';
+import { reprojectDataAlongPrincipalAxes } from '../../utils/gridFitting/pcaAlign';
 import { createPointGrid } from '../../utils/ol/createFeatures';
 
 // Others

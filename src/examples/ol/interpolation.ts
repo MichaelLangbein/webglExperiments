@@ -11,7 +11,7 @@ import { createSplineSource, GridPointProps } from '../../utils/ol/cubicSplines3
 
 import CircleStyle from 'ol/style/Circle';
 import { Fill, Style } from 'ol/style';
-import { assignRowAndColToFeatureGrid } from '../../utils/matrixTree';
+import { assignRowAndColToFeatureGrid } from '../../utils/gridFitting/matrixTree';
 
 
 function interpolate(x0: number, y0: number, x1: number, y1: number, x: number): number {
@@ -95,38 +95,6 @@ fetch('assets/testdata2.json').then((response: Response) => {
     });
 });
 
-
-
-
-fetch('assets/waveheight.json').then((response: Response) => {
-    response.json().then((data: FeatureCollection<Point>) => {
-
-
-        const instrumentedData = assignRowAndColToFeatureGrid(data.features, 'id');
-        map.addLayer(new VectorLayer({
-            source: new VectorSource({
-                features: new GeoJSON().readFeatures({
-                    type: 'FeatureCollection',
-                    features: instrumentedData
-                })
-            }),
-            style: (f) => {
-                const row = f.getProperties()['row'];
-                const col = f.getProperties()['col'];
-                return new Style({
-                    image: new CircleStyle({
-                        radius: 10,
-                        fill: new Fill({
-                            color: `rgba(${row}, ${col}, 0.0, 1.0)`
-                        })
-                    })
-                });
-            }
-        }));
-
-
-    });
-});
 
 const osm = new TileLayer({
     source: new OSM()
