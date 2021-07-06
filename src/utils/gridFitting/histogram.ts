@@ -80,7 +80,7 @@ function estimateGridDelta(data: FeatureCollection<Point, any>, precision = 4): 
         }
     }
     const deltaXSorted = keysSortedByValue(deltaXs);
-    const deltaX = Math.max(... deltaXSorted.slice(0, 40));
+    const deltaX = Math.max(... deltaXSorted.slice(0, 3));  // getting largest of the three most common deltaX's
 
     data.features
         .sort((a, b) => a.geometry.coordinates[1] < b.geometry.coordinates[1] ? 1 : -1);
@@ -97,7 +97,7 @@ function estimateGridDelta(data: FeatureCollection<Point, any>, precision = 4): 
         }
     }
     const deltaYSorted = keysSortedByValue(deltaYs);
-    const deltaY = Math.max(... deltaYSorted.slice(0, 40));
+    const deltaY = Math.max(... deltaYSorted.slice(0, 3));   // getting largest of the three most common deltaY's
 
     return {deltaX, deltaY};
 }

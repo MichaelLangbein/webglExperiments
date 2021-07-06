@@ -25,26 +25,27 @@ fetch('assets/waveheight.json').then((response: Response) => {
 
         // const instrumentedData = assignRowAndColUsingTree(data.features, 'id');
         const instrumentedData = assignRowAndColUsingHistogram(data);
-        // map.addLayer(new VectorLayer({
-        //     source: new VectorSource({
-        //         features: new GeoJSON().readFeatures(instrumentedData)
-        //     }),
-        //     style: (f) => {
-        //         const row = f.getProperties()['row'];
-        //         const col = f.getProperties()['col'];
-        //         return new Style({
-        //             image: new CircleStyle({
-        //                 radius: 10,
-        //                 fill: new Fill({
-        //                     color: `rgba(${row}, ${col}, 0.0, 1.0)`
-        //                 })
-        //             })
-        //         });
-        //     }
-        // }));
-        const source = createSplineSource(instrumentedData, map.getView().getProjection());
-        const layer = new ImageLayer({ source });
-        map.addLayer(layer);
+        map.addLayer(new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(instrumentedData)
+            }),
+            style: (f) => {
+                const row = f.getProperties()['row'];
+                const col = f.getProperties()['col'];
+                console.log(row, col)
+                return new Style({
+                    image: new CircleStyle({
+                        radius: 10,
+                        fill: new Fill({
+                            color: `rgba(${row}, ${col}, 0.0, 1.0)`
+                        })
+                    })
+                });
+            }
+        }));
+        // const source = createSplineSource(instrumentedData, map.getView().getProjection());
+        // const layer = new ImageLayer({ source });
+        // map.addLayer(layer);
 
     });
 });
