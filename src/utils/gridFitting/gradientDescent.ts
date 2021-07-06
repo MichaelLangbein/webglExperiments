@@ -8,7 +8,7 @@ interface GridParas {
     deltaX: number;
     deltaY: number;
     theta: number;
-};
+}
 
 function assignValue(data: FeatureCollection<Point>, propKey: string): FeatureCollection<Point> {
     for (const feature of data.features) {
@@ -17,25 +17,25 @@ function assignValue(data: FeatureCollection<Point>, propKey: string): FeatureCo
     return data;
 }
 
-function errorFunction(paras: GridParas, coords: number[][]): number {
-    
-}
+// function errorFunction(paras: GridParas, coords: number[][]): number {
 
-function gradientDescent(coords: number[][]): GridParas {
+// }
 
-}
+// function gradientDescent(coords: number[][]): GridParas {
 
-function instrument(data: FeatureCollection<Point, any>, paras: GridParas): FeatureCollection<Point, GridPointProps> {
+// }
 
-}
+// function instrument(data: FeatureCollection<Point, any>, paras: GridParas): FeatureCollection<Point, GridPointProps> {
 
-export function gridFit(data: FeatureCollection<Point, any>): FeatureCollection<Point, GridPointProps> {
+// }
 
-    data = assignValue(data, 'SWH');
+// export function gridFit(data: FeatureCollection<Point, any>): FeatureCollection<Point, GridPointProps> {
 
-    const coords = data.features.map(f => (f.geometry as Point).coordinates);
-    const paras = gradientDescent(coords);
-    const instrumentedData = instrument(data, paras);
+//     data = assignValue(data, 'SWH');
 
-    return instrumentedData;
-}
+//     const coords = data.features.map(f => (f.geometry as Point).coordinates);
+//     const paras = gradientDescent(coords);
+//     const instrumentedData = instrument(data, paras);
+
+//     return instrumentedData;
+// }

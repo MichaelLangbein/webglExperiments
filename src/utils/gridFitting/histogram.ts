@@ -107,8 +107,8 @@ function assignRowsAndCols(data: FeatureCollection<Point>): FeatureCollection<Po
     const {deltaX, deltaY} = estimateGridDelta(data);
     for (const feature of data.features) {
         const coords = feature.geometry.coordinates;
-        const row = Math.floor((coords[0] - bbox[0]) / deltaX);
-        const col = Math.floor((coords[1] - bbox[1]) / deltaY);
+        const col = Math.floor((coords[0] - bbox[0]) / deltaX);
+        const row = Math.floor((coords[1] - bbox[1]) / deltaY);
         feature.properties.row = row;
         feature.properties.col = col;
     }

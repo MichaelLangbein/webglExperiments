@@ -1,4 +1,4 @@
-import { Feature, Point } from "geojson";
+import { Feature, Point, FeatureCollection } from "geojson";
 import { reprojectDataAlongPrincipalAxes } from "./pcaAlign";
 
 export interface DataPoint {
@@ -237,10 +237,10 @@ export function convertToDataMatrix(data: DataPoint[]): any[][] {
  * @param data: the features to be analyzed
  * @param idProperty: a property by which a feature may be uniquely identified
  */
-export function assignRowAndColToFeatureGrid(data: Feature<Point>[], idProperty: string): Feature<Point>[] {
+export function assignRowAndColToFeatureGrid(data: FeatureCollection<Point>, idProperty: string): FeatureCollection<Point> {
 
-    const coords = data.map(f => f.geometry.coordinates);
-    const ids = data.map(f => f.properties[idProperty]);
+    const coords = data.features.map(f => f.geometry.coordinates);
+    const ids = data.features.map(f => f.properties[idProperty]);
 
     // Step 1: reproject data along principal axes, so that it's easier to parse into a matrix.
     const reprojectedData = reprojectDataAlongPrincipalAxes(coords);
@@ -260,7 +260,7 @@ export function assignRowAndColToFeatureGrid(data: Feature<Point>[], idProperty:
     for (let row = 0; row < parsedData.length; row++) {
         for (let col = 0; col < parsedData[0].length; col++) {
             const id = parsedData[row][col];
-            const feature = data.find(f => f.properties[idProperty] === id);
+            const feature = data.features.find(f => f.properties[idProperty] === id);
             if (feature) {
                 feature.properties['row'] = row;
                 feature.properties['col'] = col;

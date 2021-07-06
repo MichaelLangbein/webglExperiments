@@ -52,6 +52,7 @@
     "d3-delaunay": "^5.3.0",
     "delaunator": "^4.0.1",
     "earcut": "^2.2.2",
+    "fmin": "^0.0.2",
     "fpsmeter": "^0.3.1",
     "ml-matrix": "^6.5.3",
     "ml-pca": "^4.0.2",
