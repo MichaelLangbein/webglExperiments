@@ -268,7 +268,7 @@ export class TextureData {
         bindTextureToUniform(gl, this.texture.texture, bindPoint, location);
     }
 
-    update(gl: WebGL2RenderingContext, newData: HTMLImageElement | HTMLCanvasElement) {
+    update(gl: WebGL2RenderingContext, newData: HTMLImageElement | HTMLCanvasElement | number[][][]) {
         this.data = newData;
         this.texture = updateTexture(gl, this.texture, newData);
     }
@@ -513,7 +513,7 @@ export abstract class Bundle {
         uniform.update(context.gl, newData, location);
     }
 
-    public updateTextureData(context: Context, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement): void {
+    public updateTextureData(context: Context, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement | number[][][]): void {
         const original = this.textures[variableName];
         if (!original) {
             throw new Error(`No such texture ${variableName} to be updated.`);

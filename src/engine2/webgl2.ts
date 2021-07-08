@@ -812,6 +812,13 @@ export const createFramebuffer = (gl: WebGL2RenderingContext): WebGLFramebuffer 
     return fb;
 };
 
+export const createEmptyFramebufferObject = (gl: WebGL2RenderingContext, width: number, height: number): FramebufferObject => {
+    const fb = createFramebuffer(gl);
+    const fbTexture = createEmptyTexture(gl, width, height);
+    const fbo = bindTextureToFramebuffer(gl, fbTexture, fb);
+    return fbo;
+};
+
 
 /**
  * The operations `clear`, `drawArrays` and `drawElements` only affect the currently bound framebuffer.

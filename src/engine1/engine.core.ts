@@ -3,6 +3,7 @@ import { bindIndexBuffer, bindProgram, bindTextureToUniform, bindValueToUniform,
     getUniformLocation, IndexBufferObject, TextureObject, WebGLUniformType, drawElementsInstanced, drawArrayInstanced,
     GlDrawingMode, bindVertexArray, createVertexArray, VertexArrayObject, bindBufferToAttributeVertexArray,
     bindBufferToAttributeInstancedVertexArray, updateBufferData, updateTexture, FramebufferObject, bindOutputCanvasToFramebuffer, bindFramebuffer, clearBackground, WebGLAttributeType, createFramebuffer, bindTextureToFramebuffer, createEmptyTexture, createDataTexture, TextureType} from './webgl';
+import { NotEqualDepth } from 'three';
 
 
 
@@ -129,13 +130,13 @@ export class AttributeData implements IAttributeData {
     readonly hash: string;
     changesOften: boolean;
     attributeType: WebGLAttributeType;
-    data: Float32Array;      // raw data, user-provided
+    data: Float32Array;    // raw data, user-provided
     buffer: BufferObject;  // buffer on gpu
     constructor(data: Float32Array, attrType: WebGLAttributeType, changesOften: boolean) {
         this.data = data;
         this.attributeType = attrType;
         this.changesOften = changesOften;
-        this.hash = hash(data + '');
+        this.hash = hash(data + '' + Math.random());
     }
 
     upload(gl: WebGLRenderingContext) {
@@ -265,7 +266,7 @@ export class TextureData {
         bindTextureToUniform(gl, this.texture.texture, bindPoint, location);
     }
 
-    update(gl: WebGLRenderingContext, newData: HTMLImageElement | HTMLCanvasElement) {
+    update(gl: WebGLRenderingContext, newData: HTMLImageElement | HTMLCanvasElement | number[][][]) {
         this.data = newData;
         this.texture = updateTexture(gl, this.texture, newData);
     }
@@ -510,7 +511,7 @@ export abstract class Bundle {
         uniform.update(context.gl, newData, location);
     }
 
-    public updateTextureData(context: Context, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement): void {
+    public updateTextureData(context: Context, variableName: string, newImage: HTMLImageElement | HTMLCanvasElement | number[][][]): void {
         const original = this.textures[variableName];
         if (!original) {
             throw new Error(`No such texture ${variableName} to be updated.`);
