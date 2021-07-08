@@ -704,8 +704,10 @@ export const createDataTexture = (gl: WebGL2RenderingContext, data: number[][][]
     return textureObj;
 };
 
-
-export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, height: number, type: TextureType = 'ubyte4'): TextureObject => {
+/**
+ * @TODO: unify this method with createTexture and createDataTexture
+ */
+export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, height: number, type: TextureType = 'ubyte4', use: 'data' | 'display' = 'data'): TextureObject => {
     if (width <= 0 || height <= 0) {
         throw new Error('Width and height must be positive.');
     }
@@ -721,8 +723,13 @@ export const createEmptyTexture = (gl: WebGL2RenderingContext, width: number, he
     gl.texImage2D(gl.TEXTURE_2D, 0, paras.internalFormat, width, height, 0, paras.format, paras.type, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);  // when accessing texture2D(u_tex, vec2(1.2, 0.3)), this becomes  texture2D(u_tex, vec2(1.0, 0.3))
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);  // when accessing texture2D(u_tex, vec2(0.2, 1.3)), this becomes  texture2D(u_tex, vec2(0.2, 1.0))
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    if (use === 'data') {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    }
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     const textureObj: TextureObject = {
@@ -812,9 +819,12 @@ export const createFramebuffer = (gl: WebGL2RenderingContext): WebGLFramebuffer 
     return fb;
 };
 
-export const createEmptyFramebufferObject = (gl: WebGL2RenderingContext, width: number, height: number): FramebufferObject => {
+export const createEmptyFramebufferObject = (gl: WebGL2RenderingContext, width: number, height: number, type: TextureType, use: 'data' | 'display'): FramebufferObject => {
+    if (use === 'display' && type !== 'ubyte4') {
+        throw new Error('When using a texture for "display", it must have type "ubyte4". Float-textures are not renderable. They may be inputs, but they cannot be outputs.');
+    }
     const fb = createFramebuffer(gl);
-    const fbTexture = createEmptyTexture(gl, width, height);
+    const fbTexture = createEmptyTexture(gl, width, height, type, use);
     const fbo = bindTextureToFramebuffer(gl, fbTexture, fb);
     return fbo;
 };

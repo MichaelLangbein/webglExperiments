@@ -63,7 +63,7 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
         this.interpolationShader = createInverseDistanceInterpolationShader(dataRel2ClipSpace, maxVal, this.power, maxEdgeLengthBbox);
         this.interpolationShader.upload(this.context);
         this.interpolationShader.initVertexArray(this.context);
-        this.interpolationFb = createEmptyFramebufferObject(this.context.gl, this.webGlCanvas.width, this.webGlCanvas.height);
+        this.interpolationFb = createEmptyFramebufferObject(this.context.gl, this.webGlCanvas.width, this.webGlCanvas.height, 'display');
         this.runInterpolationShader(this.interpolationFb);
         this.arrangementShader = createArrangementShader([0, 0, 360, 180], bboxWithPadding, this.interpolationFb);
         this.arrangementShader.upload(this.context);
@@ -305,11 +305,6 @@ const createArrangementShader = (currentBbox: number[], interpolationDataGeoBbox
 
             void main() {
                 vec4 texData = texture2D(u_texture, v_texturePosition);
-                if (texData[0] > 0.55) {
-                    gl_FragColor = vec4(1, 0, 0, 1);
-                } else {
-                    gl_FragColor = vec4(0, 0, 0, 1);
-                }
                 gl_FragColor = texData;
             }
         `);

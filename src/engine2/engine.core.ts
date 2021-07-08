@@ -138,7 +138,7 @@ export class AttributeData implements IAttributeData {
         this.data = data;
         this.attributeType = attrType;
         this.changesOften = changesOften;
-        this.hash = hash(data + '' + attrType + changesOften);
+        this.hash = hash(data + '' + attrType + changesOften + Math.random());
     }
 
     upload(gl: WebGL2RenderingContext) {

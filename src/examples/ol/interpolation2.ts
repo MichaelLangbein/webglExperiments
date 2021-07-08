@@ -6,7 +6,7 @@ import VectorSource from 'ol/source/Vector';
 import RasterSource from 'ol/source/Raster';
 import GeoJSON from 'ol/format/GeoJSON';
 import { FeatureCollection, Point } from 'geojson';
-import { createInterpolationSource } from '../../utils/ol/inverseDistance2';
+import { createInterpolationSource } from '../../utils/ol/inverseDistance_withPixelCutting';
 import 'ol/ol.css';
 
 

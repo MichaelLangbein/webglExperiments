@@ -620,8 +620,10 @@ export const createDataTexture = (gl: WebGLRenderingContext, data: number[][][],
     return textureObj;
 };
 
-
-export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number, type: TextureType = 'ubyte4'): TextureObject => {
+/**
+ * @TODO: unify this method with createTexture and createDataTexture
+ */
+export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, height: number, type: TextureType = 'ubyte4', use: 'data' | 'display' = 'data'): TextureObject => {
     if (width <= 0 || height <= 0) {
         throw new Error('Width and height must be positive.');
     }
@@ -637,8 +639,13 @@ export const createEmptyTexture = (gl: WebGLRenderingContext, width: number, hei
     gl.texImage2D(gl.TEXTURE_2D, 0, paras.internalFormat, width, height, 0, paras.format, paras.type, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    if (use === 'data') {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR );
+    }
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     const textureObj: TextureObject = {
@@ -728,9 +735,9 @@ export const createFramebuffer = (gl: WebGLRenderingContext): WebGLFramebuffer =
     return fb;
 };
 
-export const createEmptyFramebufferObject = (gl: WebGLRenderingContext, width: number, height: number): FramebufferObject => {
+export const createEmptyFramebufferObject = (gl: WebGLRenderingContext, width: number, height: number, use: 'data' | 'display'): FramebufferObject => {
     const fb = createFramebuffer(gl);
-    const fbTexture = createEmptyTexture(gl, width, height);
+    const fbTexture = createEmptyTexture(gl, width, height, 'ubyte4', use);
     const fbo = bindTextureToFramebuffer(gl, fbTexture, fb);
     return fbo;
 };
