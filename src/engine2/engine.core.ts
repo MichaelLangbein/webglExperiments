@@ -138,7 +138,7 @@ export class AttributeData implements IAttributeData {
         this.data = data;
         this.attributeType = attrType;
         this.changesOften = changesOften;
-        this.hash = hash(data + '');
+        this.hash = hash(data + '' + attrType + changesOften);
     }
 
     upload(gl: WebGL2RenderingContext) {
@@ -178,7 +178,7 @@ export class InstancedAttributeData implements IAttributeData {
         this.attributeType = attrType;
         this.changesOften = changesOften;
         this.nrInstances = nrInstances;
-        this.hash = hash(data + '');
+        this.hash = hash(data + '' + attrType + changesOften + nrInstances);
     }
 
     upload(gl: WebGL2RenderingContext) {
@@ -214,7 +214,7 @@ export class UniformData {
     constructor(type: WebGLUniformType, value: number[]) {
         this.uniformType = type;
         this.value = value;
-        this.hash = hash(value + '');
+        this.hash = hash(value + '' + type);
     }
 
     upload(gl: WebGL2RenderingContext) {

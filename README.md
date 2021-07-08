@@ -20,3 +20,4 @@ This is just a simple repository of me experimenting with WebGl, engines, and li
   - DataObjects: 
     - when same data, in form of an attribute, is part of two Bundles, the Context mistakenly doesn't upload data the second time.
     - I've for now solved this with a randomized hash for attributes, but now the hash is no longer idempotent. Is that a problem?
+      - better: integrate variableName & variableType into hash.

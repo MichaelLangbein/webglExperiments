@@ -1,7 +1,10 @@
 import { Map, View } from 'ol';
 import { OSM, XYZ } from 'ol/source';
 import { Tile as TileLayer, Image as ImageLayer } from 'ol/layer';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
 import RasterSource from 'ol/source/Raster';
+import GeoJSON from 'ol/format/GeoJSON';
 import { FeatureCollection, Point } from 'geojson';
 import { createInterpolationSource } from '../../utils/ol/inverseDistance2';
 import 'ol/ol.css';
@@ -39,7 +42,7 @@ fetch('assets/waveheight.json').then((response: Response) => {
 
         const maxValue = Math.max(... data.features.map(f => f.properties['SWH']));
 
-        const interpolationSource = createInterpolationSource(data, map.getView().getProjection().getCode(), 2, 'SWH', 10);
+        const interpolationSource = createInterpolationSource(data, map.getView().getProjection().getCode(), 3, 'SWH', 0.3);
 
         const waterSource = new XYZ({
             url: 'https://storage.googleapis.com/global-surface-water/tiles2020/transitions/{z}/{x}/{y}.png',
@@ -54,7 +57,7 @@ fetch('assets/waveheight.json').then((response: Response) => {
 
                 // if inside interpolated range and water ...
                 if (interpolatedPixel[3] > 0 && waterPixel[3] > 0) {
-                    const v = interpolatedPixel[0] * maxValue;
+                    const v = interpolatedPixel[0] * maxValue / 255;
                     const r = interpolateRangewise(v, [0.3 * maxValue, 0.6 * maxValue, 0.9 * maxValue], [67, 168, 244]);
                     const g = interpolateRangewise(v, [0.3 * maxValue, 0.6 * maxValue, 0.9 * maxValue], [181, 221, 243]);
                     const b = interpolateRangewise(v, [0.3 * maxValue, 0.6 * maxValue, 0.9 * maxValue], [202, 181, 219]);
@@ -70,6 +73,13 @@ fetch('assets/waveheight.json').then((response: Response) => {
             source: differenceSource
         });
         map.addLayer(differenceLayer);
+
+        const dataLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data)
+            }),
+        });
+        map.addLayer(dataLayer);
     });
 });
 

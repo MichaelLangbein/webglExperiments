@@ -57,10 +57,10 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
 
         // preparing data
         const { coords, values, bboxWithPadding, maxVal } = parseData(data, this.valueProperty, this.maxEdgeLength);
-        const { observationsBbox, maxEdgeLengthBbox } = parseDataBbox(bboxWithPadding, coords, values, maxVal, this.maxEdgeLength);
+        const { dataRel2ClipSpace, maxEdgeLengthBbox } = parseDataRelativeToClipSpace(bboxWithPadding, coords, values, maxVal, this.maxEdgeLength);
 
         // setting up shaders
-        this.interpolationShader = createInverseDistanceInterpolationShader(observationsBbox, maxVal, this.power, maxEdgeLengthBbox);
+        this.interpolationShader = createInverseDistanceInterpolationShader(dataRel2ClipSpace, maxVal, this.power, maxEdgeLengthBbox);
         this.interpolationShader.upload(this.context);
         this.interpolationShader.initVertexArray(this.context);
         this.interpolationFb = createEmptyFramebufferObject(this.context.gl, this.webGlCanvas.width, this.webGlCanvas.height);
@@ -88,6 +88,10 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
         }
     }
 
+    setStoreInterpolatedValue(doStore: boolean) {
+        this.storeInterpolatedPixelData = doStore;
+    }
+
     setPower(power: number) {
         if (power !== this.power) {
             this.power = power;
@@ -102,6 +106,7 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
      * Called at every renderFrame. Fast.
      */
     private updateArrangementShader(currentBbox: number[]): void {
+        this.arrangementShader.bind(this.context);
         this.arrangementShader.updateUniformData(this.context, 'u_currentBbox', currentBbox);
     }
 
@@ -154,27 +159,27 @@ function parseData(source: FeatureCollection<Point>, valueProperty: string, maxE
     };
 }
 
-function parseDataBbox(bbox: number[], coords: number[][], values: number[], maxVal: number, maxEdgeLength: number) {
-    const observationsBbox = zip(coords, values).map(o => {
-        const coordsBbox = worldCoords2clipBbox([o[0], o[1]], bbox);
+function parseDataRelativeToClipSpace(geoBbox: number[], coords: number[][], values: number[], maxVal: number, maxEdgeLength: number) {
+    const dataRel2ClipSpace = zip(coords, values).map(o => {
+        const coordsClipSpace = worldCoords2clipBbox([o[0], o[1]], geoBbox);
         return [
-            255 * (coordsBbox[0] + 1) / 2,
-            255 * (coordsBbox[1] + 1) / 2,
+            255 * (coordsClipSpace[0] + 1) / 2,
+            255 * (coordsClipSpace[1] + 1) / 2,
             255 * o[2] / maxVal,
             255
         ];
     });
-    const nrObservations = observationsBbox.length;
+    const nrObservations = dataRel2ClipSpace.length;
     const nextPowerOfTwo = nextPowerOf(nrObservations, 2);
     for (let i = 0; i < nextPowerOfTwo - nrObservations; i++) {
-        observationsBbox.push([0, 0, 0, 0]);
+        dataRel2ClipSpace.push([0, 0, 0, 0]);
     }
 
-    const deltaX = bbox[2] - bbox[0];
-    const deltaY = bbox[3] - bbox[1];
+    const deltaX = geoBbox[2] - geoBbox[0];
+    const deltaY = geoBbox[3] - geoBbox[1];
     const maxEdgeLengthBbox = maxEdgeLength / Math.max(deltaX, deltaY);
 
-    return { observationsBbox, maxEdgeLengthBbox };
+    return { dataRel2ClipSpace, maxEdgeLengthBbox };
 }
 
 const worldCoords2clipBbox = (point: number[], bbox: number[]): number[] => {
@@ -185,12 +190,12 @@ const worldCoords2clipBbox = (point: number[], bbox: number[]): number[] => {
     return [xClip, yClip];
 };
 
-const createInverseDistanceInterpolationShader = (interpolatedData: number[][], maxValue: number, power: number, maxEdgeLengthBbox: number): Bundle => {
+const createInverseDistanceInterpolationShader = (observationDataRel2ClipSpace: number[][], maxValue: number, power: number, maxEdgeLengthBbox: number): Bundle => {
 
     const maxObservations = 10000;
     const inverseDistanceProgram = new Program(`
             precision mediump float;
-            attribute vec3 a_position;
+            attribute vec4 a_position;
             attribute vec2 a_texturePosition;
             varying vec2 v_position;
             varying vec2 v_texturePosition;
@@ -248,15 +253,15 @@ const createInverseDistanceInterpolationShader = (interpolatedData: number[][], 
     const viewPort = rectangleA(2, 2);
     const inverseDistanceShader = new ArrayBundle(
         inverseDistanceProgram, {
-            'a_position': new AttributeData(new Float32Array(flatten2(viewPort.vertices)), 'vec3', false),
+            'a_position': new AttributeData(new Float32Array(flatten2(viewPort.vertices)), 'vec4', false),
             'a_texturePosition': new AttributeData(new Float32Array(flatten2(viewPort.texturePositions)), 'vec2', false),
         }, {
             'u_power': new UniformData('float', [power]),
-            'u_nrDataPoints': new UniformData('int', [interpolatedData.length]),
+            'u_nrDataPoints': new UniformData('int', [observationDataRel2ClipSpace.length]),
             'u_maxValue': new UniformData('float', [maxValue]),
             'u_maxDistance': new UniformData('float', [maxEdgeLengthBbox])
         }, {
-            'u_dataTexture': new TextureData([interpolatedData])
+            'u_dataTexture': new TextureData([observationDataRel2ClipSpace])
         },
         'triangles',
         viewPort.vertices.length
@@ -299,7 +304,13 @@ const createArrangementShader = (currentBbox: number[], interpolationDataGeoBbox
             varying vec2 v_texturePosition;
 
             void main() {
-                gl_FragColor = texture2D(u_texture, v_texturePosition);
+                vec4 texData = texture2D(u_texture, v_texturePosition);
+                if (texData[0] > 0.55) {
+                    gl_FragColor = vec4(1, 0, 0, 1);
+                } else {
+                    gl_FragColor = vec4(0, 0, 0, 1);
+                }
+                gl_FragColor = texData;
             }
         `);
 
