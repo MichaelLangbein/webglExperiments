@@ -3,7 +3,7 @@ import { OSM, XYZ } from 'ol/source';
 import { Tile as TileLayer, Image as ImageLayer } from 'ol/layer';
 import 'ol/ol.css';
 import { FeatureCollection, Point } from 'geojson';
-import { createInterpolationLayer, ColorRamp } from '../../utils/ol/interpolationLayer';
+import { createInterpolationLayer, ColorRamp } from '../../utils/ol/inverseDistance/interpolationLayer';
 import { Feature as olFeature } from 'ol';
 import { Style as olStyle, Circle as olCircle, Fill as olFill, Stroke as olStroke, Text as olText } from 'ol/style';
 

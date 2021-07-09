@@ -1,5 +1,6 @@
 import { FeatureCollection, Point } from 'geojson';
-import { createInterpolationSource, InterpolationRenderer } from './inverseDistance_withPixelCutting';
+import { createInterpolationSource, InterpolationRenderer } from './inverseDistance_1step';
+// import { createInterpolationSource, InterpolationRenderer } from './inverseDistance_withPixelCutting';
 import { Vector } from 'ol/layer';
 import ImageLayer from 'ol/layer/Image';
 import { GeoJSON } from 'ol/format';
@@ -9,20 +10,16 @@ import VectorSource from 'ol/source/Vector';
 import LayerGroup from 'ol/layer/Group';
 import { Cluster } from 'ol/source';
 import { StyleLike } from 'ol/style/Style';
-import { map } from 'rxjs/operators';
 
 
 export type ColorRamp = {val: number, rgb: [number, number, number]}[];
 
-
 export function createInterpolationLayer(data: FeatureCollection<Point>, projection: string, styleFunction: StyleLike, colorRamp: ColorRamp): LayerGroup {
-
 
     const colorRampX = colorRamp.map(e => e.val);
     const colorRampR = colorRamp.map(e => e.rgb[0]);
     const colorRampG = colorRamp.map(e => e.rgb[1]);
     const colorRampB = colorRamp.map(e => e.rgb[2]);
-
 
     const interpolationSource = createInterpolationSource(data, projection, 3, 'SWH', 0.2);
     const waterSource = new XYZ({
@@ -36,7 +33,7 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
         sources: [waterSource, interpolationSource],
         operation: (pixels: number[][], data: any): number[] => {
             const waterPixel = pixels[0];
-            const interpolatedPixel = pixels[0];
+            const interpolatedPixel = pixels[1];
 
             // if inside interpolated range and water ...
             if (interpolatedPixel[3] > 0 && waterPixel[3] > 0) {
@@ -83,7 +80,7 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
     });
 
     const layerGroup = new LayerGroup({
-        layers: [differenceLayer, featureLayer]
+        layers: [differenceLayer, featureLayer],
     });
 
     layerGroup.set('updateParas', (power: number, smooth: boolean, labels: boolean) => {
@@ -102,7 +99,6 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
 
     return layerGroup;
 }
-
 
 function interpolate(x0: number, y0: number, x1: number, y1: number, x: number): number {
     const degree = (x - x0) / (x1 - x0);

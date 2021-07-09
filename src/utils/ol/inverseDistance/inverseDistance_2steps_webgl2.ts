@@ -1,10 +1,10 @@
 import ImageSource from 'ol/source/Image';
 import { FeatureCollection, Point } from 'geojson';
 import { ImageCanvas } from 'ol/source';
-import { FramebufferObject, createFramebuffer, createDataTexture, getCurrentFramebuffersPixels, createEmptyFramebufferObject } from '../../engine2/webgl2';
-import { Bundle, ArrayBundle, UniformData, Program, Context, AttributeData, TextureData } from '../../engine2/engine.core';
-import { rectangleA } from '../shapes';
-import { nextPowerOf, flatten2 } from '../math';
+import { FramebufferObject, createFramebuffer, createDataTexture, getCurrentFramebuffersPixels, createEmptyFramebufferObject } from '../../../engine2/webgl2';
+import { Bundle, ArrayBundle, UniformData, Program, Context, AttributeData, TextureData } from '../../../engine2/engine.core';
+import { rectangleA } from '../../shapes';
+import { nextPowerOf, flatten2 } from '../../math';
 
 
 

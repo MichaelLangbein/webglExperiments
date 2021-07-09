@@ -1,9 +1,9 @@
 import ImageSource from 'ol/source/Image';
 import { FeatureCollection, Point } from 'geojson';
 import { ImageCanvas } from 'ol/source';
-import { Bundle, ArrayBundle, UniformData, Program, Context, AttributeData, TextureData } from '../../engine1/engine.core';
-import { rectangleA } from '../shapes';
-import { nextPowerOf, flatten2 } from '../math';
+import { Bundle, ArrayBundle, UniformData, Program, Context, AttributeData, TextureData } from '../../../engine1/engine.core';
+import { rectangleA } from '../../shapes';
+import { nextPowerOf, flatten2 } from '../../math';
 
 
 
@@ -154,6 +154,7 @@ const createShader = (
             void main() {
                 float valSum = 0.0;
                 float wSum = 0.0;
+                float minDistance = 1000000.0;
                 for (int i = 0; i < 10000; i++) {
                     if (i > u_nrDataPoints) { break; }
 
@@ -163,7 +164,7 @@ const createShader = (
                         float value = dataPoint.z * u_maxValue;                    // transforming value from [0, 1] to [0, maxValue]
 
                         float d = distance(v_geoPosition, coords);
-                        if (d > u_maxDistance) { continue; }
+                        if (d < minDistance) { minDistance = d; }
 
                         float w = 1.0 / pow(d, u_power);
                         valSum += value * w;
@@ -172,7 +173,7 @@ const createShader = (
                 }
                 float interpolatedValue = valSum / wSum;
                 float alpha = 1.0;
-                if (wSum == 0.0) {
+                if (minDistance > u_maxDistance) {
                     alpha = 0.0;
                 }
                 gl_FragColor = vec4(interpolatedValue / u_maxValue, 0.0, 0.0, alpha);

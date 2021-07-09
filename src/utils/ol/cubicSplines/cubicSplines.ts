@@ -5,7 +5,7 @@ import { FrameState } from 'ol/PluggableMap';
 import Point from 'ol/geom/Point';
 
 import Delaunator from 'delaunator';
-import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine2/engine.core';
+import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../../engine2/engine.core';
 
 
 

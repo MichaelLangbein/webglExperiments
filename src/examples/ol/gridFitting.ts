@@ -9,8 +9,7 @@ import { FeatureCollection, Point } from 'geojson';
 import CircleStyle from 'ol/style/Circle';
 import { Fill, Style } from 'ol/style';
 import { assignRowAndColToFeatureGrid as assignRowAndColUsingTree } from '../../utils/gridFitting/matrixTree';
-import { gridFit as assignRowAndColUsingHistogram } from '../../utils/gridFitting/histogram';
-import { createSplineSource } from '../../utils/ol/cubicSplines3';
+import { createSplineSource } from '../../utils/ol/cubicSplines/cubicSplines3';
 import { PCA } from 'ml-pca';
 import Matrix, { inverse } from 'ml-matrix';
 

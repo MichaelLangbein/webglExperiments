@@ -1,5 +1,4 @@
 import { FeatureCollection, Point } from 'geojson';
-import { GridPointProps } from '../ol/cubicSplines3';
 
 
 interface GridParas {

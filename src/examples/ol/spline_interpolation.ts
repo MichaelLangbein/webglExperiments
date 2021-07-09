@@ -7,7 +7,7 @@ import 'ol/ol.css';
 
 import { FeatureCollection, Point } from 'geojson';
 
-import { createSplineSource, GridPointProps } from '../../utils/ol/cubicSplines3';
+import { createSplineSource, GridPointProps } from '../../utils/ol/cubicSplines/cubicSplines3';
 
 import CircleStyle from 'ol/style/Circle';
 import { Fill, Style } from 'ol/style';

@@ -1,5 +1,5 @@
 import { FeatureCollection, Point } from 'geojson';
-import { GridPointProps } from '../ol/cubicSplines3';
+import { GridPointProps } from '../ol/cubicSplines/cubicSplines3';
 import { Matrix, inverse } from 'ml-matrix';
 import { PCA } from 'ml-pca';
 import turf_bbox from '@turf/bbox';

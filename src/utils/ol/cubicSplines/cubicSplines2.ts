@@ -1,46 +1,38 @@
+import { Vector as VectorLayer } from 'ol/layer';
+import { Options } from 'ol/layer/BaseVector';
+import LayerRenderer from 'ol/renderer/Layer';
+import { FrameState } from 'ol/PluggableMap';
+import Point from 'ol/geom/Point';
+
 import Delaunator from 'delaunator';
-import { Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../engine2/engine.core';
-import { ImageCanvas } from 'ol/source';
-import Projection from 'ol/proj/Projection';
-import { FeatureCollection, Point } from 'geojson';
+import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../../engine1/engine.core';
 
 
-export interface GridPointProps {
-    id: number;
-    col: number;
-    row: number;
-    value: number;
-}
 
-export function createSplineSource(data: FeatureCollection<Point, GridPointProps>, projection: Projection): ImageCanvas {
+export interface SplineLayerOptions extends Options {}
 
-    const splineRenderer = new SplineRenderer(data);
+export class SplineLayer extends VectorLayer {
 
-    const splineSource = new ImageCanvas({
-        canvasFunction: (extent, imageResolution, devicePixelRatio, imageSize, projection) => {
-            splineRenderer.setCanvasSize(imageSize[0], imageSize[1]);
-            splineRenderer.setBbox(extent);
-            const canvas = splineRenderer.renderFrame();
-            return canvas;
-        },
-        projection, ratio: 1
-    });
+    constructor(opt_options: SplineLayerOptions) {
+        super(opt_options);
+    }
 
-    return splineSource;
+    createRenderer(): LayerRenderer<VectorLayer> {
+        const renderer = new SplineRenderer(this);
+        return renderer;
+    }
 }
 
 
 
-
-
-
-class SplineRenderer {
+export class SplineRenderer extends LayerRenderer<VectorLayer> {
 
     private canvas: HTMLCanvasElement;
     private bundle: Bundle;
     private context: Context;
 
-    constructor(data: FeatureCollection<Point, GridPointProps>) {
+    constructor(layer: VectorLayer) {
+        super(layer);
 
         this.canvas = document.createElement('canvas') as HTMLCanvasElement;
         this.canvas.width = 600;
@@ -52,32 +44,30 @@ class SplineRenderer {
         this.canvas.style.setProperty('height', '100%');
 
 
-        const features = data.features.sort((f1, f2) => f1.properties.id > f2.properties.id ? 1 : -1);
-        const coordinates = features.map(f => f.geometry.coordinates);
+        const features = layer.getSource().getFeatures().sort((f1, f2) => f1.getProperties()['id'] > f2.getProperties()['id'] ? 1 : -1);
+        const coordinates = features.map(f => (f.getGeometry() as Point).getCoordinates());
         const d = Delaunator.from(coordinates);
-        const index = new Uint32Array(d.triangles.buffer);
+        const index = new Uint16Array(d.triangles.buffer);
 
-        const nrCols = features.reduce((carry, val) => val.properties.col > carry ? val.properties.col : carry, 0) + 1;
-        const nrRows = features.reduce((carry, val) => val.properties.row > carry ? val.properties.row : carry, 0) + 1;
-        const minX = features.map(f => f.geometry.coordinates[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const minY = features.map(f => f.geometry.coordinates[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const maxX = features.map(f => f.geometry.coordinates[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
-        const maxY = features.map(f => f.geometry.coordinates[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const nrCols = features.reduce((carry, val) => val.getProperties()['col'] > carry ? val.getProperties()['col'] : carry, 0) + 1;
+        const nrRows = features.reduce((carry, val) => val.getProperties()['row'] > carry ? val.getProperties()['row'] : carry, 0) + 1;
+        const minX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const minY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
+        const maxX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
+        const maxY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
         const gridBounds = [minX, minY, maxX, maxY];
-        const minVal = features.map(f => f.properties.value).reduce((carry, val) => val < carry ? val : carry, 100000);
-        const maxVal = features.map(f => f.properties.value).reduce((carry, val) => val > carry ? val : carry, -100000);
+        const minVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val < carry ? val : carry, 100000);
+        const maxVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val > carry ? val : carry, -100000);
         const valueBounds = [minVal, maxVal];
 
-        const dataMatrix255: number[][][] = new Array(nrRows).fill(0)
-                    .map(v => new Array(nrCols).fill(0)
-                    .map(v => [0, 0, 0, 0]));
+        const dataMatrix255: number[][][] = new Array(nrRows).fill(0).map(v => new Array(nrRows).fill(0).map(v => [0, 0, 0, 0]));
         const colsAndRows: number[] = [];
         for (const feature of features) {
-            const id = feature.properties.id;
-            const row = feature.properties.row;
-            const col = feature.properties.col;
-            const val = feature.properties.value;
-            const coords = feature.geometry.coordinates;
+            const id = feature.getProperties()['id'];
+            const row = feature.getProperties()['row'];
+            const col = feature.getProperties()['col'];
+            const val = feature.getProperties()['value'];
+            const coords = (feature.getGeometry() as Point).getCoordinates();
             const xNormalized = 255 * (coords[0] - gridBounds[0]) / (gridBounds[2] - gridBounds[0]);
             const yNormalized = 255 * (coords[1] - gridBounds[1]) / (gridBounds[3] - gridBounds[1]);
             const valNormalized = 255 * (val - valueBounds[0]) / (valueBounds[1] - valueBounds[0]);
@@ -85,32 +75,30 @@ class SplineRenderer {
             colsAndRows.push(col, row);
         }
 
-        this.context = new Context(this.canvas.getContext('webgl2', {preserveDrawingBuffer: true}), false);
-        const program = new Program(
-            `
-                precision mediump float;
-                attribute vec2 a_geoPosition;
-                varying vec2 v_geoPosition;
-                attribute vec2 a_texturePosition;
-                varying vec2 v_texturePosition;
-                uniform vec4 u_geoBbox;
+        this.context = new Context(this.canvas.getContext('webgl') as WebGLRenderingContext, false);
+        const program = new Program(`
+        precision mediump float;
+        attribute vec2 a_geoPosition;
+        varying vec2 v_geoPosition;
+        attribute vec2 a_texturePosition;
+        varying vec2 v_texturePosition;
+        uniform vec4 u_geoBbox;
 
-                vec4 geo2ClipPosition(vec2 geoPosition, vec4 geoBbox) {
-                    return vec4(
-                        (geoPosition[0] - geoBbox[0]) / (geoBbox[2] - geoBbox[0]) * 2.0 - 1.0,
-                        (geoPosition[1] - geoBbox[1]) / (geoBbox[3] - geoBbox[1]) * 2.0 - 1.0,
-                        0.0,
-                        1.0
-                    );
-                }
+        vec4 geo2ClipPosition(vec2 geoPosition, vec4 geoBbox) {
+            return vec4(
+                (geoPosition[0] - geoBbox[0]) / (geoBbox[2] - geoBbox[0]) * 2.0 - 1.0,
+                (geoPosition[1] - geoBbox[1]) / (geoBbox[3] - geoBbox[1]) * 2.0 - 1.0,
+                0.0,
+                1.0
+            );
+        }
 
-                void main() {
-                    v_texturePosition = a_texturePosition;
-                    v_geoPosition = a_geoPosition;
-                    gl_Position = geo2ClipPosition(a_geoPosition, u_geoBbox);
-                }
-            `,
-        `
+        void main() {
+            v_texturePosition = a_texturePosition;
+            v_geoPosition = a_geoPosition;
+            gl_Position = geo2ClipPosition(a_geoPosition, u_geoBbox);
+        }
+        `, `
         precision mediump float;
         varying vec2 v_texturePosition;
         varying vec2 v_geoPosition;
@@ -163,43 +151,43 @@ class SplineRenderer {
             float f22 = readValueFromTexture(textureData22);
 
             // 1st. derivatives [val/pixel]
-            float fx_10 = (f_11 - f_1_1) / 2.0;
-            float fx_11 = (f_12 - f_10) / 2.0;
-            float fx00 = (f01 - f0_1) / 2.0;
-            float fx10 = (f11 - f1_1) / 2.0;
-            float fx01 = (f02 - f00) / 2.0;
-            float fx11 = (f12 - f10) / 2.0;
-            float fx20 = (f21 - f2_1) / 2.0;
-            float fx21 = (f22 - f20) / 2.0;
-            float fy0_1 = (f1_1 - f_1_1) / 2.0;
-            float fy1_1 = (f2_1 - f0_1) / 2.0;
-            float fy00 = (f10 - f_10) / 2.0;
-            float fy10 = (f20 - f00) / 2.0;
-            float fy01 = (f11 - f01) / 2.0;
-            float fy11 = (f21 - f01) / 2.0;
-            float fy02 = (f12 - f_12) / 2.0;
-            float fy12 = (f22 - f02) / 2.0;
+            float fx0_1 = (f1_1 - f_1_1) / 2.0;
+            float fx1_1 = (f2_1 - f0_1) / 2.0;
+            float fx00 = (f10 - f_10) / 2.0;
+            float fx10 = (f20 - f00) / 2.0;
+            float fx01 = (f11 - f_11) / 2.0;
+            float fx11 = (f21 - f01) / 2.0;
+            float fx02 = (f12 - f_12) / 2.0;
+            float fx12 = (f22 - f02) / 2.0;
+            float fy_10 = (f_11 - f_1_1) / 2.0;
+            float fy_11 = (f_12 - f_10) / 2.0;
+            float fy00 = (f01 - f0_1) / 2.0;
+            float fy01 = (f02 - f00) / 2.0;
+            float fy10 = (f11 - f1_1) / 2.0;
+            float fy11 = (f12 - f10) / 2.0;
+            float fy20 = (f21 - f2_1) / 2.0;
+            float fy21 = (f22 - f20) / 2.0;
 
             // 2nd derivatives [val/pixel^2]
-            float fxy00 = (fx10 - fx_10) / 2.0;
-            float fxy01 = (fx11 - fx_11) / 2.0;
-            float fxy10 = (fx20 - fx00) / 2.0;
-            float fxy11 = (fx21 - fx01) / 2.0;
+            float fxy00 = (fx01 - fx0_1) / 2.0;
+            float fxy01 = (fx02 - fx00) / 2.0;
+            float fxy10 = (fx11 - fx1_1) / 2.0;
+            float fxy11 = (fx12 - fx10) / 2.0;
 
             return mat4(
-                 f00,  f10,  fx00,  fx10,
-                 f01,  f11,  fx01,  fx11,
-                fy00, fy10, fxy00, fxy10,
-                fy01, fy11, fxy01, fxy11
+                 f00,  f01,  fy00,  fy01,
+                 f10,  f11,  fy10,  fy11,
+                fx00, fx01, fxy00, fxy01,
+                fx10, fx11, fxy10, fxy11
             );
         }
 
         mat4 calcBicubicCoefMatrix(mat4 derivativeMatrix) {
             return mat4(
                 1,  0, -3,  2,
-                0,  0,  3, -2,
-                0,  1, -2,  1,
-                0,  0, -1,  1
+                 0,  0,  3, -2,
+                 0,  1, -2,  1,
+                 0,  0, -1,  1
             ) * derivativeMatrix * mat4(
                 1,  0,  0,  0,
                 0,  0,  1,  0,
@@ -214,6 +202,22 @@ class SplineRenderer {
             vec4 xVec = vec4(1, x, x*x, x*x*x);
             vec4 yVec = vec4(1, y, y*y, y*y*y);
 
+            return dot(yVec, coefMatrix * xVec);
+        }
+
+        float bicubicInterpolationRectilinear(
+            float x, float x0, float x1,
+            float y, float y0, float y1,
+            mat4 derivativeMatrix
+        ) {
+           mat4 coefMatrix = calcBicubicCoefMatrix(derivativeMatrix);
+
+           float xM = (x - x0) / (x1 - x0);
+           float yM = (y - y0) / (y1 - y0);
+
+           vec4 xVec = vec4(1, xM, xM*xM, xM*xM*xM);
+           vec4 yVec = vec4(1, yM, yM*yM, yM*yM*yM);
+
             return dot(xVec, coefMatrix * yVec);
         }
 
@@ -221,8 +225,6 @@ class SplineRenderer {
             mat4 derivativeMatrix = calcDerivativeMatrix( u_dataTexture, v_texturePosition, u_textureSize );
             float x = fract(v_texturePosition.x);
             float y = fract(v_texturePosition.y);
-            if (x > 0.998) { x = 1.0 - x; }
-            if (y > 0.998) { y = 1.0 - y; }
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);
@@ -239,14 +241,16 @@ class SplineRenderer {
             'u_dataTexture': new TextureData(dataMatrix255, 'ubyte4')
         }, 'triangles', new Index(index));
 
+
         this.bundle.upload(this.context);
         this.bundle.initVertexArray(this.context);
         this.bundle.bind(this.context);
-        this.bundle.draw(this.context, [0, 0, 0, 0]);
+        this.bundle.draw(this.context);
 
     }
 
-    setBbox(newBbox: number[]): boolean {
+    prepareFrame(frameState: FrameState): boolean {
+        const newBbox = frameState.extent;
         if (newBbox !== this.bundle.uniforms['u_geoBbox'].value) {
             this.bundle.updateUniformData(this.context, 'u_geoBbox', newBbox);
             this.bundle.upload(this.context);
@@ -254,15 +258,12 @@ class SplineRenderer {
         return true;
     }
 
-    setCanvasSize(width: number, height: number): void {
-        if (this.canvas.width !== width) this.canvas.width = width;
-        if (this.canvas.height !== height) this.canvas.height = height;
-    }
-
-    renderFrame(): HTMLCanvasElement {
-        this.bundle.draw(this.context, [0, 0, 0, 0]);
+    renderFrame(frameState: FrameState, target: HTMLElement): HTMLElement {
+        this.bundle.draw(this.context);
         return this.canvas;
     }
 
+    renderDeclutter(frameState: FrameState): void {
+    }
 }
 
