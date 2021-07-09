@@ -161,10 +161,9 @@ function parseData(source: FeatureCollection<Point>, valueProperty: string, maxE
 
 function parseDataRelativeToClipSpace(geoBbox: number[], coords: number[][], values: number[], maxVal: number, maxEdgeLength: number) {
     const dataRel2ClipSpace = zip(coords, values).map(o => {
-        const coordsClipSpace = worldCoords2clipBbox([o[0], o[1]], geoBbox);
         return [
-            255 * (coordsClipSpace[0] + 1) / 2,
-            255 * (coordsClipSpace[1] + 1) / 2,
+            255 * (o[0] - geoBbox[0]) / (geoBbox[2] - geoBbox[0]),
+            255 * (o[1] - geoBbox[1]) / (geoBbox[3] - geoBbox[1]),
             255 * o[2] / maxVal,
             255
         ];
@@ -182,13 +181,6 @@ function parseDataRelativeToClipSpace(geoBbox: number[], coords: number[][], val
     return { dataRel2ClipSpace, maxEdgeLengthBbox };
 }
 
-const worldCoords2clipBbox = (point: number[], bbox: number[]): number[] => {
-    const xPerct = (point[0] - bbox[0]) / (bbox[2] - bbox[0]);
-    const yPerct = (point[1] - bbox[1]) / (bbox[3] - bbox[1]);
-    const xClip = 2 * xPerct - 1;
-    const yClip = 2 * yPerct - 1;
-    return [xClip, yClip];
-};
 
 const createInverseDistanceInterpolationShader = (observationDataRel2ClipSpace: number[][], maxValue: number, power: number, maxEdgeLengthBbox: number): Bundle => {
 
@@ -262,7 +254,7 @@ const createInverseDistanceInterpolationShader = (observationDataRel2ClipSpace: 
             'u_maxValue': new UniformData('float', [maxValue]),
             'u_maxDistance': new UniformData('float', [maxEdgeLengthBbox])
         }, {
-            'u_dataTexture': new TextureData([observationDataRel2ClipSpace])
+            'u_dataTexture': new TextureData([observationDataRel2ClipSpace], 'float4')
         },
         'triangles',
         viewPort.vertices.length

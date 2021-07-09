@@ -1,7 +1,7 @@
 import ImageSource from 'ol/source/Image';
 import { FeatureCollection, Point } from 'geojson';
-import { ImageCanvas } from 'ol/source';
-import { FramebufferObject, createFramebuffer, createDataTexture, getCurrentFramebuffersPixels, createEmptyFramebufferObject } from '../../engine1/webgl';
+import ImageCanvas from 'ol/source/ImageCanvas';
+import { FramebufferObject, getCurrentFramebuffersPixels, createEmptyFramebufferObject } from '../../engine1/webgl';
 import { Bundle, ArrayBundle, UniformData, Program, Context, AttributeData, TextureData } from '../../engine1/engine.core';
 import { rectangleA } from '../shapes';
 import { nextPowerOf, flatten2 } from '../math';
@@ -14,22 +14,25 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
     const interpolationRenderer = new InterpolationRenderer(data, power, valueProperty, maxEdgeLength, false);
 
     const interpolationSource = new ImageCanvas({
-        canvasFunction: (extent, imageResolution, devicePixelRatio, imageSize, projection) => {
-            interpolationRenderer.setCanvasSize(imageSize[0], imageSize[1]);
-            interpolationRenderer.setBbox(extent);
-            const canvas = interpolationRenderer.renderFrame();
+        canvasFunction: function(extent, imageResolution, devicePixelRatio, imageSize, projection) {
+            // @ts-ignore
+            const renderer = this.get('renderer') as InterpolationRenderer;
+            renderer.setCanvasSize(imageSize[0], imageSize[1]);
+            renderer.setBbox(extent);
+            const canvas = renderer.renderFrame();
             return canvas;
         },
         projection: projection,
         ratio: 1
     });
+    interpolationSource.set('renderer', interpolationRenderer);
+
 
     return interpolationSource;
 }
 
 
  export class InterpolationRenderer {
-
     private webGlCanvas: HTMLCanvasElement;
     private context: Context;
     private interpolationShader: Bundle;
@@ -101,6 +104,9 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
         }
     }
 
+    getPower(): number {
+        return this.power;
+    }
 
     /**
      * Called at every renderFrame. Fast.
@@ -161,10 +167,9 @@ function parseData(source: FeatureCollection<Point>, valueProperty: string, maxE
 
 function parseDataRelativeToClipSpace(geoBbox: number[], coords: number[][], values: number[], maxVal: number, maxEdgeLength: number) {
     const dataRel2ClipSpace = zip(coords, values).map(o => {
-        const coordsClipSpace = worldCoords2clipBbox([o[0], o[1]], geoBbox);
         return [
-            255 * (coordsClipSpace[0] + 1) / 2,
-            255 * (coordsClipSpace[1] + 1) / 2,
+            255 * (o[0] - geoBbox[0]) / (geoBbox[2] - geoBbox[0]),
+            255 * (o[1] - geoBbox[1]) / (geoBbox[3] - geoBbox[1]),
             255 * o[2] / maxVal,
             255
         ];
@@ -182,13 +187,6 @@ function parseDataRelativeToClipSpace(geoBbox: number[], coords: number[][], val
     return { dataRel2ClipSpace, maxEdgeLengthBbox };
 }
 
-const worldCoords2clipBbox = (point: number[], bbox: number[]): number[] => {
-    const xPerct = (point[0] - bbox[0]) / (bbox[2] - bbox[0]);
-    const yPerct = (point[1] - bbox[1]) / (bbox[3] - bbox[1]);
-    const xClip = 2 * xPerct - 1;
-    const yClip = 2 * yPerct - 1;
-    return [xClip, yClip];
-};
 
 const createInverseDistanceInterpolationShader = (observationDataRel2ClipSpace: number[][], maxValue: number, power: number, maxEdgeLengthBbox: number): Bundle => {
 
