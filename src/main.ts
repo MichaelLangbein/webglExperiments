@@ -1,1 +1,1 @@
-import './examples/ol/interpolation2';
+import './examples/ol/simpleInverseDistance_interpolation';

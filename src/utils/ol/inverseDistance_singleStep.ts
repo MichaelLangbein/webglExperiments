@@ -13,15 +13,18 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
     const interpolationRenderer = new InterpolationRenderer(data, power, valueProperty, maxEdgeLength);
 
     const interpolationSource = new ImageCanvas({
-        canvasFunction: (extent, imageResolution, devicePixelRatio, imageSize, projection) => {
-            interpolationRenderer.setCanvasSize(imageSize[0], imageSize[1]);
-            interpolationRenderer.setBbox(extent);
-            const canvas = interpolationRenderer.draw();
+        canvasFunction: function(extent, imageResolution, devicePixelRatio, imageSize, projection) {
+            // @ts-ignore
+            const renderer = this.get('renderer');
+            renderer.setCanvasSize(imageSize[0], imageSize[1]);
+            renderer.setBbox(extent);
+            const canvas = renderer.draw();
             return canvas;
         },
         projection: projection,
         ratio: 1
     });
+    interpolationSource.set('renderer', interpolationRenderer);
 
     return interpolationSource;
 }
@@ -45,14 +48,14 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
         this.webGlCanvas.style.setProperty('top', '0px');
         this.webGlCanvas.style.setProperty('width', '100%');
         this.webGlCanvas.style.setProperty('height', '100%');
-        this.webGlCanvas.width = 1000;  // <-- make smaller for better performance
-        this.webGlCanvas.height = 1000;  // <-- make smaller for better performance
+        this.webGlCanvas.width = 500;
+        this.webGlCanvas.height = 500;
         this.context = new Context(this.webGlCanvas.getContext('webgl'), false);
 
         // preparing data
         const currentViewPortBbox = [0, 0, 360, 180];
         const coords = data.features.map(f => f.geometry.coordinates);
-        const values = data.features.map(f => parseFloat(f.properties[valueProperty]));
+        const values = data.features.map(f => parseFloat(f.properties[this.valueProperty]));
         const dataBbox = getBbox(coords);
         const maxVal = Math.max(... values);
         const dataRel2ClipSpace = data2TextureRelativeToClipSpace(dataBbox, coords, values, maxVal, this.maxEdgeLength);
@@ -124,7 +127,7 @@ const createShader = (
                 float xRel = (clipSpacePos[0] + 1.0) / 2.0;
                 float yRel = (clipSpacePos[1] + 1.0) / 2.0;
                 float xGeo = xRel * (currentGeoBbox[2] - currentGeoBbox[0]) + currentGeoBbox[0];
-                float yGeo = xRel * (currentGeoBbox[3] - currentGeoBbox[1]) + currentGeoBbox[1];
+                float yGeo = yRel * (currentGeoBbox[3] - currentGeoBbox[1]) + currentGeoBbox[1];
                 return vec2(xGeo, yGeo);
             }
 
@@ -173,7 +176,6 @@ const createShader = (
                     alpha = 0.0;
                 }
                 gl_FragColor = vec4(interpolatedValue / u_maxValue, 0.0, 0.0, alpha);
-                gl_FragColor = vec4(gl_FragCoord.y, 0.0, 0.0, 1.0);
             }
         `);
 
