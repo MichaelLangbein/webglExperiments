@@ -9,9 +9,6 @@ import { FeatureCollection, Point } from 'geojson';
 
 import { createSplineSource, GridPointProps } from '../../utils/ol/cubicSplines/cubicSplines3';
 
-import CircleStyle from 'ol/style/Circle';
-import { Fill, Style } from 'ol/style';
-import { assignRowAndColToFeatureGrid } from '../../utils/gridFitting/matrixTree';
 
 
 function interpolate(x0: number, y0: number, x1: number, y1: number, x: number): number {
@@ -33,15 +30,6 @@ function interpolateRangewise(x: number, xs: number[], ys: number[]): number {
         return ys[ys.length - 1];
     }
 }
-
-
-
-
-/**
- * @TODO:
- * - splineSource has strange line-artifacts
- * - out of memory error
- */
 
 
 

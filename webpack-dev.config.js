@@ -6,11 +6,9 @@ const destinationPath = path.resolve( __dirname, 'dist' );
 
 module.exports = {
     context: rootPath,
-
     entry: {
         'main': './main.ts'
     },
-    
     output: {
         filename: '[name].bundle.js',
         path: destinationPath
@@ -23,7 +21,6 @@ module.exports = {
             'node_modules'
         ]
     },
-
     module: {
         rules: [
             /****************
@@ -65,6 +62,11 @@ module.exports = {
     devServer: {
         disableHostCheck: true, 
         // public: 'localhost:9000'
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+          }
     }
 };
 

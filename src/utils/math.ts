@@ -91,6 +91,18 @@ export const vectorCrossProduct = (vec0: Vec3, vec1: Vec3): Vec3 => {
     ];
 };
 
+export const vectorInnerProduct = (vec0: number[], vec1: number[]): number => {
+    let s = 0;
+    for (let i = 0; i < vec0.length; i++) {
+        s += vec0[i] * vec1[i];
+    }
+    return s;
+};
+
+export const vectorProjectedOnto = (point: number[], axis: number[]): number => {
+    return vectorInnerProduct(point, axis) / Math.sqrt(vectorLength(axis));
+};
+
 export const pointWiseVectorMultiplication = (vec0: Vector, vec1: Vector): Vector => {
     return binaryVectorOp(vec0, vec1, (a, b) => a * b);
 };

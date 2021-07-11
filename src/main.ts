@@ -1,1 +1,1 @@
-import './examples/ol/inverseDistance_interpolation';
+import './examples/ol/gridFitting';

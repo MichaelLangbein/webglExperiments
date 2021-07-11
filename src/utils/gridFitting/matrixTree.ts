@@ -1,5 +1,5 @@
-import { Feature, Point, FeatureCollection } from "geojson";
-import { reprojectDataAlongPrincipalAxes } from "./pcaAlign";
+import { Feature, Point, FeatureCollection } from 'geojson';
+import { reprojectDataAlongPrincipalAxes } from './pcaAlign';
 
 export interface DataPoint {
     x: number;
