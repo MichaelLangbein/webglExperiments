@@ -84,10 +84,7 @@ function error(data: number[][], gridParas: GridParas): number {
     return cumlDistance;
 }
 
-function gradientDescent(points: number[][]): GridParas {
-    const minX = Math.min(... points.map(p => p[0]));
-    const minY = Math.min(... points.map(p => p[1]));
-    const deltaX = Math.abs(points[1][0] - points[0][0]);
+function gradientDescent(points: number[][], firstGuess: GridParas): {paras: GridParas, fit: number} {
 
     const loss = (paras: number[]) => {
         const gridParas: GridParas = {
@@ -100,7 +97,7 @@ function gradientDescent(points: number[][]): GridParas {
         };
         return error(points, gridParas);
     };
-    var solution = nelderMead(loss, [minX, minY, deltaX, deltaX, 0, Math.PI / 2]);
+    var solution = nelderMead(loss, [firstGuess.x0, firstGuess.y0, firstGuess.deltaX, firstGuess.deltaY, firstGuess.theta, firstGuess.rho]);
 
     const output = {
         x0: solution.x[0],
@@ -110,7 +107,10 @@ function gradientDescent(points: number[][]): GridParas {
         theta: solution.x[4],
         rho: solution.x[5]
     };
-    return output;
+    return {
+        paras: output,
+        fit: solution.fit
+    };
 }
 
 function instrument(data: FeatureCollection<Point, any>, gridParas: GridParas, valuePara: string): FeatureCollection<Point, GridPointProps> {
@@ -125,10 +125,34 @@ function instrument(data: FeatureCollection<Point, any>, gridParas: GridParas, v
 
 export function gridFit(data: FeatureCollection<Point, any>, valuePara: string): FeatureCollection<Point, GridPointProps> {
 
+    data.features.sort((a, b) => a.properties.id < b.properties.id ? -1 : 1);
     const coords = data.features.map(f => (f.geometry as Point).coordinates);
-    const paras = gradientDescent(coords);
-    console.log(paras)
-    const instrumentedData = instrument(data, paras, valuePara);
+
+    const lastPoint = coords[coords.length - 1];
+    const deltaX = Math.abs(coords[1][0] - coords[0][0]);
+    const firstGuess = {x0: lastPoint[0], y0: lastPoint[1], deltaX: deltaX, deltaY: deltaX, theta: 0, rho: Math.PI / 2};
+    const firstResult = gradientDescent(coords, firstGuess);
+
+    let bestParas: GridParas = firstResult.paras;
+    let bestFit = firstResult.fit;
+    for (let i = 0; i < 10; i++) {
+        const guess: GridParas = {
+            x0: firstGuess.x0 + Math.random(),
+            y0: firstGuess.y0 + Math.random(),
+            deltaX: firstGuess.deltaX + Math.random(),
+            deltaY: firstGuess.deltaY + Math.random(),
+            theta: firstGuess.theta + Math.random(),
+            rho: firstGuess.rho + Math.random(),
+        };
+        const out = gradientDescent(coords, guess);
+        if (out.fit < bestFit) {
+            bestParas = out.paras;
+            bestFit = out.fit;
+        }
+    }
+console.log(bestParas)
+
+    const instrumentedData = instrument(data, bestParas, valuePara);
 
     return instrumentedData;
 }

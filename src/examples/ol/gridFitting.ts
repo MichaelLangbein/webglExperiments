@@ -1,4 +1,4 @@
-import { Map, View, Feature } from 'ol';
+import { Map, View, Feature as OlFeature } from 'ol';
 import { GeoJSON } from 'ol/format';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { Vector as VectorLayer, Tile as TileLayer } from 'ol/layer';
@@ -6,8 +6,10 @@ import { Fill, Style, Text, Circle as CircleStyle } from 'ol/style';
 import 'ol/ol.css';
 
 import { FeatureCollection, Point } from 'geojson';
+import { gridFit } from '../../utils/gridFitting/marissSpecific';
 
-import { gridFit } from '../../utils/gridFitting/gradientDescent';
+
+
 
 
 
@@ -27,7 +29,7 @@ fetch('assets/waveheight.json').then((response: Response) => {
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(instrumentedData)
             }),
-            style: (feature: Feature) => {
+            style: (feature: OlFeature) => {
                 const row = feature.getProperties()['row'];
                 const col = feature.getProperties()['col'];
                 const r = 255 * row / maxRow;
@@ -39,7 +41,7 @@ fetch('assets/waveheight.json').then((response: Response) => {
                         fill: new Fill({
                             color: `rgba(${r}, ${g}, ${b}, 1.0)`
                         }),
-                        radius: 10,
+                        radius: 18,
                     }),
                     text: new Text({
                         text: `${row} / ${col}`,
