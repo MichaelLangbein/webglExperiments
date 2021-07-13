@@ -4,7 +4,7 @@ import { XYZ, Vector as VectorSource, Cluster } from 'ol/source';
 import { Vector as VectorLayer, Image as ImageLayer } from 'ol/layer';
 import RasterSource from 'ol/source/Raster';
 
-import { createSplineSource, GridPointProps } from '../../ol/cubicSplines/cubicSplines3';
+import { createSplineSource, GridPointProps } from './cubicSplines_webgl2';
 import { gridFit } from '../../gridFitting/lineSweeping';
 import LayerGroup from 'ol/layer/Group';
 import { FeatureCollection, Point } from 'geojson';

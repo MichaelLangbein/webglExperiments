@@ -1,5 +1,5 @@
 import { FeatureCollection, Point, Feature } from 'geojson';
-import { GridPointProps } from '../../utils/ol/cubicSplines/cubicSplines3';
+import { GridPointProps } from '../ol/cubicSplines/cubicSplines_webgl1';
 import { pointDistance, vectorSubtraction, vectorAddition, vectorProjectOnto, vectorDistance } from '../../utils/math';
 import { PCA } from 'ml-pca';
 
