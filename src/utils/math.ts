@@ -113,7 +113,7 @@ export const vectorProjectOnto = (point: Vector, axis: Vector) => {
 };
 
 export const vectorProjectedOntoLength = (point: Vector, axis: Vector): number => {
-    return vectorInnerProduct(point, axis) / Math.sqrt(vectorLength(axis));
+    return vectorInnerProduct(point, axis) / Math.pow(vectorLength(axis), 2);
 };
 
 export const pointWiseVectorMultiplication = (vec0: Vector, vec1: Vector): Vector => {
