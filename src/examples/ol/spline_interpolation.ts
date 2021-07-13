@@ -25,11 +25,14 @@ const fpser = document.getElementById('fpser');
 fetch('assets/waveheight.json').then((response: Response) => {
     response.json().then((data: FeatureCollection<Point>) => {
 
-        const maxValue = Math.max(...data.features.map(f => f.properties['SWH']));
+        const valueProperty = 'SWH';
+        const maxColDistance = 0.1;
+        const maxRowDistance = 0.2;
+        const maxValue = Math.max(...data.features.map(f => f.properties[valueProperty]));
         const colorRamp: ColorRamp = [
-            { val: 0.9 * maxValue, rgb: [67, 168, 244] },
-            { val: 0.93 * maxValue, rgb: [181, 221, 243] },
-            { val: 0.96 * maxValue, rgb: [202, 181, 219] }
+            { val: maxValue * 0.3, rgb: [67, 168, 244] },
+            { val: maxValue * 0.6, rgb: [181, 221, 243] },
+            { val: maxValue * 0.9, rgb: [202, 181, 219] }
         ];
 
         const styleFunction = (feature: olFeature<any>, resolution: number): olStyle => {
@@ -38,7 +41,8 @@ fetch('assets/waveheight.json').then((response: Response) => {
             if (features.length > 1) {
                 labelText = `${feature.getProperties().features.length}`;
             } else {
-                labelText = `${Number.parseFloat(features[0].getProperties()['SWH']).toPrecision(3)}`;
+                labelText = `${Number.parseFloat(features[0].getProperties()[valueProperty]).toPrecision(3)}`;
+                // labelText = features[0].getProperties()['row'] + '/' + features[0].getProperties()['col'];
             }
 
             return new olStyle({
@@ -65,7 +69,7 @@ fetch('assets/waveheight.json').then((response: Response) => {
             });
         };
 
-        const layer = createInterpolationLayer(data, map.getView().getProjection(), styleFunction, colorRamp);
+        const layer = createInterpolationLayer(data, valueProperty, maxRowDistance, maxColDistance, map.getView().getProjection(), styleFunction, colorRamp);
         map.addLayer(layer);
     });
 });

@@ -140,10 +140,10 @@ function lineSweepRows(data: FeatureCollection<Point>, errorThreshold: number): 
     return data;
 }
 
-export function gridFit(data: FeatureCollection<Point>, valuePara: string): FeatureCollection<Point, GridPointProps> {
+export function gridFit(data: FeatureCollection<Point>, valuePara: string, maxColDistance: number, maxRowDistance: number): FeatureCollection<Point, GridPointProps> {
 
-    data = lineSweepCols(data, 0.1);
-    data = lineSweepRows(data, 0.2);
+    data = lineSweepCols(data, maxColDistance);
+    data = lineSweepRows(data, maxRowDistance);
 
     for (const feature of data.features) {
         feature.properties.value = feature.properties[valuePara];

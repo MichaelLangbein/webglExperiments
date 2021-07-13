@@ -20,7 +20,7 @@ const fpser = document.getElementById('fpser');
 fetch('assets/waveheight.json').then((response: Response) => {
     response.json().then((data: FeatureCollection<Point>) => {
 
-        const instrumentedData = gridFit(data, 'SWH');
+        const instrumentedData = gridFit(data, 'SWH', 0.1, 0.2);
         const maxRow = Math.max( ... instrumentedData.features.map(f => f.properties.row));
         const maxCol = Math.max( ... instrumentedData.features.map(f => f.properties.col));
         console.log(maxRow, maxCol);

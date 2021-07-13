@@ -6,7 +6,6 @@ import { FeatureCollection, Point } from 'geojson';
 
 
 export interface GridPointProps {
-    id: number;
     col: number;
     row: number;
     value: number;
@@ -52,20 +51,15 @@ class SplineRenderer {
         this.canvas.style.setProperty('height', '100%');
 
 
-        const features = data.features.sort((f1, f2) => f1.properties.id > f2.properties.id ? 1 : -1);
+        const features = data.features;
         const coordinates = features.map(f => f.geometry.coordinates);
         const d = Delaunator.from(coordinates);
         const index = new Uint32Array(d.triangles.buffer);
 
-        const nrCols = features.reduce((carry, val) => val.properties.col > carry ? val.properties.col : carry, 0) + 1;
-        const nrRows = features.reduce((carry, val) => val.properties.row > carry ? val.properties.row : carry, 0) + 1;
-        const minX = features.map(f => f.geometry.coordinates[0]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const minY = features.map(f => f.geometry.coordinates[1]).reduce((carry, val) => val < carry ? val : carry, 10000);
-        const maxX = features.map(f => f.geometry.coordinates[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
-        const maxY = features.map(f => f.geometry.coordinates[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
-        const gridBounds = [minX, minY, maxX, maxY];
-        const minVal = features.map(f => f.properties.value).reduce((carry, val) => val < carry ? val : carry, 100000);
-        const maxVal = features.map(f => f.properties.value).reduce((carry, val) => val > carry ? val : carry, -100000);
+        const nrCols = Math.max(... features.map(f => f.properties.col)) + 1;
+        const nrRows = Math.max(... features.map(f => f.properties.row)) + 1;
+        const minVal = Math.min(... features.map(f => f.properties.value));
+        const maxVal = Math.max(... features.map(f => f.properties.value));
         const valueBounds = [minVal, maxVal];
 
         const dataMatrix255: number[][][] = new Array(nrRows).fill(0)
@@ -73,19 +67,16 @@ class SplineRenderer {
                     .map(v => [0, 0, 0, 0]));
         const colsAndRows: number[] = [];
         for (const feature of features) {
-            const id = feature.properties.id;
             const row = feature.properties.row;
             const col = feature.properties.col;
             const val = feature.properties.value;
-            const coords = feature.geometry.coordinates;
-            const xNormalized = 255 * (coords[0] - gridBounds[0]) / (gridBounds[2] - gridBounds[0]);
-            const yNormalized = 255 * (coords[1] - gridBounds[1]) / (gridBounds[3] - gridBounds[1]);
+            // @IMPORTANT: only normalize to 255 if texture is ubyte4. With floatX there is no need for (de-)normalization
             const valNormalized = 255 * (val - valueBounds[0]) / (valueBounds[1] - valueBounds[0]);
-            dataMatrix255[row][col] = [id, xNormalized, yNormalized, valNormalized];
+            dataMatrix255[row][col] = [0, 0, 0, valNormalized];
             colsAndRows.push(col, row);
         }
 
-        this.context = new Context(this.canvas.getContext('webgl2', {preserveDrawingBuffer: true}), false);
+        this.context = new Context(this.canvas.getContext('webgl2') as WebGL2RenderingContext, false);
         const program = new Program(
             `
                 precision mediump float;
@@ -146,45 +137,45 @@ class SplineRenderer {
 
             // values
             float f_1_1 = readValueFromTexture(textureData_1_1);
-            float f0_1 = readValueFromTexture(textureData0_1);
-            float f1_1 = readValueFromTexture(textureData1_1);
-            float f2_1 = readValueFromTexture(textureData2_1);
-            float f_10 = readValueFromTexture(textureData_10);
-            float f00 = readValueFromTexture(textureData00);
-            float f10 = readValueFromTexture(textureData10);
-            float f20 = readValueFromTexture(textureData20);
-            float f_11 = readValueFromTexture(textureData_11);
-            float f01 = readValueFromTexture(textureData01);
-            float f11 = readValueFromTexture(textureData11);
-            float f21 = readValueFromTexture(textureData21);
-            float f_12 = readValueFromTexture(textureData_12);
-            float f02 = readValueFromTexture(textureData02);
-            float f12 = readValueFromTexture(textureData12);
-            float f22 = readValueFromTexture(textureData22);
+            float f0_1  = readValueFromTexture(textureData0_1 );
+            float f1_1  = readValueFromTexture(textureData1_1 );
+            float f2_1  = readValueFromTexture(textureData2_1 );
+            float f_10  = readValueFromTexture(textureData_10 );
+            float f00   = readValueFromTexture(textureData00  );
+            float f10   = readValueFromTexture(textureData10  );
+            float f20   = readValueFromTexture(textureData20  );
+            float f_11  = readValueFromTexture(textureData_11 );
+            float f01   = readValueFromTexture(textureData01  );
+            float f11   = readValueFromTexture(textureData11  );
+            float f21   = readValueFromTexture(textureData21  );
+            float f_12  = readValueFromTexture(textureData_12 );
+            float f02   = readValueFromTexture(textureData02  );
+            float f12   = readValueFromTexture(textureData12  );
+            float f22   = readValueFromTexture(textureData22  );
 
             // 1st. derivatives [val/pixel]
             float fx_10 = (f_11 - f_1_1) / 2.0;
-            float fx_11 = (f_12 - f_10) / 2.0;
-            float fx00 = (f01 - f0_1) / 2.0;
-            float fx10 = (f11 - f1_1) / 2.0;
-            float fx01 = (f02 - f00) / 2.0;
-            float fx11 = (f12 - f10) / 2.0;
-            float fx20 = (f21 - f2_1) / 2.0;
-            float fx21 = (f22 - f20) / 2.0;
+            float fx_11 = (f_12 - f_10 ) / 2.0;
+            float fx00  = (f01  - f0_1 ) / 2.0;
+            float fx10  = (f11  - f1_1 ) / 2.0;
+            float fx01  = (f02  - f00  ) / 2.0;
+            float fx11  = (f12  - f10  ) / 2.0;
+            float fx20  = (f21  - f2_1 ) / 2.0;
+            float fx21  = (f22  - f20  ) / 2.0;
             float fy0_1 = (f1_1 - f_1_1) / 2.0;
-            float fy1_1 = (f2_1 - f0_1) / 2.0;
-            float fy00 = (f10 - f_10) / 2.0;
-            float fy10 = (f20 - f00) / 2.0;
-            float fy01 = (f11 - f01) / 2.0;
-            float fy11 = (f21 - f01) / 2.0;
-            float fy02 = (f12 - f_12) / 2.0;
-            float fy12 = (f22 - f02) / 2.0;
+            float fy1_1 = (f2_1 - f0_1 ) / 2.0;
+            float fy00  = (f10 - f_10  ) / 2.0;
+            float fy10  = (f20  - f00  ) / 2.0;
+            float fy01  = (f11  - f01  ) / 2.0;
+            float fy11  = (f21  - f01  ) / 2.0;
+            float fy02  = (f12  - f_12 ) / 2.0;
+            float fy12  = (f22  - f02  ) / 2.0;
 
             // 2nd derivatives [val/pixel^2]
-            float fxy00 = (fx10 - fx_10) / 2.0;
-            float fxy01 = (fx11 - fx_11) / 2.0;
-            float fxy10 = (fx20 - fx00) / 2.0;
-            float fxy11 = (fx21 - fx01) / 2.0;
+            float fxy00 = ( ((fx10 - fx_10)/2.0)  + ((fy01 - fy0_1)/2.0)  ) / 2.0;
+            float fxy01 = ( ((fx11 - fx_11)/2.0)  + ((fy02 - fy00 )/2.0)  ) / 2.0;
+            float fxy10 = ( ((fx20 - fx00 )/2.0)  + ((fy11 - fy1_1)/2.0)  ) / 2.0;
+            float fxy11 = ( ((fx21 - fx01 )/2.0)  + ((fy12 - fy10 )/2.0)  ) / 2.0;
 
             return mat4(
                  f00,  f10,  fx00,  fx10,
@@ -221,8 +212,8 @@ class SplineRenderer {
             mat4 derivativeMatrix = calcDerivativeMatrix( u_dataTexture, v_texturePosition, u_textureSize );
             float x = fract(v_texturePosition.x);
             float y = fract(v_texturePosition.y);
-            if (x > 0.998) { x = 1.0 - x; }
-            if (y > 0.998) { y = 1.0 - y; }
+            // if (x > 0.998) { x = 1.0 - x; }
+            // if (y > 0.998) { y = 1.0 - y; }
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);

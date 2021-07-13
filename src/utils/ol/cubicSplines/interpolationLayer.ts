@@ -5,7 +5,7 @@ import { Vector as VectorLayer, Image as ImageLayer } from 'ol/layer';
 import RasterSource from 'ol/source/Raster';
 
 import { createSplineSource, GridPointProps } from '../../ol/cubicSplines/cubicSplines3';
-import { gridFit } from '../../gridFitting/marissSpecific';
+import { gridFit } from '../../gridFitting/lineSweeping';
 import LayerGroup from 'ol/layer/Group';
 import { FeatureCollection, Point } from 'geojson';
 import { StyleLike } from 'ol/style/Style';
@@ -50,9 +50,14 @@ function interpolateStepwise(x: number, xs: number[], ys: number[]): number {
 }
 
 
-export function createInterpolationLayer(data: FeatureCollection<Point>, projection: Projection, styleFunction: StyleLike, colorRamp: ColorRamp) {
+export function createInterpolationLayer(
+    data: FeatureCollection<Point>,
+    valueProperty: string, maxRowDistance: number, maxColDistance: number,
+    projection: Projection, styleFunction: StyleLike, colorRamp: ColorRamp) {
 
-    data = gridFit(data, 'SWH');
+    if (!data.features[0].properties.col || !data.features[0].properties.row) {
+        data = gridFit(data, valueProperty, maxColDistance, maxRowDistance);
+    }
     const splineSource = createSplineSource(data as FeatureCollection<Point, GridPointProps>, projection);
 
     const colorRampX = colorRamp.map(e => e.val);
@@ -66,7 +71,8 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
     });
 
     let smoothInterpolation = true;
-    const maxValue = Math.max(... data.features.map(f => f.properties['SWH']));
+    const minValue = Math.min(... data.features.map(f => f.properties[valueProperty]));
+    const maxValue = Math.max(... data.features.map(f => f.properties[valueProperty]));
     const differenceSource = new RasterSource({
         sources: [waterSource, splineSource],
         operation: (pixels: number[][], data: any): number[] => {
@@ -75,7 +81,7 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
 
             // if inside interpolated range and water ...
             if (splinePixel[3] > 0 && waterPixel[3] > 0) {
-                const v = splinePixel[0];
+                const v = minValue + splinePixel[0] * (maxValue - minValue) / 255;
 
                 let r, g, b;
                 if (data.smooth) {
@@ -92,7 +98,7 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
                 return [0, 0, 0, 0];
             }
         },
-        lib: { interpolateRangewise, interpolateStepwise, interpolate, maxValue }
+        lib: { interpolateRangewise, interpolateStepwise, interpolate, minValue, maxValue }
     });
     differenceSource.on('beforeoperations', function (event) {
         event.data.smooth = smoothInterpolation;
