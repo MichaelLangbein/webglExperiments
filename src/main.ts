@@ -1,1 +1,1 @@
-import './examples/ol/spline_interpolation';
+import './examples/ol/gridFitting';

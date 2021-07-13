@@ -6,7 +6,7 @@ import { Fill, Style, Text, Circle as CircleStyle } from 'ol/style';
 import 'ol/ol.css';
 
 import { FeatureCollection, Point } from 'geojson';
-import { gridFit } from '../../utils/gridFitting/marissSpecific';
+import { gridFit } from '../../utils/gridFitting/lineSweeping';
 
 
 
