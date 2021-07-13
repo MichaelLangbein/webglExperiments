@@ -83,6 +83,12 @@ export const vectorSubtraction = (vec0: Vector, vec1: Vector): Vector => {
     return binaryVectorOp(vec0, vec1, (a, b) => a - b);
 };
 
+export const vectorDistance = (vec0: Vector, vec1: Vector): number => {
+    const diff = vectorSubtraction(vec0, vec1);
+    const length = vectorLength(diff);
+    return length;
+};
+
 export const vectorCrossProduct = (vec0: Vec3, vec1: Vec3): Vec3 => {
     return [
         vec0[1] * vec1[2] - vec0[2] * vec1[1],
@@ -91,7 +97,7 @@ export const vectorCrossProduct = (vec0: Vec3, vec1: Vec3): Vec3 => {
     ];
 };
 
-export const vectorInnerProduct = (vec0: number[], vec1: number[]): number => {
+export const vectorInnerProduct = (vec0: Vector, vec1: Vector): number => {
     let s = 0;
     for (let i = 0; i < vec0.length; i++) {
         s += vec0[i] * vec1[i];
@@ -99,7 +105,14 @@ export const vectorInnerProduct = (vec0: number[], vec1: number[]): number => {
     return s;
 };
 
-export const vectorProjectedOnto = (point: number[], axis: number[]): number => {
+
+export const vectorProjectOnto = (point: Vector, axis: Vector) => {
+    const length = vectorProjectedOntoLength(point, axis);
+    const projected = scalarProduct(length, axis);
+    return projected;
+};
+
+export const vectorProjectedOntoLength = (point: Vector, axis: Vector): number => {
     return vectorInnerProduct(point, axis) / Math.sqrt(vectorLength(axis));
 };
 
@@ -112,7 +125,7 @@ export const scalarProduct = (scalar: number, vector: Vector): Vector => {
 };
 
 export const vectorLength = (vec: Vector): number => {
-    const sq = vec.reduce((prevVal: number, currVal: number) => prevVal + currVal * currVal, 0);
+    const sq = vectorInnerProduct(vec, vec); // vec.reduce((prevVal: number, currVal: number) => prevVal + currVal * currVal, 0);
     return Math.sqrt(sq);
 };
 

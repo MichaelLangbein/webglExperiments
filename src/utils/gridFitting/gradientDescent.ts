@@ -1,7 +1,7 @@
 import { FeatureCollection, Point } from 'geojson';
 import { GridPointProps } from '../ol/cubicSplines/cubicSplines3';
 import { nelderMead } from 'fmin';
-import { vectorProjectedOnto, vectorAddition, scalarProduct, vectorLength, vectorSubtraction, createMatrix } from '../math';
+import { vectorProjectedOntoLength, vectorAddition, scalarProduct, vectorLength, vectorSubtraction, createMatrix } from '../math';
 
 
 export interface GridParas {
@@ -26,11 +26,11 @@ function point2closestGridPoint(point: number[], gridParas: GridParas): {closest
     const pointMin = vectorSubtraction(point, nullPoint);
 
     const primaryAxis = makeAxis(gridParas.theta);
-    const alpha = vectorProjectedOnto(pointMin, primaryAxis);
+    const alpha = vectorProjectedOntoLength(pointMin, primaryAxis);
     const col = Math.round(alpha / gridParas.deltaX);
 
     const secondaryAxis = makeAxis(gridParas.rho);
-    const beta = vectorProjectedOnto(pointMin, secondaryAxis);
+    const beta = vectorProjectedOntoLength(pointMin, secondaryAxis);
     const row = Math.round(beta / gridParas.deltaY);
 
     const closestGridPoint = vectorAddition(

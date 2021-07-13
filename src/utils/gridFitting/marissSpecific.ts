@@ -1,6 +1,113 @@
 import { FeatureCollection, Point, Feature } from 'geojson';
 import { GridPointProps } from '../../utils/ol/cubicSplines/cubicSplines3';
-import { pointDistance } from '../../utils/math';
+import { pointDistance, vectorSubtraction, vectorAddition, vectorProjectOnto, vectorDistance } from '../../utils/math';
+
+
+
+class SweepedColumn {
+    public y: number;
+    public features: Feature<Point>[] = [];
+
+    constructor(feature: Feature<Point>) {
+        this.push(feature);
+    }
+
+    push(feature: Feature<Point>): void {
+        const fy = feature.geometry.coordinates[1];
+        this.y = fy;
+        this.features.push(feature);
+    }
+
+    /**
+     * The lower the returned number, the more the feature is in line with this column
+     */
+    pointsTo(feature: Feature<Point>): number {
+        // f_proj = f, projected onto column-axis
+        // distance = |f - f_proj|
+
+        // if there's only one point in column, we don't know where it points to.
+        if (this.features.length < 2) {
+            return vectorDistance(this.features[0].geometry.coordinates, feature.geometry.coordinates);
+        }
+
+        const featureV = feature.geometry.coordinates;
+        const firstV = this.features[0].geometry.coordinates;
+        const lastV = this.features[this.features.length - 1].geometry.coordinates;
+
+        const columnDirection = vectorSubtraction(lastV, firstV);
+        const featureRelative = vectorSubtraction(featureV, firstV);
+        const featureProjected = vectorProjectOnto(featureRelative, columnDirection);
+        const distance = vectorDistance(featureV, featureProjected);
+
+        return distance;
+    }
+}
+
+/**
+ * Assumes that each column is tilted towards the right (x) the higher up (in y) you go.
+ */
+function sweepWithRightTilt(data: FeatureCollection<Point>, missThreshold = 4) {
+    data.features.sort((f1, f2) => f1.geometry.coordinates[0] - f2.geometry.coordinates[0] > 0 ? 1 : -1);
+
+    const columns: SweepedColumn[] = [new SweepedColumn(data.features[0])];
+
+    for (const feature of data.features) {
+        const y = feature.geometry.coordinates[1];
+
+        if (y < columns[columns.length - 1].y) {
+            columns.push(new SweepedColumn(feature));
+        } else {
+            const candidateColumns = columns.filter(c => c.y < y);
+
+            if (candidateColumns.length === 0) {
+                columns.push(new SweepedColumn(feature));
+                continue;
+            }
+
+            let lowestMiss = candidateColumns[0].pointsTo(feature);
+            let bestColumn = 0;
+            for (let i = 1; i < candidateColumns.length - 1; i++) {
+                let miss = candidateColumns[i].pointsTo(feature);
+                if (miss < lowestMiss) {
+                    lowestMiss = miss;
+                    bestColumn = i;
+                }
+            }
+            candidateColumns[bestColumn].push(feature);
+
+            // const candidateColumns = columns.filter(c => c.y < y && c.features.length >= 2);
+            // const immatureColumns = columns.filter(c => c.features.length < 2);
+            // const lastImmatureColumn = immatureColumns[immatureColumns.length - 1];
+
+            // if (candidateColumns.length === 0) {
+            //     lastImmatureColumn.push(feature);
+            //     continue;
+            // }
+
+            // let lowestMiss = candidateColumns[0].pointsTo(feature);
+            // let bestColumn = 0;
+            // for (let i = 1; i < candidateColumns.length - 1; i++) {
+            //     let miss = candidateColumns[i].pointsTo(feature);
+            //     if (miss < lowestMiss) {
+            //         lowestMiss = miss;
+            //         bestColumn = i;
+            //     }
+            // }
+            // if (lowestMiss < missThreshold || !lastImmatureColumn) {
+            //     candidateColumns[bestColumn].push(feature);
+            // } else {
+            //     lastImmatureColumn.push(feature);
+            // }
+        }
+    }
+
+    for (let c = 0; c < columns.length; c++) {
+        for (const feature of columns[c].features) {
+            feature.properties.col = c;
+        }
+    }
+}
+
 
 
 
@@ -137,13 +244,15 @@ export function gridFit(data: FeatureCollection<Point>, valuePara: string): Feat
         currentCol += 1;
     }
 
+    sweepWithRightTilt(data);
 
-    const rows = splitDataInRows(data.features);
-    const xSortedRows = rows.map(row => {
-        return row.sort((f1, f2) => f1.geometry.coordinates[0] < f2.geometry.coordinates[0] ? -1 : 1);
-    });
-    const largestRowIndex = getLargestRowIndex(rows);
-    const largestRow = xSortedRows[largestRowIndex];
+
+    // const rows = splitDataInRows(data.features);
+    // const xSortedRows = rows.map(row => {
+    //     return row.sort((f1, f2) => f1.geometry.coordinates[0] < f2.geometry.coordinates[0] ? -1 : 1);
+    // });
+    // const largestRowIndex = getLargestRowIndex(rows);
+    // const largestRow = xSortedRows[largestRowIndex];
 
     // const largestRowSize = xSortedRows[largestRowIndex].length;
     // const largestRowSpread = xSortedRows[largestRowIndex][largestRowSize - 1].geometry.coordinates[0] - xSortedRows[largestRowIndex][0].geometry.coordinates[0];
@@ -155,17 +264,17 @@ export function gridFit(data: FeatureCollection<Point>, valuePara: string): Feat
     //     }
     // }
 
-    largestRow.map((v, i) => v.properties.col = i);
-    for (let i = largestRowIndex + 1; i < rows.length; i++) {
-        // const annotedRow = xSortedRows[i - 1];
-        const row = xSortedRows[i];
-        getColsFromXNearest(row, largestRow);
-    }
-    for (let i = largestRowIndex - 1; i > 0; i--) {
-        // const annotedRow = xSortedRows[i + 1];
-        const row = xSortedRows[i];
-        getColsFromXNearest(row, largestRow);
-    }
+    // largestRow.map((v, i) => v.properties.col = i);
+    // for (let i = largestRowIndex + 1; i < rows.length; i++) {
+    //     // const annotedRow = xSortedRows[i - 1];
+    //     const row = xSortedRows[i];
+    //     getColsFromXNearest(row, largestRow);
+    // }
+    // for (let i = largestRowIndex - 1; i > 0; i--) {
+    //     // const annotedRow = xSortedRows[i + 1];
+    //     const row = xSortedRows[i];
+    //     getColsFromXNearest(row, largestRow);
+    // }
 
 
     // const maxCol = Math.max(... data.features.map(f => f.properties.preliminaryColumn));
