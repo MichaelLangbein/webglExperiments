@@ -3,7 +3,7 @@ import { Program, AttributeData, UniformData, TextureData, Context, ElementsBund
 import { ImageCanvas } from 'ol/source';
 import Projection from 'ol/proj/Projection';
 import { FeatureCollection, Point } from 'geojson';
-import { nextPowerOf } from '../../math';
+import { flatten2, nextPowerOf } from '../../math';
 
 
 export interface GridPointProps {
@@ -223,7 +223,7 @@ class SplineRenderer {
         }
         `);
         this.bundle = new ElementsBundle(program, {
-            'a_geoPosition': new AttributeData(new Float32Array(coordinates.flat()), 'vec2', false),
+            'a_geoPosition': new AttributeData(new Float32Array(flatten2(coordinates)), 'vec2', false),
             'a_texturePosition': new AttributeData(new Float32Array(colsAndRows), 'vec2', false),
         }, {
             'u_geoBbox': new UniformData('vec4', [0, 0, 360, 180]),

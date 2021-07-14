@@ -58,7 +58,7 @@ export function createInterpolationLayer(
     if (!data.features[0].properties.col || !data.features[0].properties.row) {
         data = gridFit(data, valueProperty, maxColDistance, maxRowDistance);
     }
-    const splineSource = createSplineSource(data as FeatureCollection<Point, GridPointProps>, projection);
+    const splineSource = createSplineSource(data as FeatureCollection<Point, GridPointProps>);
 
     const colorRampX = colorRamp.map(e => e.val);
     const colorRampR = colorRamp.map(e => e.rgb[0]);
@@ -98,7 +98,8 @@ export function createInterpolationLayer(
                 return [0, 0, 0, 0];
             }
         },
-        lib: { interpolateRangewise, interpolateStepwise, interpolate, minValue, maxValue }
+        lib: { interpolateRangewise, interpolateStepwise, interpolate, minValue, maxValue },
+        // threads: 5,
     });
     differenceSource.on('beforeoperations', function (event) {
         event.data.smooth = smoothInterpolation;
@@ -117,10 +118,13 @@ export function createInterpolationLayer(
         source: new Cluster({
             distance: 30,
             source: new VectorSource({
-                features: new GeoJSON().readFeatures(data),
+                features: new GeoJSON({
+                    dataProjection: 'EPSG:4326',
+                    featureProjection: projection
+                }).readFeatures(data),
             })
         }),
-        style: styleFunction
+        style: styleFunction,
     });
 
     const layerGroup = new LayerGroup({

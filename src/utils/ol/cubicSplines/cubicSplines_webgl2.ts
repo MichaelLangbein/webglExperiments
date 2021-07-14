@@ -3,6 +3,7 @@ import { Program, AttributeData, UniformData, TextureData, Context, ElementsBund
 import { ImageCanvas } from 'ol/source';
 import Projection from 'ol/proj/Projection';
 import { FeatureCollection, Point } from 'geojson';
+import { flatten2 } from '../../math';
 
 
 export interface GridPointProps {
@@ -11,7 +12,7 @@ export interface GridPointProps {
     value: number;
 }
 
-export function createSplineSource(data: FeatureCollection<Point, GridPointProps>, projection: Projection): ImageCanvas {
+export function createSplineSource(data: FeatureCollection<Point, GridPointProps>): ImageCanvas {
 
     const splineRenderer = new SplineRenderer(data);
 
@@ -22,7 +23,8 @@ export function createSplineSource(data: FeatureCollection<Point, GridPointProps
             const canvas = splineRenderer.renderFrame();
             return canvas;
         },
-        projection, ratio: 1
+        projection: 'EPSG:4326',
+        ratio: 1,
     });
 
     return splineSource;
@@ -50,7 +52,6 @@ class SplineRenderer {
         this.canvas.style.setProperty('width', '100%');
         this.canvas.style.setProperty('height', '100%');
 
-
         const features = data.features;
         const coordinates = features.map(f => f.geometry.coordinates);
         const d = Delaunator.from(coordinates);
@@ -64,7 +65,7 @@ class SplineRenderer {
 
         const dataMatrix255: number[][][] = new Array(nrRows).fill(0)
                     .map(v => new Array(nrCols).fill(0)
-                    .map(v => [0, 0, 0, 0]));
+                    .map(v => [255, 0, 0, 0]));
         const colsAndRows: number[] = [];
         for (const feature of features) {
             const row = feature.properties.row;
@@ -217,10 +218,15 @@ class SplineRenderer {
             float interpolatedValue = bicubicInterpolationUnitSquare( x,  y, derivativeMatrix );
             float interpolatedValueNormalized = (interpolatedValue - u_valueBounds[0]) / (u_valueBounds[1] - u_valueBounds[0]);
             gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.8);
+
+            // vec4 data = texture2D(u_dataTexture, v_texturePosition / u_textureSize);
+            // if (data[0] > 0.95) {  // if No-Data pixel has been set:
+            //     gl_FragColor = vec4(interpolatedValueNormalized, interpolatedValueNormalized, interpolatedValueNormalized, 0.0);
+            // } // @TODO: better: interpolate alpha using bicubic interpolation as well!
         }
         `);
         this.bundle = new ElementsBundle(program, {
-            'a_geoPosition': new AttributeData(new Float32Array(coordinates.flat()), 'vec2', false),
+            'a_geoPosition': new AttributeData(new Float32Array(flatten2(coordinates)), 'vec2', false),
             'a_texturePosition': new AttributeData(new Float32Array(colsAndRows), 'vec2', false),
         }, {
             'u_geoBbox': new UniformData('vec4', [0, 0, 360, 180]),

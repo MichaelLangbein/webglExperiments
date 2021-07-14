@@ -10,19 +10,21 @@ import { nextPowerOf, flatten2 } from '../../math';
 
 
 
-export function createInterpolationSource(data: FeatureCollection<Point>, projection: string, power: number, valueProperty: string, maxEdgeLength: number): ImageSource {
+export function createInterpolationSource(
+    data: FeatureCollection<Point>, power: number, valueProperty: string, maxEdgeLength: number): ImageSource {
+
     const interpolationRenderer = new InterpolationRenderer(data, power, valueProperty, maxEdgeLength, false);
 
     const interpolationSource = new ImageCanvas({
-        canvasFunction: function(extent, imageResolution, devicePixelRatio, imageSize, projection) {
+        canvasFunction: function (extent, imageResolution, devicePixelRatio, imageSize, projection) {
             // @ts-ignore
             const renderer = this.get('renderer') as InterpolationRenderer;
             renderer.setCanvasSize(imageSize[0], imageSize[1]);
-            renderer.setBbox(extent);
+            renderer.setBbox(extent as [number, number, number, number]);
             const canvas = renderer.renderFrame();
             return canvas;
         },
-        projection: projection,
+        projection: 'EPSG:4326',
         ratio: 1
     });
     interpolationSource.set('renderer', interpolationRenderer);
@@ -32,7 +34,7 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
 }
 
 
- export class InterpolationRenderer {
+export class InterpolationRenderer {
     private webGlCanvas: HTMLCanvasElement;
     private context: Context;
     private interpolationShader: Bundle;
@@ -42,10 +44,10 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
     private interpolatedValues: Uint8Array;
 
     constructor(data: FeatureCollection<Point>,
-        private power: number,
-        private valueProperty: string,
-        private maxEdgeLength: number,
-        private storeInterpolatedPixelData: boolean) {
+                private power: number,
+                private valueProperty: string,
+                private maxEdgeLength: number,
+                private storeInterpolatedPixelData: boolean) {
 
         // setting up HTML element
         this.webGlCanvas = document.createElement('canvas');
@@ -54,8 +56,8 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
         this.webGlCanvas.style.setProperty('top', '0px');
         this.webGlCanvas.style.setProperty('width', '100%');
         this.webGlCanvas.style.setProperty('height', '100%');
-        this.webGlCanvas.width = 1000;  // <-- make smaller for better performance
-        this.webGlCanvas.height = 1000;  // <-- make smaller for better performance
+        this.webGlCanvas.width = 500;  // <-- make smaller for better performance
+        this.webGlCanvas.height = 500;  // <-- make smaller for better performance
         this.context = new Context(this.webGlCanvas.getContext('webgl'), false);
 
         // preparing data
@@ -251,16 +253,16 @@ const createInverseDistanceInterpolationShader = (observationDataRel2ClipSpace: 
     const viewPort = rectangleA(2, 2);
     const inverseDistanceShader = new ArrayBundle(
         inverseDistanceProgram, {
-            'a_position': new AttributeData(new Float32Array(flatten2(viewPort.vertices)), 'vec4', false),
-            'a_texturePosition': new AttributeData(new Float32Array(flatten2(viewPort.texturePositions)), 'vec2', false),
-        }, {
-            'u_power': new UniformData('float', [power]),
-            'u_nrDataPoints': new UniformData('int', [observationDataRel2ClipSpace.length]),
-            'u_maxValue': new UniformData('float', [maxValue]),
-            'u_maxDistance': new UniformData('float', [maxEdgeLengthBbox])
-        }, {
-            'u_dataTexture': new TextureData([observationDataRel2ClipSpace])
-        },
+        'a_position': new AttributeData(new Float32Array(flatten2(viewPort.vertices)), 'vec4', false),
+        'a_texturePosition': new AttributeData(new Float32Array(flatten2(viewPort.texturePositions)), 'vec2', false),
+    }, {
+        'u_power': new UniformData('float', [power]),
+        'u_nrDataPoints': new UniformData('int', [observationDataRel2ClipSpace.length]),
+        'u_maxValue': new UniformData('float', [maxValue]),
+        'u_maxDistance': new UniformData('float', [maxEdgeLengthBbox])
+    }, {
+        'u_dataTexture': new TextureData([observationDataRel2ClipSpace])
+    },
         'triangles',
         viewPort.vertices.length
     );
@@ -300,6 +302,36 @@ const createArrangementShader = (currentBbox: number[], interpolationDataGeoBbox
             precision mediump float;
             uniform sampler2D u_texture;
             varying vec2 v_texturePosition;
+
+            float interpolate(float x0, float y0, float x1, float y1,float  x) {
+                float degree = (x - x0) / (x1 - x0);
+                float interp = degree * (y1 - y0) + y0;
+                return interp;
+            }
+
+            function interpolateRangewise(x: number, xs: number[], ys: number[]): number {
+                if (x < xs[0]) return ys[0];
+                for (let i = 0; i < xs.length - 1; i++) {
+                    if (xs[i] <= x && x < xs[i + 1]) {
+                        return interpolate(xs[i], ys[i], xs[i + 1], ys[i + 1], x);
+                    }
+                }
+                if (xs[xs.length - 1] <= x) {
+                    return ys[ys.length - 1];
+                }
+            }
+
+            function interpolateStepwise(x: number, xs: number[], ys: number[]): number {
+                if (x < xs[0]) return ys[0];
+                for (let i = 0; i < xs.length - 1; i++) {
+                    if (xs[i] <= x && x < xs[i + 1]) {
+                        return ys[i + 1];
+                    }
+                }
+                if (xs[xs.length - 1] <= x) {
+                    return ys[ys.length - 1];
+                }
+            }
 
             void main() {
                 vec4 texData = texture2D(u_texture, v_texturePosition);

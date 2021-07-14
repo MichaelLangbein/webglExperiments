@@ -9,7 +9,10 @@ import { nextPowerOf, flatten2 } from '../../math';
 
 
 
-export function createInterpolationSource(data: FeatureCollection<Point>, projection: string, power: number, valueProperty: string, maxEdgeLength: number): ImageSource {
+export function createInterpolationSource(
+    data: FeatureCollection<Point>,
+    power: number, valueProperty: string, maxEdgeLength: number): ImageSource {
+
     const interpolationRenderer = new InterpolationRenderer(data, power, valueProperty, maxEdgeLength);
 
     const interpolationSource = new ImageCanvas({
@@ -21,7 +24,7 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
             const canvas = renderer.draw();
             return canvas;
         },
-        projection: projection,
+        projection: 'EPSG:4326',
         ratio: 1
     });
     interpolationSource.set('renderer', interpolationRenderer);

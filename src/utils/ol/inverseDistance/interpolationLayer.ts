@@ -21,7 +21,7 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
     const colorRampG = colorRamp.map(e => e.rgb[1]);
     const colorRampB = colorRamp.map(e => e.rgb[2]);
 
-    const interpolationSource = createInterpolationSource(data, projection, 3, 'SWH', 0.2);
+    const interpolationSource = createInterpolationSource(data, 3, 'SWH', 0.2);
     const waterSource = new XYZ({
         url: 'https://storage.googleapis.com/global-surface-water/tiles2020/transitions/{z}/{x}/{y}.png',
         crossOrigin: 'anonymous'
@@ -73,7 +73,10 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
         source: new Cluster({
             distance: 30,
             source: new VectorSource({
-                features: new GeoJSON().readFeatures(data),
+                features: new GeoJSON({
+                    dataProjection: 'EPSG:4326',
+                    featureProjection: projection
+                }).readFeatures(data),
             })
         }),
         style: styleFunction
