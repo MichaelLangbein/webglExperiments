@@ -146,7 +146,7 @@ const map = new Map({
 
 map.on('singleclick', function (evt) {
     var coordinate = evt.coordinate;
-    map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike, l: Layer) => {
+    map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike, l: Layer<VectorSource<Polygon>>) => {
         console.log(f.getProperties());
     });
 });

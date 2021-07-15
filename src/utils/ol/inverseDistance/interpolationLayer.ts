@@ -57,7 +57,8 @@ export function createInterpolationLayer(data: FeatureCollection<Point>, project
         },
         lib: { interpolateStepwise, interpolateRangewise, interpolate, maxValue }
     });
-    differenceSource.on('beforeoperations', function (event) {
+    // @ts-ignore
+    differenceSource.on('beforeoperations', function (event: any) {
         event.data.smooth = smoothInterpolation;
         event.data.colorRampX = colorRampX;
         event.data.colorRampR = colorRampR;

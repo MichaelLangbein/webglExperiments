@@ -12,6 +12,7 @@ import { Options } from 'ol/layer/BaseVector';
 import { Pixel } from 'ol/pixel';
 import { Coordinate } from 'ol/coordinate';
 import MultiPolygon from 'ol/geom/MultiPolygon';
+import { Vector } from 'ol/source';
 
 
 export interface PolygonRendererData {
@@ -94,17 +95,17 @@ export function parseFeaturesToRendererData(
     };
 }
 
-export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
+export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer<Vector<Polygon>>> {
     polyShader: ElementsBundle;
     lineShader: ElementsBundle;
     context: Context;
     canvas: HTMLCanvasElement;
 
-    constructor(layer: VectorLayer, colorFunc: (f: Feature<Polygon>) => number[], data?: PolygonRendererData) {
+    constructor(layer: VectorLayer<Vector<Polygon>>, colorFunc: (f: Feature<Polygon>) => number[], data?: PolygonRendererData) {
         super(layer);
 
         if (!data) {
-            const features = layer.getSource().getFeatures() as Feature<Polygon>[];
+            const features = layer.getSource().getFeatures();
             data = parseFeaturesToRendererData(features, colorFunc);
         }
 
@@ -225,7 +226,11 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
      * @return Callback result.
      * @template T
      */
-    forEachFeatureAtCoordinate(coordinate: Coordinate, frameState: FrameState, hitTolerance: number, callback: (f: Feature, l: Layer) => any, declutteredFeatures: Feature[]) {
+    // @ts-ignore
+    forEachFeatureAtCoordinate(
+        coordinate: Coordinate, frameState: FrameState, hitTolerance: number,
+        callback: (f: Feature<Polygon>, l: Layer<Vector<Polygon>>) => any,
+        declutteredFeatures: Feature<Polygon>[]) {
         const layer = this.getLayer();
         const features = layer.getSource().getFeaturesAtCoordinate(coordinate);
         for (const feature of features) {
@@ -234,12 +239,12 @@ export class WebGlPolygonRenderer extends LayerRenderer<VectorLayer> {
     }
 }
 
-export interface WebGlPolygonLayerOptions extends Options {
+export interface WebGlPolygonLayerOptions extends Options<Vector<Polygon>> {
     colorFunc: (f: Feature<Polygon>) => number[];
     webGlData?: PolygonRendererData;
 }
 
-export class WebGlPolygonLayer extends VectorLayer {
+export class WebGlPolygonLayer extends VectorLayer<Vector<Polygon>> {
 
     webGlData: PolygonRendererData;
     colorFunc: (f: Feature<Polygon>) => number[];
@@ -252,9 +257,10 @@ export class WebGlPolygonLayer extends VectorLayer {
         }
     }
 
-    createRenderer(): LayerRenderer<VectorLayer> {
+    createRenderer(): LayerRenderer<VectorLayer<Vector<Polygon>>> {
         const renderer = new WebGlPolygonRenderer(this, this.colorFunc, this.webGlData);
         delete(this.webGlData);
+        // @ts-ignore
         return renderer;
     }
 }

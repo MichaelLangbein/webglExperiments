@@ -67,7 +67,7 @@ export function createInterpolationLayer(
 
     const waterSource = new XYZ({
         url: 'https://storage.googleapis.com/global-surface-water/tiles2020/transitions/{z}/{x}/{y}.png',
-        crossOrigin: 'anonymous'
+        crossOrigin: 'anonymous',
     });
 
     let smoothInterpolation = true;
@@ -101,6 +101,7 @@ export function createInterpolationLayer(
         lib: { interpolateRangewise, interpolateStepwise, interpolate, minValue, maxValue },
         // threads: 5,
     });
+    // @ts-ignore
     differenceSource.on('beforeoperations', function (event) {
         event.data.smooth = smoothInterpolation;
         event.data.colorRampX = colorRampX;

@@ -3,21 +3,23 @@ import { Options } from 'ol/layer/BaseVector';
 import LayerRenderer from 'ol/renderer/Layer';
 import { FrameState } from 'ol/PluggableMap';
 import Point from 'ol/geom/Point';
+import { Feature } from 'ol';
 
 import Delaunator from 'delaunator';
 import { ArrayBundle, Program, AttributeData, UniformData, TextureData, Context, ElementsBundle, Index, Bundle } from '../../../engine2/engine.core';
+import { Vector } from 'ol/source';
 
 
 
-export interface InverseDistanceLayerOptions extends Options {}
+export interface InverseDistanceLayerOptions extends Options<Vector<Point>> {}
 
-export class InverseDistanceLayer extends VectorLayer {
+export class InverseDistanceLayer extends VectorLayer<Vector<Point>> {
 
     constructor(opt_options: InverseDistanceLayerOptions) {
         super(opt_options);
     }
 
-    createRenderer(): LayerRenderer<VectorLayer> {
+    createRenderer(): LayerRenderer<VectorLayer<Vector<Point>>> {
         const renderer = new InverseDistanceRenderer(this);
         return renderer;
     }
@@ -25,13 +27,13 @@ export class InverseDistanceLayer extends VectorLayer {
 
 
 
-export class InverseDistanceRenderer extends LayerRenderer<VectorLayer> {
+export class InverseDistanceRenderer extends LayerRenderer<VectorLayer<Vector<Point>>> {
 
     private canvas: HTMLCanvasElement;
     private bundle: Bundle;
     private context: Context;
 
-    constructor(layer: VectorLayer) {
+    constructor(layer: VectorLayer<Vector<Point>>) {
         super(layer);
 
         this.canvas = document.createElement('canvas') as HTMLCanvasElement;
@@ -56,8 +58,8 @@ export class InverseDistanceRenderer extends LayerRenderer<VectorLayer> {
         const maxX = features.map(f => (f.getGeometry() as Point).getCoordinates()[0]).reduce((carry, val) => val > carry ? val : carry, -10000);
         const maxY = features.map(f => (f.getGeometry() as Point).getCoordinates()[1]).reduce((carry, val) => val > carry ? val : carry, -10000);
         const gridBounds = [minX, minY, maxX, maxY];
-        const minVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val < carry ? val : carry, 100000);
-        const maxVal = features.map(f => f.getProperties()['value']).reduce((carry, val) => val > carry ? val : carry, -100000);
+        const minVal = Math.min(... features.map(f => f.getProperties().value));
+        const maxVal = Math.max(... features.map(f => f.getProperties().value));
         const valueBounds = [minVal, maxVal];
 
         const dataMatrix255: number[][][] = new Array(nrRows).fill(0).map(v => new Array(nrRows).fill(0).map(v => [0, 0, 0, 0]));

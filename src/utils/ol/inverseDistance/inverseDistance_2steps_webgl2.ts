@@ -16,7 +16,7 @@ export function createInterpolationSource(data: FeatureCollection<Point>, projec
     const interpolationSource = new ImageCanvas({
         canvasFunction: (extent, imageResolution, devicePixelRatio, imageSize, projection) => {
             interpolationRenderer.setCanvasSize(imageSize[0], imageSize[1]);
-            interpolationRenderer.setBbox(extent);
+            interpolationRenderer.setBbox(extent as [number, number, number, number]);
             const canvas = interpolationRenderer.renderFrame();
             return canvas;
         },

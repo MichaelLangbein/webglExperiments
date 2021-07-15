@@ -29,7 +29,7 @@ fetch('assets/waveheight.json').then((response: Response) => {
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(instrumentedData)
             }),
-            style: (feature: OlFeature) => {
+            style: (feature: OlFeature<any>) => {
                 const row = feature.getProperties()['row'];
                 const col = feature.getProperties()['col'];
                 const r = 255 * row / maxRow;
