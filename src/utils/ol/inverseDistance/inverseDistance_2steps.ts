@@ -64,7 +64,7 @@ export class InterpolationRenderer {
         this.webGlCanvas.style.setProperty('height', '100%');
         this.webGlCanvas.width = 500;  // <-- make smaller for better performance
         this.webGlCanvas.height = 500;  // <-- make smaller for better performance
-        this.context = new Context(this.webGlCanvas.getContext('webgl'), false);
+        this.context = new Context(this.webGlCanvas.getContext('webgl', {preserveDrawingBuffer: true}), false);
 
         // preparing data
         const { coords, values, bboxWithPadding, maxVal } = parseData(data, this.valueProperty, this.maxEdgeLength);
@@ -381,11 +381,13 @@ const createArrangementShader = (
             vec4 texData=texture2D(u_texture,v_texturePosition);
             float val=texData[0] * u_maxValue;
             float alpha=texData[3];
+            vec3 rgb;
             if(u_smooth==1){
-                gl_FragColor=vec4(interpolateRangewise(val).xyz / 255.0,alpha);
+                rgb = interpolateRangewise(val) / 255.0;
             }else{
-                gl_FragColor=vec4(interpolateStepwise(val).xyz / 255.0,alpha);
+                rgb = interpolateStepwise(val) / 255.0;
             }
+            gl_FragColor=vec4(rgb.xyz * alpha, alpha); // I think openlayers requires pre-multiplied alpha.
         }
         `);
 

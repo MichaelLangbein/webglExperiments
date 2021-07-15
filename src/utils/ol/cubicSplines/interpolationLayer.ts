@@ -99,7 +99,8 @@ export function createInterpolationLayer(
             }
         },
         lib: { interpolateRangewise, interpolateStepwise, interpolate, minValue, maxValue },
-        // threads: 5,
+        threads: 0,
+        operationType: 'pixel' // 'image'
     });
     // @ts-ignore
     differenceSource.on('beforeoperations', function (event) {
