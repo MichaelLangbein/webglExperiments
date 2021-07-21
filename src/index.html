@@ -3,15 +3,17 @@
     <style>
         #container {
             background-color: aliceblue;
+            display: flex;
+            flex-direction: row;
         }
         #canvas {
-            width: 100%;
-            height: 80%;
+            width: 50%;
+            height: 500px;
             background-color: black;
             display: block;
         }
         #map {
-            width: 100%;
+            width: 50%;
             height: 500px;
         }
         #empty {
@@ -36,20 +38,19 @@
     <div id="container">
         <canvas id="canvas"></canvas>
         <div id="map" class="map"></div>
-        <div id="empty" class="empty"></div>
-        
-        <button class="button" id="button">Click me</button>
-
-        <div>
-            <label>x</label>
-            <input type="range" min="-100" max="100" value="-100" id="xrange">
-        </div>
-        <div>
-            <label>y</label>
-            <input type="range" min="-100" max="100" value="-100" id="yrange">
-        </div>
-        <div id="fpser"></div>
     </div>
+
+    <div id="empty" class="empty"></div>
+    <button class="button" id="button">Click me</button>
+    <div>
+        <label>x</label>
+        <input type="range" min="-100" max="100" value="-100" id="xrange">
+    </div>
+    <div>
+        <label>y</label>
+        <input type="range" min="-100" max="100" value="-100" id="yrange">
+    </div>
+    <div id="fpser"></div>
 
     <script src="/main.bundle.js"></script>
 </body>

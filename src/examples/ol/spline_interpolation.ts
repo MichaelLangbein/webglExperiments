@@ -22,6 +22,39 @@ document.getElementById('canvas').style.setProperty('height', '0px');
 const fpser = document.getElementById('fpser');
 
 
+const styleFunction = (feature: olFeature<any>, resolution: number): olStyle => {
+    const features = feature.getProperties().features;
+    let labelText: string;
+    if (features.length > 1) {
+        labelText = `${feature.getProperties().features.length}`;
+    } else {
+        labelText = `${Number.parseFloat(features[0].getProperties()['SWH']).toPrecision(3)}`;
+    }
+
+    return new olStyle({
+        image: new olCircle({
+            radius: 13,
+            fill: new olFill({
+                color: 'rgba(0, 153, 255, 0.2)',
+            }),
+            stroke: new olStroke({
+                color: 'rgba(255, 255, 255, 0.2)',
+                width: 1,
+            })
+        }),
+        text: new olText({
+            text: labelText,
+            overflow: true,
+            offsetX: -((labelText.length * 5) / 2),
+            offsetY: 1,
+            textAlign: 'left',
+            fill: new olFill({
+                color: '#ffffff'
+            }),
+        })
+    });
+};
+
 fetch('assets/waveheight.json').then((response: Response) => {
     response.json().then((data: FeatureCollection<Point>) => {
 
@@ -35,39 +68,23 @@ fetch('assets/waveheight.json').then((response: Response) => {
             { val: maxValue * 0.9, rgb: [202, 181, 219] }
         ];
 
-        const styleFunction = (feature: olFeature<any>, resolution: number): olStyle => {
-            const features = feature.getProperties().features;
-            let labelText: string;
-            if (features.length > 1) {
-                labelText = `${feature.getProperties().features.length}`;
-            } else {
-                labelText = `${Number.parseFloat(features[0].getProperties()[valueProperty]).toPrecision(3)}`;
-                // labelText = features[0].getProperties()['row'] + '/' + features[0].getProperties()['col'];
-            }
+        const layer = createInterpolationLayer(data, valueProperty, maxRowDistance, maxColDistance, map.getView().getProjection(), styleFunction, colorRamp);
+        map.addLayer(layer);
+    });
+});
 
-            return new olStyle({
-                image: new olCircle({
-                    radius: 13,
-                    fill: new olFill({
-                        color: 'rgba(0, 153, 255, 0.2)',
-                    }),
-                    stroke: new olStroke({
-                        color: 'rgba(255, 255, 255, 0.2)',
-                        width: 1,
-                    })
-                }),
-                text: new olText({
-                    text: labelText,
-                    overflow: true,
-                    offsetX: -((labelText.length * 5) / 2),
-                    offsetY: 1,
-                    textAlign: 'left',
-                    fill: new olFill({
-                        color: '#ffffff'
-                    }),
-                })
-            });
-        };
+fetch('assets/waveheight2.json').then((response: Response) => {
+    response.json().then((data: FeatureCollection<Point>) => {
+
+        const valueProperty = 'SWH';
+        const maxColDistance = 0.2;
+        const maxRowDistance = 0.3;
+        const maxValue = Math.max(...data.features.map(f => f.properties[valueProperty]));
+        const colorRamp: ColorRamp = [
+            { val: maxValue * 0.3, rgb: [67, 168, 244] },
+            { val: maxValue * 0.6, rgb: [181, 221, 243] },
+            { val: maxValue * 0.9, rgb: [202, 181, 219] }
+        ];
 
         const layer = createInterpolationLayer(data, valueProperty, maxRowDistance, maxColDistance, map.getView().getProjection(), styleFunction, colorRamp);
         map.addLayer(layer);
