@@ -1,15 +1,17 @@
 import { FeatureCollection, Point, Feature } from 'geojson';
 import { GridPointProps } from '../ol/cubicSplines/cubicSplines_webgl1';
-import { vectorDistance, vectorSubtraction, vectorProjectOnto, vectorProjectedOntoLength, scalarProduct } from '../math';
+import { vectorDistance, vectorSubtraction, vectorProjectOnto, vectorProjectedOntoLength, scalarProduct, vectorAngle } from '../math';
 
 
-function distanceLineToPoint(line: Column | Row, feature: Feature<Point>) {
+function distanceAndAngleLineToPoint(line: Column | Row, feature: Feature<Point>): {distance: number, angle: number} {
     // f_proj = f, projected onto line
     // distance = |f - f_proj|
 
     // if there's only one point in column, we don't know yet where it points to.
     if (line.features.length < 2) {
-        return vectorDistance(line.features[0].geometry.coordinates, feature.geometry.coordinates);
+        const distance = vectorDistance(line.features[0].geometry.coordinates, feature.geometry.coordinates);
+        const angle = 0;
+        return {distance, angle};
     }
 
     const featureV = feature.geometry.coordinates;
@@ -18,15 +20,22 @@ function distanceLineToPoint(line: Column | Row, feature: Feature<Point>) {
 
     const columnDirection = vectorSubtraction(lastV, firstV);
     const featureRelative = vectorSubtraction(featureV, firstV);
+
     const featureProjectedLength = vectorProjectedOntoLength(featureRelative, columnDirection);
+    const featureProjected = scalarProduct(featureProjectedLength, columnDirection);
+    let distance = vectorDistance(featureRelative, featureProjected);
     if (featureProjectedLength < 1.0) {
         // if the feature is not outside of the columns current bounds, it cannot be pushed on top of it.
-        return Infinity;
+        distance = Infinity;
     }
-    const featureProjected = scalarProduct(featureProjectedLength, columnDirection);
-    const distance = vectorDistance(featureRelative, featureProjected);
 
-    return distance;
+    const angle = vectorAngle(columnDirection, featureRelative);
+
+    return {distance, angle};
+}
+
+function distanceMetric (distance: number, angle: number) {
+    return distance * (1.0 + angle);
 }
 
 class Column {
@@ -47,7 +56,8 @@ class Column {
      * The lower the returned number, the more the feature is in line with this column
      */
     pointsTo(feature: Feature<Point>): number {
-        return distanceLineToPoint(this, feature);
+        const m = distanceAndAngleLineToPoint(this, feature);
+        return distanceMetric(m.distance, m.angle);
     }
 }
 
@@ -69,7 +79,8 @@ class Row {
      * The lower the returned number, the more the feature is in line with this row
      */
     pointsTo(feature: Feature<Point>): number {
-        return distanceLineToPoint(this, feature);
+        const m = distanceAndAngleLineToPoint(this, feature);
+        return distanceMetric(m.distance, m.angle);
     }
 }
 

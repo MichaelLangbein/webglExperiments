@@ -1,1 +1,1 @@
-import './examples/ol/printMap';
+import './examples/ol/gridFitting';

@@ -17,7 +17,7 @@ document.getElementById('canvas').style.setProperty('height', '0px');
 const fpser = document.getElementById('fpser');
 
 
-fetch('assets/waveheight.json').then((response: Response) => {
+fetch('assets/waveheight2.json').then((response: Response) => {
     response.json().then((data: FeatureCollection<Point>) => {
 
         const instrumentedData = gridFit(data, 'SWH', 0.1, 0.2);

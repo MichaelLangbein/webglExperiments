@@ -105,6 +105,13 @@ export const vectorInnerProduct = (vec0: Vector, vec1: Vector): number => {
     return s;
 };
 
+/**
+ * returns angle in radians
+ */
+export const vectorAngle = (vec1: Vector, vec2: Vector): number => {
+    const frac = vectorInnerProduct(vec1, vec2) / (vectorLength(vec1) * vectorLength(vec2));
+    return Math.acos(frac);
+}
 
 export const vectorProjectOnto = (point: Vector, axis: Vector) => {
     const length = vectorProjectedOntoLength(point, axis);
