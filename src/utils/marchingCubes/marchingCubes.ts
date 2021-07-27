@@ -6,6 +6,9 @@ import { ArrayCubeF32 } from '../arrayMatrix';
 
 /**
  * Thanks to https://surma.dev/things/c-to-webassembly/ !
+ * Pretty much all of `stdlib.h` and `memory.h`, including `malloc`, are missing from WASM.
+ * Instead you have to build JS-functions that emulate stdlib and memory by manipulating a shared-memory-array.
+ * These JS-emulator functions are called from WASM per FFI.
  */
 
 
